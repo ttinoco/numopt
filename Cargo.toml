@@ -6,4 +6,5 @@ edition = "2018"
 license = "BSD-2-Clause"
 
 [dependencies]
+num-traits = "0.2.11"
 sprs = "0.7.1"
