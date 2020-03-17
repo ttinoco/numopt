@@ -1,3 +1,3 @@
-# optcore
+# optrs
 
-Experimental core abstractions for optimization in Rust.
+Experimental optimization tools in Rust.

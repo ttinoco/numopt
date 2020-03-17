@@ -1,10 +1,9 @@
-use optcore;
-use optcore::Problem;
+use optrs::Problem;
 use sprs::{TriMat, TriMatBase};
 
 fn main () {
 
-    println!("optcore example problem 1");
+    println!("optrs example problem 1");
 
     // Sample linear problem
     // min        180*x1 + 160*x2 
