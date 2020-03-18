@@ -1,5 +1,6 @@
 use optrs::Problem;
 use optrs::ProblemLp;
+use optrs::SolverClpCMD;
 use sprs::{TriMat, TriMatBase};
 
 fn main () {
@@ -26,15 +27,16 @@ fn main () {
         u: Vec<f64>,
     };
 
-    impl ProblemLp<f64> for P {
-        fn x(&self) -> &Vec<f64> { &self.x }
-        fn c(&self) -> &Vec<f64> { &self.c }
+    impl ProblemLp for P {
+        type N = f64;
+        fn x(&self) -> &[f64] { &self.x }
+        fn c(&self) -> &[f64] { &self.c }
         fn a(&self) -> &TriMat<f64> { &self.a }
-        fn b(&self) -> &Vec<f64> { &self.b }
-        fn l(&self) -> &Vec<f64> { &self.l }
-        fn u(&self) -> &Vec<f64> { &self.u }
-        fn setx(&mut self, x: &Vec<f64>) -> () {
-            self.x = x.clone();
+        fn b(&self) -> &[f64] { &self.b }
+        fn l(&self) -> &[f64] { &self.l }
+        fn u(&self) -> &[f64] { &self.u }
+        fn setx(&mut self, x: &[f64]) -> () {
+            self.x = x.to_vec();
         }
     }
 
@@ -63,4 +65,6 @@ fn main () {
     println!("b = {:?}", ProblemLp::b(&p));
     println!("l = {:?}", ProblemLp::l(&p));
     println!("u = {:?}", ProblemLp::u(&p));
+
+    let s = SolverClpCMD::new();
 }

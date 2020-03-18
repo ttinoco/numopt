@@ -26,22 +26,23 @@ fn main () {
         u: Vec<f64>,
     };
 
-    impl Problem<f64> for P {
-        fn x(&self) -> &Vec<f64> { &self.x }
+    impl Problem for P {
+        type N = f64;
+        fn x(&self) -> &[f64] { &self.x }
         fn phi(&self) -> f64 { self.phi }
-        fn gphi(&self) -> &Vec<f64> { &self.gphi }
+        fn gphi(&self) -> &[f64] { &self.gphi }
         fn a(&self) -> &TriMat<f64> { &self.a }
-        fn b(&self) -> &Vec<f64> { &self.b }
-        fn l(&self) -> &Vec<f64> { &self.l }
-        fn u(&self) -> &Vec<f64> { &self.u }
-        fn eval(&mut self, x: &Vec<f64>) -> () {
+        fn b(&self) -> &[f64] { &self.b }
+        fn l(&self) -> &[f64] { &self.l }
+        fn u(&self) -> &[f64] { &self.u }
+        fn eval(&mut self, x: &[f64]) -> () {
             self.setx(x);
             self.phi = 180.*x[0] + 160.*x[1];
             self.gphi[0] = 180.;
             self.gphi[1] = 160.;
         }
-        fn setx(&mut self, x: &Vec<f64>) -> () {
-            self.x = x.clone();
+        fn setx(&mut self, x: &[f64]) -> () {
+            self.x = x.to_vec();
         }
     }
 

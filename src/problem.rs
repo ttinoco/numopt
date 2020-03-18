@@ -4,47 +4,54 @@ use num_traits::Float;
 
 use super::utils::dot;
 
-pub trait Problem<N: Float> {
-    fn x(&self) -> &Vec<N>;
-    fn phi(&self) -> N;
-    fn gphi(&self) -> &Vec<N>;
-    fn a(&self) -> &TriMat<N>;
-    fn b(&self) -> &Vec<N>;
-    fn l(&self) -> &Vec<N>;
-    fn u(&self) -> &Vec<N>;
-    fn eval(&mut self, x: &Vec<N>) -> ();
-    fn setx(&mut self, x: &Vec<N>) -> ();
+pub trait Problem {
+    type N: Float;
+    fn x(&self) -> &[Self::N];
+    fn phi(&self) -> Self::N;
+    fn gphi(&self) -> &[Self::N];
+    fn a(&self) -> &TriMat<Self::N>;
+    fn b(&self) -> &[Self::N];
+    fn l(&self) -> &[Self::N];
+    fn u(&self) -> &[Self::N];
+    fn eval(&mut self, x: &[Self::N]) -> ();
+    fn setx(&mut self, x: &[Self::N]) -> ();
 }
 
-pub trait ProblemLp<N: Float> {
-    fn x(&self) -> &Vec<N>;
-    fn c(&self) -> &Vec<N>;
-    fn a(&self) -> &TriMat<N>;
-    fn b(&self) -> &Vec<N>;
-    fn l(&self) -> &Vec<N>;
-    fn u(&self) -> &Vec<N>;
-    fn setx(&mut self, x: &Vec<N>) -> ();
+pub trait ProblemLp {
+    type N: Float;
+    fn x(&self) -> &[Self::N];
+    fn c(&self) -> &[Self::N];
+    fn a(&self) -> &TriMat<Self::N>;
+    fn b(&self) -> &[Self::N];
+    fn l(&self) -> &[Self::N];
+    fn u(&self) -> &[Self::N];
+    fn setx(&mut self, x: &[Self::N]) -> ();
 }
 
 /*
-pub trait ProblemMILp<N: Float> {
+pub trait ProblemMILp<T: Float> {
 
 }
 
-pub trait ProblemNlp<N: Float> {
+pub trait ProblemQp<T: Float> {
+
+}
+
+pub trait ProblemNlp<T: Float> {
 
 }
 */
 
-impl<T: ProblemLp<N>, N: Float> Problem<N> for T {
-    fn x(&self) -> &Vec<N> { self.x() }
-    fn phi(&self) -> N { dot(self.c(), self.x()) }
-    fn gphi(&self) -> &Vec<N> { self.c() }
-    fn a(&self) -> &TriMat<N> { self.a() }
-    fn b(&self) -> &Vec<N> { self.b() }
-    fn l(&self) -> &Vec<N> { self.l() }
-    fn u(&self) -> &Vec<N> { self.u() }
-    fn eval(&mut self, x: &Vec<N>) -> () { self.setx(x); }
-    fn setx(&mut self, x: &Vec<N>) -> () { self.setx(x); }
+impl<T: ProblemLp> Problem for T {
+    type N = T::N;
+    fn x(&self) -> &[Self::N] { self.x() }
+    fn phi(&self) -> Self::N { dot(self.c(), self.x()) }
+    fn gphi(&self) -> &[Self::N] { self.c() }
+    fn a(&self) -> &TriMat<Self::N> { self.a() }
+    fn b(&self) -> &[Self::N] { self.b() }
+    fn l(&self) -> &[Self::N] { self.l() }
+    fn u(&self) -> &[Self::N] { self.u() }
+    fn eval(&mut self, x: &[Self::N]) -> () { self.setx(x); }
+    fn setx(&mut self, x: &[Self::N]) -> () { self.setx(x); }
 }
 
