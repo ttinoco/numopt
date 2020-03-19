@@ -1,5 +1,5 @@
-use super::solver::Solver;
-use super::problem::ProblemLp;
+use crate::solver::Solver;
+use crate::problem::ProblemLp;
 
 pub struct SolverClpCMD {
 
@@ -15,4 +15,3 @@ impl<T: ProblemLp> Solver<T> for SolverClpCMD {
         
     }
 }
-

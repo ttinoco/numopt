@@ -1,8 +1,7 @@
-
 use sprs::TriMat;
 use num_traits::Float;
 
-use super::utils::dot;
+use crate::utils::dot;
 
 pub trait Problem {
     type N: Float;
