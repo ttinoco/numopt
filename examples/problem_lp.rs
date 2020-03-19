@@ -1,5 +1,6 @@
 use optrs::Problem;
 use optrs::ProblemLp;
+use optrs::Solver;
 use optrs::SolverClpCMD;
 use sprs::{TriMat, TriMatBase};
 
@@ -67,4 +68,5 @@ fn main () {
     println!("u = {:?}", ProblemLp::u(&p));
 
     let s = SolverClpCMD::new();
+    s.solve(p);
 }
