@@ -8,16 +8,16 @@ fn main () {
 
     println!("optrs example LP problem");
 
-    // Sample problem
-    // min        180*x1 + 160*x2 
-    // subject to 6*x1 +   x2 + x3 == 12
-    //            3*x1 +   x2 + x4 ==  8
-    //            4*x1 + 6*x2 + x5 == 24
+    // Sample problem 
+    // min        180*x0 + 160*x1 
+    // subject to 6*x0 +   x1 + x2 == 12
+    //            3*x0 +   x1 + x3 ==  8
+    //            4*x0 + 6*x1 + x4 == 24
+    //            0 <= x0 <= 5
     //            0 <= x1 <= 5
-    //            0 <= x2 <= 5
+    //            x2 <= 0
     //            x3 <= 0
     //            x4 <= 0
-    //            x5 <= 0
 
     struct P {
         x: Vec<f64>,
@@ -46,7 +46,7 @@ fn main () {
         c: vec![180.,160., 0., 0., 0.],
         a: TriMatBase::from_triplets(
             (3, 5),
-            vec![0,0,0,1,1,1,1,1,1],
+            vec![0,0,0,1,1,1,2,2,2],
             vec![0,1,2,0,1,3,0,1,4],
             vec![6.,1.,1.,3.,1.,1.,4.,6.,1.]),
         b: vec![12.,8.,24.],
@@ -68,5 +68,5 @@ fn main () {
     println!("u = {:?}", ProblemLp::u(&p));
 
     let s = SolverClpCMD::new();
-    s.solve(p);
+    s.solve(p).unwrap();
 }
