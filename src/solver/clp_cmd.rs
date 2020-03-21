@@ -1,5 +1,7 @@
+use std::fs::remove_file;
 use std::ffi::OsStr;
 use tempfile::Builder;
+use std::process::Command;
 use simple_error::SimpleError;
 
 use crate::solver::Solver;
@@ -43,13 +45,40 @@ impl<T: ProblemLp> Solver<T> for SolverClpCMD {
         println!("{}", output_filename);
 
         // Write input file
-        //p.write_to_lp_file(&input_filename)?;
-        p.write_to_lp_file("foo.lp")?;
+        match p.write_to_lp_file(&input_filename) {
+            Ok(()) => (),
+            Err(_e) => {
+                remove_file(&input_filename).ok();
+                remove_file(&output_filename).ok();
+                return Err(SimpleError::new("failed to write lp file"));
+            }
+        };
 
         // Call Clp command
-        
+        match Command::new("clp")
+                      .args(&[&input_filename, 
+                              "solve", 
+                              "printingOptions",
+                              "all",
+                              "solution",
+                              &output_filename])
+                      .spawn()
+                      .and_then(|mut cmd| cmd.wait())
+                      .map(|ecode| assert!(ecode.success())) {
+            Ok(()) => (),
+            Err(_e) => {
+                remove_file(&input_filename).ok();
+                remove_file(&output_filename).ok();
+                return Err(SimpleError::new("failed executing clp command"));
+            }
+        }
+
         // Read output file
 
+
+        // Clean up
+        remove_file(&input_filename).ok();
+        remove_file(&output_filename).ok();
         
         // All good
         Ok(())
