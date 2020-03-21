@@ -1,5 +1,5 @@
-use tempfile::Builder;
 use std::ffi::OsStr;
+use tempfile::Builder;
 use simple_error::SimpleError;
 
 use crate::solver::Solver;
@@ -43,7 +43,8 @@ impl<T: ProblemLp> Solver<T> for SolverClpCMD {
         println!("{}", output_filename);
 
         // Write input file
-        p.write_to_lp_file(&input_filename)?;
+        //p.write_to_lp_file(&input_filename)?;
+        p.write_to_lp_file("foo.lp")?;
 
         // Call Clp command
         

@@ -3,7 +3,8 @@ mod lp;
 use sprs::TriMat;
 use num_traits::Float;
 
-pub use crate::problem::lp::{ProblemLp, ProblemLpWriter};
+pub use crate::problem::lp::ProblemLp;
+pub use crate::problem::lp::ProblemLpWriter;
 
 pub trait Problem {
     type N: Float;
@@ -18,16 +19,13 @@ pub trait Problem {
     fn setx(&mut self, x: &[Self::N]) -> ();
 }
 
-/*
-pub trait ProblemMILp<T: Float> {
-
+pub trait ProblemDims {
+    fn nx(&self) -> usize;
+    fn na(&self) -> usize;
 }
 
-pub trait ProblemQp<T: Float> {
-
+impl<T: Problem> ProblemDims for T {
+    fn nx(&self) -> usize { self.x().len() }
+    fn na(&self) -> usize { self.b().len() }
 }
 
-pub trait ProblemNlp<T: Float> {
-
-}
-*/
