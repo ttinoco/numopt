@@ -1,11 +1,17 @@
+use std::fs::File;
 use std::ffi::OsStr;
 use tempfile::Builder;
+use std::io::prelude::*;
 use std::fs::remove_file;
 use std::process::Command;
 use simple_error::SimpleError;
+use std::io::{self, BufReader};
 
-use crate::solver::{Solver, SolverStatus};
-use crate::problem::{ProblemLp, 
+use crate::solver::{Solver, 
+                    SolverStatus};
+use crate::problem::{Problem,
+                     ProblemDims,
+                     ProblemLp, 
                      ProblemLpIO,
                      ProblemSol};
 
@@ -16,12 +22,73 @@ pub struct SolverClpCMD<T: ProblemLp> {
 
 impl<T: ProblemLp> SolverClpCMD<T> {
 
-    fn read_sol_file(filename: &str) -> Result<(SolverStatus, ProblemSol<T>), SimpleError> {
+    fn read_sol_file(filename: &str, p: &T) -> io::Result<(SolverStatus, ProblemSol<T>)> {
         
-        let status = SolverStatus::Unknown;
-        let solution = ProblemSol::new(0,0);
+        let mut index: usize;
+        let mut value: T::N;
+        let mut status = SolverStatus::Unknown;
+        let mut solution = ProblemSol::new(p.nx(),p.na());
+        let f = File::open(filename)?;
+        let mut r = BufReader::new(f);
+        let mut line = String::new();
+        let e = io::Error::new(io::ErrorKind::Other, "bad clp solution file");
 
-        
+        // Status
+        r.read_line(&mut line)?;
+        line = line.trim().to_string();
+
+        println!("{}", line);
+        println!("{}", line.len());
+        println!("{}", line == "optimal");
+        if line == "optimal" {
+            status = SolverStatus::Solved;
+        }
+
+        // Objective value
+        r.read_line(&mut line)?;
+
+        // Results
+        for l in r.lines() {
+            line = l?;
+            let mut iter = line.split_ascii_whitespace();
+            iter.next();
+            let name: String = match iter.next() {
+                Some(s) => s.to_string(),
+                None => return Err(e)
+            };
+            let value: T::N = match iter.next() {
+                Some(s) => match s.parse() { Ok(f) => f, Err(_e) => return Err(e) },
+                None => return Err(e)
+            };
+            let mul: T::N = match iter.next() {
+                Some(s) => match s.parse() { Ok(f) => f, Err(_e) => return Err(e) },
+                None => return Err(e)
+            };
+            let mut name_iter = name.split('_');
+            let vartype: String = match name_iter.next() {
+                Some(s) => s.to_string(),
+                None => return Err(e)
+            };
+            let varindex: usize  = match name_iter.next() {
+                Some(s) => match s.parse() { Ok(n) => n, Err(_e) => return Err(e) },
+                None => return Err(e)
+            };
+
+            // Variable
+             if vartype == "x" {
+                println!("variable");
+
+            }
+
+            // Constraint
+            else if vartype == "c" {
+                println!("constraint");
+
+            }
+            else {
+                return Err(e);
+            }
+        }
 
         Ok((status, solution))
     }
@@ -97,7 +164,7 @@ impl<T: ProblemLp> Solver<T> for SolverClpCMD<T> {
         remove_file(&input_filename).ok();
 
         // Read output file
-        let (status, solution) = match Self::read_sol_file(&output_filename) {
+        let (status, solution) = match Self::read_sol_file("bar.sol", &p) {
             Ok((s, sol)) => (s, sol),
             Err(_e) => {
                 remove_file(&output_filename).ok();

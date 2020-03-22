@@ -25,10 +25,10 @@ pub trait ProblemDims {
 }
 
 pub struct ProblemSol<T: Problem> {
-    x: Option<Vec<T::N>>,
-    lam: Option<Vec<T::N>>,
-    mu: Option<Vec<T::N>>,
-    pi: Option<Vec<T::N>>,
+    x: Vec<T::N>,
+    lam: Vec<T::N>,
+    mu: Vec<T::N>,
+    pi: Vec<T::N>,
 }
 
 impl<T: Problem> ProblemDims for T {
@@ -40,10 +40,10 @@ impl<T: Problem> ProblemSol<T> {
     pub fn new(nx: usize, na: usize) -> Self {
         let z = NumCast::from(0.).unwrap();
         Self {
-            x: Some(vec![z;nx]),
-            lam: Some(vec![z;na]),
-            mu: Some(vec![z;nx]),
-            pi: Some(vec![z;nx])
+            x: vec![z;nx],
+            lam: vec![z;na],
+            mu: vec![z;nx],
+            pi: vec![z;nx]
         }
     }
 }
