@@ -1,25 +1,45 @@
-use std::fs::remove_file;
 use std::ffi::OsStr;
 use tempfile::Builder;
+use std::fs::remove_file;
 use std::process::Command;
 use simple_error::SimpleError;
 
-use crate::solver::Solver;
-use crate::problem::{ProblemLp, ProblemLpWriter};
+use crate::solver::{Solver, SolverStatus};
+use crate::problem::{ProblemLp, 
+                     ProblemLpIO,
+                     ProblemSol};
 
-pub struct SolverClpCMD {
-
+pub struct SolverClpCMD<T: ProblemLp> {
+    status: SolverStatus,
+    solution: Option<ProblemSol<T>>,
 }
 
-impl SolverClpCMD {
-    pub fn new() -> Self { Self{} }
+impl<T: ProblemLp> SolverClpCMD<T> {
+
+    fn read_sol_file(filename: &str) -> Result<(SolverStatus, ProblemSol<T>), SimpleError> {
+        
+        let status = SolverStatus::Unknown;
+        let solution = ProblemSol::new(0,0);
+
+        
+
+        Ok((status, solution))
+    }
 }
 
-impl<T: ProblemLp> Solver<T> for SolverClpCMD {
+impl<T: ProblemLp> Solver<T> for SolverClpCMD<T> {
+
+    fn new() -> Self { 
+        Self {
+            status: SolverStatus::Unknown,
+            solution: None,
+        } 
+    }
+
+    fn status(&self) -> &SolverStatus { &self.status }
+    fn solution(&self) -> &Option<ProblemSol<T>> { &self.solution }
 
     fn solve(&self, p: T) -> Result<(), SimpleError> {
-
-        println!("Testing SolverClpCMD solve");
      
         // Input filename
         let input_file = Builder::new()
@@ -61,7 +81,7 @@ impl<T: ProblemLp> Solver<T> for SolverClpCMD {
                               "printingOptions",
                               "all",
                               "solution",
-                              &output_filename])
+                              "bar.sol"])
                       .spawn()
                       .and_then(|mut cmd| cmd.wait())
                       .map(|ecode| assert!(ecode.success())) {
@@ -72,12 +92,20 @@ impl<T: ProblemLp> Solver<T> for SolverClpCMD {
                 return Err(SimpleError::new("failed executing clp command"));
             }
         }
+        
+        // Clean up input file
+        remove_file(&input_filename).ok();
 
         // Read output file
+        let (status, solution) = match Self::read_sol_file(&output_filename) {
+            Ok((s, sol)) => (s, sol),
+            Err(_e) => {
+                remove_file(&output_filename).ok();
+                return Err(SimpleError::new("failed to read clp solution file"))
+            }
+        };
 
-
-        // Clean up
-        remove_file(&input_filename).ok();
+        // Clean up output file
         remove_file(&output_filename).ok();
         
         // All good

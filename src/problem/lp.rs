@@ -20,6 +20,12 @@ pub trait ProblemLp {
     fn setx(&mut self, x: &[Self::N]) -> ();
 }
 
+pub trait ProblemLpIO {
+    type P: ProblemLp;
+    fn read_from_lp_file(filename: &str) -> Result<Self::P, SimpleError>;
+    fn write_to_lp_file(&self, filename: &str) -> Result<(), SimpleError>;
+}
+
 impl<T: ProblemLp> Problem for T {
     type N = T::N;
     fn x(&self) -> &[Self::N] { self.x() }
@@ -33,15 +39,16 @@ impl<T: ProblemLp> Problem for T {
     fn setx(&mut self, x: &[Self::N]) -> () { self.setx(x); }
 }
 
-pub trait ProblemLpWriter {
-    fn write_to_lp_file(&self, filename: &str) -> Result<(), SimpleError>;
-}
-
-impl<T: ProblemLp> ProblemLpWriter for T {
+impl<T: ProblemLp> ProblemLpIO for T {
     
-    fn write_to_lp_file(&self, filename: &str) -> Result<(), SimpleError> {
+    type P = T;
 
-        println!("Problem write to LP file");
+    fn read_from_lp_file(filename: &str) -> Result<Self::P, SimpleError> {
+
+        Err(SimpleError::new("not implemented"))
+    }
+
+    fn write_to_lp_file(&self, filename: &str) -> Result<(), SimpleError> {
 
         let mut pre: char;
         let mut j: usize;

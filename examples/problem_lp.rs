@@ -1,8 +1,8 @@
-use optrs::Problem;
-use optrs::ProblemLp;
-use optrs::Solver;
-use optrs::SolverClpCMD;
 use sprs::{TriMat, TriMatBase};
+use optrs::{Problem,
+            ProblemLp,
+            Solver,
+            SolverClpCMD};
 
 fn main () {
 
