@@ -1,5 +1,6 @@
 mod problem;
 mod solver;
+mod model;
 mod utils;
 
 pub use problem::{Problem,
@@ -11,3 +12,5 @@ pub use problem::{Problem,
 pub use solver::{Solver,
                  SolverStatus,
                  SolverClpCMD};
+
+//pub use model::;
