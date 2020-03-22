@@ -1,6 +1,6 @@
+use std::fmt;
 use std::fs::File;
 use std::str::FromStr;
-use std::fmt::LowerExp;
 use std::io::prelude::*;
 use sprs::{TriMat, CsMat};
 use std::io::{self, BufWriter};
@@ -10,7 +10,7 @@ use crate::utils::dot;
 use crate::problem::{Problem, ProblemDims};
 
 pub trait ProblemLp {
-    type N: Float + LowerExp + FromStr;
+    type N: Float + FromStr + fmt::LowerExp + fmt::Debug;
     fn x(&self) -> &[Self::N];
     fn c(&self) -> &[Self::N];
     fn a(&self) -> &TriMat<Self::N>;

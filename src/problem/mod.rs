@@ -1,13 +1,15 @@
 mod lp;
 
+use std::fmt;
 use sprs::TriMat;
+use std::str::FromStr;
 use num_traits::{Float, NumCast};
 
 pub use crate::problem::lp::{ProblemLp,
                              ProblemLpIO};
 
 pub trait Problem {
-    type N: Float;
+    type N: Float + FromStr + fmt::LowerExp + fmt::Debug;
     fn x(&self) -> &[Self::N];
     fn phi(&self) -> Self::N;
     fn gphi(&self) -> &[Self::N];
@@ -25,10 +27,10 @@ pub trait ProblemDims {
 }
 
 pub struct ProblemSol<T: Problem> {
-    x: Vec<T::N>,
-    lam: Vec<T::N>,
-    mu: Vec<T::N>,
-    pi: Vec<T::N>,
+    pub x: Vec<T::N>,
+    pub lam: Vec<T::N>,
+    pub mu: Vec<T::N>,
+    pub pi: Vec<T::N>,
 }
 
 impl<T: Problem> ProblemDims for T {
@@ -45,6 +47,18 @@ impl<T: Problem> ProblemSol<T> {
             mu: vec![z;nx],
             pi: vec![z;nx]
         }
+    }
+}
+
+impl<T: Problem> fmt::Debug for ProblemSol<T> {
+
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ProblemSol")
+         .field("x", &self.x)
+         .field("lam", &self.lam)
+         .field("mu", &self.mu)
+         .field("pi", &self.pi)
+         .finish()
     }
 }
 

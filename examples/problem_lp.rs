@@ -67,6 +67,9 @@ fn main () {
     println!("l = {:?}", ProblemLp::l(&p));
     println!("u = {:?}", ProblemLp::u(&p));
 
-    let s = SolverClpCMD::new();
+    let mut s = SolverClpCMD::new();
     s.solve(p).unwrap();
+
+    println!("solver status = {}", s.status());
+    println!("solution = {:?}", s.solution());
 }

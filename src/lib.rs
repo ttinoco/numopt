@@ -9,4 +9,5 @@ pub use problem::{Problem,
                   ProblemLpIO};
 
 pub use solver::{Solver,
+                 SolverStatus,
                  SolverClpCMD};
