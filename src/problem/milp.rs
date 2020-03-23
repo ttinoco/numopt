@@ -7,9 +7,11 @@ use std::io::{self, BufWriter};
 use num_traits::{Float, NumCast};
 
 use crate::utils::dot;
-use crate::problem::{Problem, ProblemDims};
+use crate::problem::{ProblemBase, ProblemDims};
 
-pub trait ProblemMilp {
+
+
+pub trait ProblemMilpBase {
     type N: Float + FromStr + fmt::LowerExp + fmt::Debug;
     fn x(&self) -> &[Self::N];
     fn c(&self) -> &[Self::N];
