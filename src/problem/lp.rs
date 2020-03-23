@@ -1,5 +1,5 @@
 use std::fmt;
-use sprs::TriMat;
+use sprs::TriMat; 
 use std::str::FromStr;
 use num_traits::Float;
 

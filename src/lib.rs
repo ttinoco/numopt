@@ -13,6 +13,7 @@ pub use problem::{Problem,
 
 pub use solver::{Solver,
                  SolverStatus,
-                 SolverClpCMD};
+                 SolverClpCmd,
+                 SolverCbcCmd};
 
 //pub use model::;

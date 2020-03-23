@@ -1,19 +1,13 @@
-
-#[macro_use]
-extern crate optrs;
-
-#[macro_use]
-extern crate approx;
-
 use sprs::{TriMat, TriMatBase};
-use optrs::{Problem,
+use optrs::{assert_vec_approx_eq,
+            Problem,
             ProblemLp,
             Solver,
-            SolverClpCMD};
+            SolverClpCmd};
 
 fn main () {
 
-    println!("optrs example LP problem");
+    println!("optrs example LP problem and solution");
 
     // Sample problem 
     // min        180*x0 + 160*x1 
@@ -73,8 +67,9 @@ fn main () {
     println!("b = {:?}", ProblemLp::b(&p));
     println!("l = {:?}", ProblemLp::l(&p));
     println!("u = {:?}", ProblemLp::u(&p));
+    println!("p = {:?}", Problem::p(&p));
 
-    let mut s = SolverClpCMD::new();
+    let mut s = SolverClpCmd::new();
     s.solve(p).unwrap();
 
     println!("solver status = {}", s.status());
