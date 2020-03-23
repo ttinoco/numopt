@@ -3,9 +3,9 @@ use std::str::FromStr;
 use num_traits::{Float, NumCast};
 use std::fmt::{self, LowerExp, Debug};
 
-pub type ProblemEval<T> = fn(&mut T, &mut Vec<T>, &[T])-> ();
+pub type ProblemEval<'a, T> = fn(&'a mut T, &'a mut Vec<T>, &'a [T])-> ();
 
-pub struct Problem<T> {
+pub struct Problem<'a, T> {
     x: Vec<T>,
     phi: T,
     gphi: Vec<T>,
@@ -14,20 +14,20 @@ pub struct Problem<T> {
     l: Vec<T>,
     u: Vec<T>,
     p: Option<Vec<bool>>,
-    eval_fn: ProblemEval<T>,
+    eval_fn: ProblemEval<'a, T>,
 }
 
 pub trait ProblemBase {
-    type T: Float + FromStr + LowerExp + Debug;
-    fn x(&self) -> &[Self::T];
-    fn phi(&self) -> Self::T;
-    fn gphi(&self) -> &[Self::T];
-    fn a(&self) -> &TriMat<Self::T>;
-    fn b(&self) -> &[Self::T];
-    fn l(&self) -> &[Self::T];
-    fn u(&self) -> &[Self::T];
+    type N: Float + FromStr + LowerExp + Debug;
+    fn x(&self) -> &[Self::N];
+    fn phi(&self) -> Self::N;
+    fn gphi(&self) -> &[Self::N];
+    fn a(&self) -> &TriMat<Self::N>;
+    fn b(&self) -> &[Self::N];
+    fn l(&self) -> &[Self::N];
+    fn u(&self) -> &[Self::N];
     fn p(&self) -> Option<&[bool]>;
-    fn eval(&mut self, x: &[Self::T]) -> ();
+    fn eval(&mut self, x: &[Self::N]) -> ();
 }
 
 pub trait ProblemDims {
@@ -36,19 +36,19 @@ pub trait ProblemDims {
 }
 
 pub struct ProblemSol<T: ProblemBase> {
-    pub x: Vec<T::T>,
-    pub lam: Vec<T::T>,
-    pub mu: Vec<T::T>,
-    pub pi: Vec<T::T>,
+    pub x: Vec<T::N>,
+    pub lam: Vec<T::N>,
+    pub mu: Vec<T::N>,
+    pub pi: Vec<T::N>,
 }
 
-impl<T: Float + FromStr + LowerExp + Debug> Problem<T> {
+impl<'a, T: Float + FromStr + LowerExp + Debug> Problem<'a, T> {
     pub fn new(a: TriMat<T>, 
                b: Vec<T>,  
                l: Vec<T>, 
                u: Vec<T>, 
                p: Option<Vec<bool>>,
-               eval_fn: ProblemEval<T>) -> Self {
+               eval_fn: ProblemEval<'a, T>) -> Self {
         assert_eq!(a.cols(), l.len());
         assert_eq!(a.cols(), u.len());
         match &p {
@@ -71,7 +71,7 @@ impl<T: Float + FromStr + LowerExp + Debug> Problem<T> {
 }
 
 impl<N: Float + FromStr + LowerExp + Debug> ProblemBase for Problem<N> {
-    type T = N;
+    type N = N;
     fn x(&self) -> &[N] { &self.x }
     fn phi(&self) -> N { self.phi }
     fn gphi(&self) -> &[N] { &self.gphi }

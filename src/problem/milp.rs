@@ -1,18 +1,21 @@
-use std::fmt;
 use std::fs::File;
 use std::str::FromStr;
 use std::io::prelude::*;
 use sprs::{TriMat, CsMat};
 use std::io::{self, BufWriter};
+use std::fmt::{LowerExp, Debug};
 use num_traits::{Float, NumCast};
 
 use crate::utils::dot;
-use crate::problem::{ProblemBase, ProblemDims};
+use crate::problem::{Problem, ProblemBase, ProblemDims};
 
-
+pub struct ProblemMilp<'a, T> {
+    c: Vec<T>,
+    base: Problem<'a, T>,
+}
 
 pub trait ProblemMilpBase {
-    type N: Float + FromStr + fmt::LowerExp + fmt::Debug;
+    type N: Float + FromStr + LowerExp + Debug;
     fn x(&self) -> &[Self::N];
     fn c(&self) -> &[Self::N];
     fn a(&self) -> &TriMat<Self::N>;
@@ -20,30 +23,64 @@ pub trait ProblemMilpBase {
     fn l(&self) -> &[Self::N];
     fn u(&self) -> &[Self::N];
     fn p(&self) -> Option<&[bool]>;
-    fn setx(&mut self, x: &[Self::N]) -> ();
+    fn base(&self) -> &Problem<Self::N>;
+    fn base_mut(&mut self) -> &mut Problem<Self::N>;
 }
 
 pub trait ProblemMilpIO {
-    type P: ProblemMilp;
+    type P: ProblemMilpBase;
     fn read_from_lp_file(filename: &str) -> io::Result<Self::P>;
     fn write_to_lp_file(&self, filename: &str) -> io::Result<()>;
 }
 
-impl<T: ProblemMilp> Problem for T {
+impl<'a, T: Float + FromStr + LowerExp + Debug> ProblemMilp<'a, T> {
+    pub fn new(c: &'a [T],
+               a: TriMat<T>,
+               b: Vec<T>,  
+               l: Vec<T>,
+               u: Vec<T>, 
+               p: Option<Vec<bool>>) -> () {
+        let f = | phi: &mut T, gphi: &mut Vec<T>, x: &[T] | {
+            //let cc = c;
+            *phi = c[0];
+        };
+        //let base = Problem::new(a, b, l, u, p, f);
+        //Self {
+        //    c: c,
+        //    base: base,
+        //}
+    }
+}
+
+impl<N: Float + FromStr + LowerExp + Debug> ProblemMilpBase for ProblemMilp<N> {
+    type N = N;
+    fn x(&self) -> &[N] { &self.base.x() }
+    fn c(&self) -> &[N] { &self.c }
+    fn a(&self) -> &TriMat<N> { &self.base.a() } 
+    fn b(&self) -> &[N] { &self.base.b() }
+    fn l(&self) -> &[N] { &self.base.l() }
+    fn u(&self) -> &[N] { &self.base.u() }
+    fn p(&self) -> Option<&[bool]> { self.base.p() }
+    fn base(&self) -> &Problem<Self::N> { &self.base }
+    fn base_mut(&mut self) -> &mut Problem<Self::N> { &mut self.base }
+}
+
+impl<T: ProblemMilpBase> ProblemBase for T {
     type N = T::N;
     fn x(&self) -> &[Self::N] { self.x() }
-    fn phi(&self) -> Self::N { dot(self.c(), self.x()) }
+    fn phi(&self) -> Self::N { self.base().phi() }
     fn gphi(&self) -> &[Self::N] { self.c() }
     fn a(&self) -> &TriMat<Self::N> { self.a() }
     fn b(&self) -> &[Self::N] { self.b() }
     fn l(&self) -> &[Self::N] { self.l() }
     fn u(&self) -> &[Self::N] { self.u() }
     fn p(&self) -> Option<&[bool]> { self.p() }
-    fn eval(&mut self, x: &[Self::N]) -> () { self.setx(x); }
-    fn setx(&mut self, x: &[Self::N]) -> () { self.setx(x); }
+    fn eval(&mut self, x: &[Self::N]) -> () { 
+        self.base_mut().eval(x)
+    }
 }
 
-impl<T: ProblemMilp> ProblemMilpIO for T {
+impl<T: ProblemMilpBase> ProblemMilpIO for T {
     
     type P = T;
 
