@@ -24,6 +24,7 @@ fn main () {
         b: Vec<f64>,
         l: Vec<f64>,
         u: Vec<f64>,
+        p: Vec<bool>,
     };
 
     impl Problem for P {
@@ -35,6 +36,7 @@ fn main () {
         fn b(&self) -> &[f64] { &self.b }
         fn l(&self) -> &[f64] { &self.l }
         fn u(&self) -> &[f64] { &self.u }
+        fn p(&self) -> Option<&[bool]> { Some(&self.p) }
         fn eval(&mut self, x: &[f64]) -> () {
             self.setx(x);
             self.phi = 180.*x[0] + 160.*x[1];
@@ -58,6 +60,7 @@ fn main () {
         b: vec![12.,8.,24.],
         l: vec![0.,0.,-1e8,-1e8,-1e8],
         u: vec![5.,5.,0.,0.,0.],
+        p: vec![false;5],
     };
 
     let x = vec![0.5, 2., 1., 2., 3.];

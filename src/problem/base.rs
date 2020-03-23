@@ -12,6 +12,7 @@ pub trait Problem {
     fn b(&self) -> &[Self::N];
     fn l(&self) -> &[Self::N];
     fn u(&self) -> &[Self::N];
+    fn p(&self) -> Option<&[bool]>;
     fn eval(&mut self, x: &[Self::N]) -> ();
     fn setx(&mut self, x: &[Self::N]) -> ();
 }

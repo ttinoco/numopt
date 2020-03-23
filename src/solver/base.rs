@@ -16,6 +16,15 @@ pub trait Solver<T: Problem> {
     fn solve(&mut self, p: T) -> Result<(), SimpleError>;
 }
 
+impl SolverStatus {
+    pub fn is_solved(&self) -> bool {
+        match self {
+            SolverStatus::Solved => true,
+            _ => false
+        }
+    }
+}
+
 impl fmt::Display for SolverStatus {
 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -26,3 +35,4 @@ impl fmt::Display for SolverStatus {
         }
     }
 }
+

@@ -12,7 +12,7 @@ use crate::solver::{Solver,
                     SolverStatus};
 use crate::problem::{ProblemDims,
                      ProblemLp, 
-                     ProblemLpIO,
+                     ProblemMilpIO,
                      ProblemSol};
 
 pub struct SolverClpCMD<T: ProblemLp> {
@@ -136,7 +136,7 @@ impl<T: ProblemLp> Solver<T> for SolverClpCMD<T> {
         };
 
         // Write input file
-        match p.write_to_lp_file(&input_filename) {
+        match p.write_to_lp_file("foo.lp") { //&input_filename) {
             Ok(()) => (),
             Err(_e) => {
                 remove_file(&input_filename).ok();
@@ -147,12 +147,12 @@ impl<T: ProblemLp> Solver<T> for SolverClpCMD<T> {
 
         // Call Clp command
         match Command::new("clp")
-                      .args(&[&input_filename, 
+                      .args(&["foo.lp", //&input_filename, 
                               "solve", 
                               "printingOptions",
                               "all",
                               "solution",
-                              &output_filename])
+                              "bar.sol"]) //&output_filename])
                       .spawn()
                       .and_then(|mut cmd| cmd.wait())
                       .map(|ecode| assert!(ecode.success())) {
@@ -168,7 +168,7 @@ impl<T: ProblemLp> Solver<T> for SolverClpCMD<T> {
         remove_file(&input_filename).ok();
 
         // Read output file
-        let (status, solution) = match Self::read_sol_file(&output_filename, &p) {
+        let (status, solution) = match Self::read_sol_file("bar.sol", &p) {
             Ok((s, sol)) => (s, sol),
             Err(_e) => {
                 remove_file(&output_filename).ok();

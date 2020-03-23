@@ -1,3 +1,10 @@
+
+#[macro_use]
+extern crate optrs;
+
+#[macro_use]
+extern crate approx;
+
 use sprs::{TriMat, TriMatBase};
 use optrs::{Problem,
             ProblemLp,
@@ -72,4 +79,19 @@ fn main () {
 
     println!("solver status = {}", s.status());
     println!("solution = {:?}", s.solution());
+
+    assert!(s.status().is_solved());
+    assert!(s.solution().is_some());
+    assert_vec_approx_eq!(s.solution().as_ref().unwrap().x, 
+                          &vec![1.7142857, 2.8571429, -1.1428571, 0., 0.], 
+                          epsilon=1e-8);
+    assert_vec_approx_eq!(s.solution().as_ref().unwrap().lam, 
+                          &vec![0., 31.428571, 21.428571], 
+                          epsilon=1e-8);
+    assert_vec_approx_eq!(s.solution().as_ref().unwrap().mu, 
+                          &vec![1.4210855e-14, 0., 0., 3.1428571e+01, 2.1428571e+01], 
+                          epsilon=1e-8);
+    assert_vec_approx_eq!(s.solution().as_ref().unwrap().pi, 
+                          &vec![0.;5], 
+                          epsilon=1e-8);
 }
