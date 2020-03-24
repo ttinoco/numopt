@@ -1,5 +1,6 @@
 use sprs::TriMatBase;
-use optrs::{Problem, ProblemBase};
+use optrs::{Problem, 
+            ProblemBase};
 
 fn main () {
 

@@ -1,5 +1,5 @@
 mod problem;
-//mod solver;
+mod solver;
 //mod model;
 mod utils;
 mod macros;
@@ -14,9 +14,9 @@ pub use problem::{Problem,
                   ProblemMilpBase,
                   ProblemMilpIO};
 
-//pub use solver::{Solver,
-//                 SolverStatus,
+pub use solver::{Solver,
+                 SolverStatus,
 //                 SolverClpCmd,
-//                 SolverCbcCmd};
+                 SolverCbcCmd};
 
 //pub use model::;

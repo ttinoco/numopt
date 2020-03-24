@@ -1,7 +1,8 @@
-use sprs::{TriMat, TriMatBase};
-use optrs::{assert_vec_approx_eq,
-            Problem,
+use sprs::TriMatBase;
+use optrs::{self,
+            assert_vec_approx_eq,
             ProblemMilp,
+            ProblemMilpBase,
             Solver,
             SolverCbcCmd};
 
@@ -18,62 +19,32 @@ fn main () {
     //            x0 integer
     //            x1 integer
 
-    struct P {
-        x: Vec<f64>,
-        c: Vec<f64>,
-        a: TriMat<f64>,
-        b: Vec<f64>,
-        l: Vec<f64>,
-        u: Vec<f64>,
-        p: Option<Vec<bool>>,
-    };
-
-    impl ProblemMilp for P {
-        type N = f64;
-        fn x(&self) -> &[f64] { &self.x }
-        fn c(&self) -> &[f64] { &self.c }
-        fn a(&self) -> &TriMat<f64> { &self.a }
-        fn b(&self) -> &[f64] { &self.b }
-        fn l(&self) -> &[f64] { &self.l }
-        fn u(&self) -> &[f64] { &self.u }
-        fn p(&self) -> Option<&[bool]> { 
-            match self.p.as_ref() {
-                Some(p) => Some(p),
-                None => None
-            }
-        }
-        fn setx(&mut self, x: &[f64]) -> () {
-            self.x = x.to_vec();
-        }
-    }
-
-    let mut p = P {
-        x: vec![0.,0.,0.,0.,0.],
-        c: vec![-1.,-1., 0., 0.],
-        a: TriMatBase::from_triplets(
+    let mut p = ProblemMilp::new(
+        vec![-1.,-1., 0., 0.],
+        TriMatBase::from_triplets(
             (2, 4),
             vec![0,0,0,1,1,1],
             vec![0,1,2,0,1,3],
             vec![-2.,2.,1.,-8.,10.,1.]),
-        b: vec![1.,13.],
-        l: vec![-1e8,-1e8,-1e8,0.],
-        u: vec![1e8,1e8,0.,1e8],
-        p: Some(vec![true, true, false, false]),
-    };
+        vec![1.,13.],
+        vec![-1e8,-1e8,-1e8,0.],
+        vec![1e8,1e8,0.,1e8],
+        Some(vec![true, true, false, false]),
+    );
 
     let x = vec![0.5, 2., 1., 2.];
 
-    p.eval(&x);
+    optrs::ProblemBase::eval(&mut p, &x);
     
-    println!("x = {:?}", ProblemMilp::x(&p));
-    println!("phi = {}", p.phi());
-    println!("gphi = {:?}", p.gphi());
+    println!("x = {:?}", p.x());
+    println!("phi = {}", optrs::ProblemBase::phi(&p));
+    println!("gphi = {:?}", optrs::ProblemBase::gphi(&p));
     println!("c = {:?}", p.c());
-    println!("a = {:?}", ProblemMilp::a(&p));
-    println!("b = {:?}", ProblemMilp::b(&p));
-    println!("l = {:?}", ProblemMilp::l(&p));
-    println!("u = {:?}", ProblemMilp::u(&p));
-    println!("p = {:?}", ProblemMilp::p(&p));
+    println!("a = {:?}", p.a());
+    println!("b = {:?}", p.b());
+    println!("l = {:?}", p.l());
+    println!("u = {:?}", p.u());
+    println!("p = {:?}", p.p());
 
     let mut s = SolverCbcCmd::new();
     s.solve(p).unwrap();

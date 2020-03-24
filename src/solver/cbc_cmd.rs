@@ -10,17 +10,17 @@ use std::io::{self, BufReader};
 
 use crate::solver::{Solver, 
                     SolverStatus};
-use crate::problem::{ProblemDims,
-                     ProblemMilp, 
-                     ProblemMilpIO,
-                     ProblemSol};
+use crate::problem::{ProblemSol,
+                     ProblemDims,
+                     ProblemMilpBase, 
+                     ProblemMilpIO};
 
-pub struct SolverCbcCmd<T: ProblemMilp> {
+pub struct SolverCbcCmd<T: ProblemMilpBase> {
     status: SolverStatus,
     solution: Option<ProblemSol<T>>,
 }
 
-impl<T: ProblemMilp> SolverCbcCmd<T> {
+impl<T: ProblemMilpBase> SolverCbcCmd<T> {
 
     pub fn read_sol_file(filename: &str, p: &T, cbc: bool) -> io::Result<(SolverStatus, ProblemSol<T>)> {
         
@@ -106,7 +106,7 @@ impl<T: ProblemMilp> SolverCbcCmd<T> {
     }
 }
 
-impl<T: ProblemMilp> Solver<T> for SolverCbcCmd<T> {
+impl<T: ProblemMilpBase> Solver<T> for SolverCbcCmd<T> {
 
     fn new() -> Self { 
         Self {
