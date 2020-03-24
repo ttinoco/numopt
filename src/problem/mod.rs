@@ -1,5 +1,5 @@
 mod base;
-//mod lp;
+mod lp;
 mod milp;
 
 pub use crate::problem::base::{Problem,
@@ -7,7 +7,8 @@ pub use crate::problem::base::{Problem,
                                ProblemBase,
                                ProblemDims,
                                ProblemSol};
-//pub use crate::problem::lp::ProblemLp;
+pub use crate::problem::lp::{ProblemLp,
+                             ProblemLpBase};
 pub use crate::problem::milp::{ProblemMilp,
                                ProblemMilpBase,
                                ProblemMilpIO};

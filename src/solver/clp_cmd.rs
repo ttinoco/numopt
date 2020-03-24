@@ -7,16 +7,16 @@ use simple_error::SimpleError;
 use crate::solver::{Solver, 
                     SolverStatus,
                     SolverCbcCmd};
-use crate::problem::{ProblemLp, 
-                     ProblemMilpIO,
-                     ProblemSol};
+use crate::problem::{ProblemSol,
+                     ProblemLpBase, 
+                     ProblemMilpIO};
 
-pub struct SolverClpCmd<T: ProblemLp> {
+pub struct SolverClpCmd<T: ProblemLpBase> {
     status: SolverStatus,
     solution: Option<ProblemSol<T>>,
 }
 
-impl<T: ProblemLp> Solver<T> for SolverClpCmd<T> {
+impl<T: ProblemLpBase> Solver<T> for SolverClpCmd<T> {
 
     fn new() -> Self { 
         Self {

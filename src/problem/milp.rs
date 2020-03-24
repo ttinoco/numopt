@@ -43,7 +43,7 @@ impl<T: 'static + Float + FromStr + LowerExp + Debug> ProblemMilp<T> {
                u: Vec<T>, 
                p: Option<Vec<bool>>) -> Self {
         let cc = c.clone();
-        let f = Box::new(move | phi: &mut T, gphi: &mut Vec<T>, x: &[T] | {
+        let f = Box::new(move | phi: &mut T, _gphi: &mut Vec<T>, x: &[T] | {
             *phi = dot(&c, x);
         });
         let base = Problem::new(a, b, l, u, p, f);
