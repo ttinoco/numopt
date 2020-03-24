@@ -3,9 +3,11 @@ use std::str::FromStr;
 use num_traits::{Float, NumCast};
 use std::fmt::{self, LowerExp, Debug};
 
-pub type ProblemEval<'a, T> = fn(&'a mut T, &'a mut Vec<T>, &'a [T])-> ();
+//pub trait ProblemFloat: Float + FromStr + LowerExp + Debug {}
+pub type ProblemEval<T> = Box<dyn Fn(&mut T, &mut Vec<T>, &[T])-> ()>;
 
-pub struct Problem<'a, T> {
+pub struct Problem<T> 
+{
     x: Vec<T>,
     phi: T,
     gphi: Vec<T>,
@@ -14,7 +16,7 @@ pub struct Problem<'a, T> {
     l: Vec<T>,
     u: Vec<T>,
     p: Option<Vec<bool>>,
-    eval_fn: ProblemEval<'a, T>,
+    eval_fn: ProblemEval<T>,
 }
 
 pub trait ProblemBase {
@@ -42,13 +44,14 @@ pub struct ProblemSol<T: ProblemBase> {
     pub pi: Vec<T::N>,
 }
 
-impl<'a, T: Float + FromStr + LowerExp + Debug> Problem<'a, T> {
+impl<T: Float + FromStr + LowerExp + Debug> Problem<T> 
+{
     pub fn new(a: TriMat<T>, 
                b: Vec<T>,  
                l: Vec<T>, 
                u: Vec<T>, 
                p: Option<Vec<bool>>,
-               eval_fn: ProblemEval<'a, T>) -> Self {
+               eval_fn: ProblemEval<T>) -> Self {
         assert_eq!(a.cols(), l.len());
         assert_eq!(a.cols(), u.len());
         match &p {
@@ -70,7 +73,7 @@ impl<'a, T: Float + FromStr + LowerExp + Debug> Problem<'a, T> {
     }
 }
 
-impl<N: Float + FromStr + LowerExp + Debug> ProblemBase for Problem<N> {
+impl<N: Float + FromStr + LowerExp + Debug > ProblemBase for Problem<N> {
     type N = N;
     fn x(&self) -> &[N] { &self.x }
     fn phi(&self) -> N { self.phi }

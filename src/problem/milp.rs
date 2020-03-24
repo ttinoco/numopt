@@ -7,11 +7,13 @@ use std::fmt::{LowerExp, Debug};
 use num_traits::{Float, NumCast};
 
 use crate::utils::dot;
-use crate::problem::{Problem, ProblemBase, ProblemDims};
+use crate::problem::{Problem, 
+                     ProblemBase, 
+                     ProblemDims};
 
-pub struct ProblemMilp<'a, T> {
+pub struct ProblemMilp<T> {
     c: Vec<T>,
-    base: Problem<'a, T>,
+    base: Problem<T>,
 }
 
 pub trait ProblemMilpBase {
@@ -33,22 +35,22 @@ pub trait ProblemMilpIO {
     fn write_to_lp_file(&self, filename: &str) -> io::Result<()>;
 }
 
-impl<'a, T: Float + FromStr + LowerExp + Debug> ProblemMilp<'a, T> {
-    pub fn new(c: &'a [T],
+impl<T: 'static + Float + FromStr + LowerExp + Debug> ProblemMilp<T> {
+    pub fn new(c: Vec<T>,
                a: TriMat<T>,
                b: Vec<T>,  
                l: Vec<T>,
                u: Vec<T>, 
-               p: Option<Vec<bool>>) -> () {
-        let f = | phi: &mut T, gphi: &mut Vec<T>, x: &[T] | {
-            //let cc = c;
-            *phi = c[0];
-        };
-        //let base = Problem::new(a, b, l, u, p, f);
-        //Self {
-        //    c: c,
-        //    base: base,
-        //}
+               p: Option<Vec<bool>>) -> Self {
+        let cc = c.clone();
+        let f = Box::new(move | phi: &mut T, gphi: &mut Vec<T>, x: &[T] | {
+            *phi = dot(&c, x);
+        });
+        let base = Problem::new(a, b, l, u, p, f);
+        Self {
+            c: cc,
+            base: base,
+        }
     }
 }
 

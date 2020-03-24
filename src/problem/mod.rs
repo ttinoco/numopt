@@ -3,6 +3,7 @@ mod base;
 mod milp;
 
 pub use crate::problem::base::{Problem,
+                               ProblemEval,
                                ProblemBase,
                                ProblemDims,
                                ProblemSol};

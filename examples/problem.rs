@@ -26,11 +26,11 @@ fn main () {
         vec![0.,0.,-1e8,-1e8,-1e8],
         vec![5.,5.,0.,0.,0.],
         Some(vec![false;5]),
-        | phi: &mut f64, gphi: &mut Vec<f64>, x: &[f64] | {
+        Box::new(| phi: &mut f64, gphi: &mut Vec<f64>, x: &[f64] | {
             *phi = 180.*x[0] + 160.*x[1];
             gphi[0] = 180.;
             gphi[1] = 160.;
-        }
+        })
     );
 
     let x = vec![0.5, 2., 1., 2., 3.];
