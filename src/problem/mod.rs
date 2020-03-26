@@ -1,6 +1,7 @@
 mod base;
-mod lp;
 mod milp;
+mod lp;
+mod nlp;
 
 pub use crate::problem::base::{Problem,
                                ProblemEval,
@@ -12,5 +13,6 @@ pub use crate::problem::lp::{ProblemLp,
 pub use crate::problem::milp::{ProblemMilp,
                                ProblemMilpBase,
                                ProblemMilpIO};
+pub use crate::problem::nlp::{ProblemNlp};
     
 

@@ -5,7 +5,7 @@ use sprs::{TriMat, CsMat};
 use std::io::{self, BufWriter};
 use std::fmt::{LowerExp, Debug};
 use num_traits::{Float, NumCast};
-
+ 
 use crate::utils::dot;
 use crate::problem::{Problem, 
                      ProblemBase, 

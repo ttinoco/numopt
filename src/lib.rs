@@ -13,8 +13,9 @@ pub use problem::{Problem,
                   ProblemLpBase,
                   ProblemMilp,
                   ProblemMilpBase,
-                  ProblemMilpIO};
-
+                  ProblemMilpIO,
+                  ProblemNlp};
+                  
 pub use solver::{Solver,
                  SolverStatus,
                  SolverClpCmd,
