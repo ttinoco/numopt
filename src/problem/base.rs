@@ -34,7 +34,7 @@ pub struct Problem<T>
     l: Vec<T>,
     u: Vec<T>,
     
-    p: Option<Vec<bool>>,
+    p: Vec<bool>,
     
     eval_fn: ProblemEval<T>,
 }
@@ -53,7 +53,7 @@ pub trait ProblemBase {
     fn hcomb(&self) -> &TriMat<Self::N>; 
     fn l(&self) -> &[Self::N];
     fn u(&self) -> &[Self::N];
-    fn p(&self) -> Option<&[bool]>;
+    fn p(&self) -> &[bool];
     fn evaluate(&mut self, x: &[Self::N]) -> ();
     fn combine_h(&mut self, nu: &[Self::N]) -> ();
 }
@@ -83,7 +83,7 @@ impl<T: ProblemFloat> Problem<T>
                h: Vec<TriMat<T>>,  
                l: Vec<T>, 
                u: Vec<T>, 
-               p: Option<Vec<bool>>,
+               p: Vec<bool>,
                eval_fn: ProblemEval<T>) -> Self {
 
         let z: T = NumCast::from(0.).unwrap();
@@ -110,10 +110,7 @@ impl<T: ProblemFloat> Problem<T>
         assert_eq!(l.len(), nx);
         assert_eq!(u.len(), nx);
 
-        match &p {
-            Some(pp) => assert_eq!(pp.len(), nx),
-            None => (),
-        }
+        assert_eq!(p.len(), nx);
 
         let hcomb_nnz = h.iter().map(|h| h.nnz()).sum();
         let mut hcomb: TriMat<T> = TriMatBase::with_capacity((nx, nx), hcomb_nnz);
@@ -157,12 +154,7 @@ impl<N: ProblemFloat> ProblemBase for Problem<N> {
     fn hcomb(&self) -> &TriMat<N> { &self.hcomb }
     fn l(&self) -> &[N] { &self.l }
     fn u(&self) -> &[N] { &self.u }
-    fn p(&self) -> Option<&[bool]> { 
-        match self.p.as_ref() {
-            Some(p) => Some(p),
-            None => None
-        }
-    }
+    fn p(&self) -> &[bool] { &self.p } 
     
     fn evaluate(&mut self, x: &[N]) -> () {
         (self.eval_fn)(&mut self.phi, 

@@ -22,7 +22,7 @@ pub trait ProblemMilpBase {
     fn b(&self) -> &[Self::N];
     fn l(&self) -> &[Self::N];
     fn u(&self) -> &[Self::N];
-    fn p(&self) -> Option<&[bool]>;
+    fn p(&self) -> &[bool];
     fn base(&self) -> &Problem<Self::N>;
     fn base_mut(&mut self) -> &mut Problem<Self::N>;
 }
@@ -39,7 +39,7 @@ impl<T: 'static + ProblemFloat> ProblemMilp<T> {
                b: Vec<T>,  
                l: Vec<T>,
                u: Vec<T>, 
-               p: Option<Vec<bool>>) -> Self {
+               p: Vec<bool>) -> Self {
         let cc = c.clone();
         let eval_fn = Box::new(move | phi: &mut T, 
                                       gphi: &mut Vec<T>, 
@@ -76,7 +76,7 @@ impl<N: ProblemFloat> ProblemMilpBase for ProblemMilp<N> {
     fn b(&self) -> &[N] { &self.base.b() }
     fn l(&self) -> &[N] { &self.base.l() }
     fn u(&self) -> &[N] { &self.base.u() }
-    fn p(&self) -> Option<&[bool]> { self.base.p() }
+    fn p(&self) -> &[bool] { self.base.p() }
     fn base(&self) -> &Problem<Self::N> { &self.base }
     fn base_mut(&mut self) -> &mut Problem<Self::N> { &mut self.base }
 }
@@ -95,7 +95,7 @@ impl<T: ProblemMilpBase> ProblemBase for T {
     fn hcomb(&self) -> &TriMat<Self::N> { self.base().hcomb() }
     fn l(&self) -> &[Self::N] { self.l() }
     fn u(&self) -> &[Self::N] { self.u() }
-    fn p(&self) -> Option<&[bool]> { self.p() }
+    fn p(&self) -> &[bool] { self.p() }
     fn evaluate(&mut self, x: &[Self::N]) -> () { 
         self.base_mut().evaluate(x)
     }
@@ -187,16 +187,11 @@ impl<T: ProblemMilpBase> ProblemMilpIO for T {
 
         // General
         w.write("General\n".as_bytes())?;
-        match self.p() {
-            None => (),
-            Some(p) => {
-                for (i,f) in p.iter().enumerate() {
-                    if *f {
-                        w.write(format!(" x_{}\n", i).as_bytes())?;
-                    }
-                }
+        for (i,f) in self.p().iter().enumerate() {
+            if *f {
+                w.write(format!(" x_{}\n", i).as_bytes())?;
             }
-        };
+        }
 
         // End
         w.write("End\n".as_bytes())?;

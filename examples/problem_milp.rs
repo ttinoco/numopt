@@ -29,7 +29,7 @@ fn main () {
         vec![1.,13.],
         vec![-1e8,-1e8,-1e8,0.],
         vec![1e8,1e8,0.,1e8],
-        Some(vec![true, true, false, false]),
+        vec![true, true, false, false],
     );
 
     let x = vec![0.5, 2., 1., 2.];

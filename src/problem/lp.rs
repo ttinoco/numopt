@@ -27,7 +27,8 @@ impl<T: 'static + ProblemFloat> ProblemLp<T> {
                b: Vec<T>,  
                l: Vec<T>,
                u: Vec<T>) -> Self {
-        let base = ProblemMilp::new(c, a, b, l, u, None);
+        let nx = c.len();
+        let base = ProblemMilp::new(c, a, b, l, u, vec![false;nx]);
         Self {
             base: base,
         }
@@ -54,7 +55,7 @@ impl<T: ProblemLpBase> ProblemMilpBase for T {
     fn b(&self) -> &[Self::N] { self.b() }
     fn l(&self) -> &[Self::N] { self.l() }
     fn u(&self) -> &[Self::N] { self.u() }
-    fn p(&self) -> Option<&[bool]> { None }
+    fn p(&self) -> &[bool] { self.base().p() }
     fn base(&self) -> &Problem<Self::N> { self.base().base() }
     fn base_mut(&mut self) -> &mut Problem<Self::N> { self.base_mut().base_mut() }
 }

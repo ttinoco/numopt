@@ -30,7 +30,7 @@ fn main () {
         Vec::new(),
         vec![0.,0.,-1e8,-1e8,-1e8],
         vec![5.,5.,0.,0.,0.],
-        Some(vec![false;5]),
+        vec![false;5],
         Box::new(| phi: &mut f64, 
                    gphi: &mut Vec<f64>, 
                    _hphi: &mut TriMat<f64>,
