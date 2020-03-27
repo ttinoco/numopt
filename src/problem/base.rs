@@ -4,6 +4,8 @@ use sprs::{TriMat, TriMatBase};
 use num_traits::{Float, NumCast};
 use std::fmt::{self, LowerExp, Debug};
 
+pub trait ProblemFloat: Float + FromStr + LowerExp + Debug + Mul {}
+
 pub type ProblemEval<T> = Box< dyn Fn(&mut T,              // phi
                                       &mut Vec<T>,         // gphi
                                       &mut TriMat<T>,      // Hphi
@@ -38,7 +40,7 @@ pub struct Problem<T>
 }
 
 pub trait ProblemBase {
-    type N: Float + FromStr + LowerExp + Debug + Mul;
+    type N: ProblemFloat;
     fn x(&self) -> &[Self::N];
     fn phi(&self) -> Self::N;
     fn gphi(&self) -> &[Self::N];
@@ -70,7 +72,9 @@ pub struct ProblemSol<T: ProblemBase> {
     pub pi: Vec<T::N>,
 }
 
-impl<T: Float + FromStr + LowerExp + Debug + Mul> Problem<T> 
+impl<T: Float + FromStr + LowerExp + Debug + Mul> ProblemFloat for T { }
+
+impl<T: ProblemFloat> Problem<T> 
 {
     pub fn new(hphi: TriMat<T>, 
                a: TriMat<T>, 
@@ -138,7 +142,7 @@ impl<T: Float + FromStr + LowerExp + Debug + Mul> Problem<T>
     }
 }
 
-impl<N: Float + FromStr + LowerExp + Debug + Mul> ProblemBase for Problem<N> {
+impl<N: ProblemFloat> ProblemBase for Problem<N> {
 
     type N = N;
     fn x(&self) -> &[N] { &self.x }

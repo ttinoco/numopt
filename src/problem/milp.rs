@@ -1,14 +1,11 @@
-use std::ops::Mul;
 use std::fs::File;
-use std::str::FromStr;
-use std::io::prelude::*;
-use std::io::{self, BufWriter};
-use std::fmt::{LowerExp, Debug};
 use num_traits::{Float, NumCast};
+use std::io::{self, Write, BufWriter};
 use sprs::{TriMat, TriMatBase, CsMat};
  
 use crate::utils::dot;
 use crate::problem::{Problem, 
+                     ProblemFloat,
                      ProblemBase, 
                      ProblemDims};
 
@@ -18,7 +15,7 @@ pub struct ProblemMilp<T> {
 }
 
 pub trait ProblemMilpBase {
-    type N: Float + FromStr + LowerExp + Debug + Mul;
+    type N: ProblemFloat;
     fn x(&self) -> &[Self::N];
     fn c(&self) -> &[Self::N];
     fn a(&self) -> &TriMat<Self::N>;
@@ -36,7 +33,7 @@ pub trait ProblemMilpIO {
     fn write_to_lp_file(&self, filename: &str) -> io::Result<()>;
 }
 
-impl<T: 'static + Float + FromStr + LowerExp + Debug + Mul> ProblemMilp<T> {
+impl<T: 'static + ProblemFloat> ProblemMilp<T> {
     pub fn new(c: Vec<T>,
                a: TriMat<T>,
                b: Vec<T>,  
@@ -71,7 +68,7 @@ impl<T: 'static + Float + FromStr + LowerExp + Debug + Mul> ProblemMilp<T> {
     }
 }
 
-impl<N: Float + FromStr + LowerExp + Debug + Mul> ProblemMilpBase for ProblemMilp<N> {
+impl<N: ProblemFloat> ProblemMilpBase for ProblemMilp<N> {
     type N = N;
     fn x(&self) -> &[N] { &self.base.x() }
     fn c(&self) -> &[N] { &self.c }

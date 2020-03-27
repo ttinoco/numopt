@@ -5,6 +5,7 @@ mod utils;
 mod macros;
 
 pub use problem::{Problem,
+                  ProblemFloat,
                   ProblemEval,
                   ProblemBase,
                   ProblemDims,
