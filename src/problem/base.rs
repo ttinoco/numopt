@@ -19,20 +19,20 @@ pub struct Problem<T>
     
     phi: T,
     gphi: Vec<T>,
-    Hphi: TriMat<T>,
+    hphi: TriMat<T>,
     
-    A: TriMat<T>,
+    a: TriMat<T>,
     b: Vec<T>,
     
     f: Vec<T>,
-    J: TriMat<T>,
-    H: Vec<TriMat<T>>,
-    Hcomb: TriMat<T>,
+    j: TriMat<T>,
+    h: Vec<TriMat<T>>,
+    hcomb: TriMat<T>,
     
     l: Vec<T>,
     u: Vec<T>,
     
-    P: Option<Vec<bool>>,
+    p: Option<Vec<bool>>,
     
     eval_fn: ProblemEval<T>,
 }
@@ -42,18 +42,18 @@ pub trait ProblemBase {
     fn x(&self) -> &[Self::N];
     fn phi(&self) -> Self::N;
     fn gphi(&self) -> &[Self::N];
-    fn Hphi(&self) -> &TriMat<Self::N>;
-    fn A(&self) -> &TriMat<Self::N>;
+    fn hphi(&self) -> &TriMat<Self::N>;
+    fn a(&self) -> &TriMat<Self::N>;
     fn b(&self) -> &[Self::N];
     fn f(&self) -> &[Self::N];
-    fn J(&self) -> &TriMat<Self::N>;
-    fn H(&self) -> &Vec<TriMat<Self::N>>;
-    fn Hcomb(&self) -> &TriMat<Self::N>; 
+    fn j(&self) -> &TriMat<Self::N>;
+    fn h(&self) -> &Vec<TriMat<Self::N>>;
+    fn hcomb(&self) -> &TriMat<Self::N>; 
     fn l(&self) -> &[Self::N];
     fn u(&self) -> &[Self::N];
-    fn P(&self) -> Option<&[bool]>;
+    fn p(&self) -> Option<&[bool]>;
     fn evaluate(&mut self, x: &[Self::N]) -> ();
-    fn combine_H(&mut self, nu: &[Self::N]) -> ();
+    fn combine_h(&mut self, nu: &[Self::N]) -> ();
 }
 
 pub trait ProblemDims {
@@ -72,50 +72,50 @@ pub struct ProblemSol<T: ProblemBase> {
 
 impl<T: Float + FromStr + LowerExp + Debug + Mul> Problem<T> 
 {
-    pub fn new(Hphi: TriMat<T>, 
-               A: TriMat<T>, 
+    pub fn new(hphi: TriMat<T>, 
+               a: TriMat<T>, 
                b: Vec<T>,
-               J: TriMat<T>,
-               H: Vec<TriMat<T>>,  
+               j: TriMat<T>,
+               h: Vec<TriMat<T>>,  
                l: Vec<T>, 
                u: Vec<T>, 
-               P: Option<Vec<bool>>,
+               p: Option<Vec<bool>>,
                eval_fn: ProblemEval<T>) -> Self {
 
         let z: T = NumCast::from(0.).unwrap();
 
-        let nx = A.cols();
-        let na = A.rows();
-        let nf = J.rows();
+        let nx = a.cols();
+        let na = a.rows();
+        let nf = j.rows();
 
-        assert_eq!(Hphi.cols(), nx);
-        assert_eq!(Hphi.rows(), nx);
+        assert_eq!(hphi.cols(), nx);
+        assert_eq!(hphi.rows(), nx);
 
-        assert_eq!(A.cols(), nx);
-        assert_eq!(A.rows(), na);
+        assert_eq!(a.cols(), nx);
+        assert_eq!(a.rows(), na);
         assert_eq!(b.len(), na);
 
-        assert_eq!(J.cols(), nx);
-        assert_eq!(J.rows(), nf);
-        assert_eq!(H.len(), nf);
-        for Hi in H.iter() {
-            assert_eq!(Hi.rows(), nx);
-            assert_eq!(Hi.cols(), nx);
+        assert_eq!(j.cols(), nx);
+        assert_eq!(j.rows(), nf);
+        assert_eq!(h.len(), nf);
+        for hh in h.iter() {
+            assert_eq!(hh.rows(), nx);
+            assert_eq!(hh.cols(), nx);
         }
 
         assert_eq!(l.len(), nx);
         assert_eq!(u.len(), na);
 
-        match &P {
-            Some(p) => assert_eq!(p.len(), nx),
+        match &p {
+            Some(pp) => assert_eq!(pp.len(), nx),
             None => (),
         }
 
-        let Hcomb_nnz = H.iter().map(|h| h.nnz()).sum();
-        let Hcomb: TriMat<T> = TriMatBase::with_capacity((nx, nx), Hcomb_nnz);
-        for HH in H.iter() {
-            for (val, (row, col)) in HH.triplet_iter() {
-                Hcomb.add_triplet(row, col, z);
+        let hcomb_nnz = h.iter().map(|h| h.nnz()).sum();
+        let mut hcomb: TriMat<T> = TriMatBase::with_capacity((nx, nx), hcomb_nnz);
+        for hh in h.iter() {
+            for (_val, (row, col)) in hh.triplet_iter() {
+                hcomb.add_triplet(row, col, z);
             }
         }
         
@@ -123,38 +123,38 @@ impl<T: Float + FromStr + LowerExp + Debug + Mul> Problem<T>
             x: vec![NumCast::from(0.).unwrap();nx],
             phi: NumCast::from(0.).unwrap(),
             gphi: vec![NumCast::from(0.).unwrap();nx],
-            Hphi: Hphi,
-            A: A,
+            hphi: hphi,
+            a: a,
             b: b,
             f: vec![NumCast::from(0.).unwrap();nf],
-            J: J,
-            H: H,
-            Hcomb: Hcomb,
+            j: j,
+            h: h,
+            hcomb: hcomb,
             l: l,
             u: u,
-            P: P,
+            p: p,
             eval_fn: eval_fn
         }
     }
 }
 
-impl<N: Float + FromStr + LowerExp + Debug + Mul > ProblemBase for Problem<N> {
+impl<N: Float + FromStr + LowerExp + Debug + Mul> ProblemBase for Problem<N> {
 
     type N = N;
     fn x(&self) -> &[N] { &self.x }
     fn phi(&self) -> N { self.phi }
     fn gphi(&self) -> &[N] { &self.gphi }
-    fn Hphi(&self) -> &TriMat<N> { &self.Hphi }
-    fn A(&self) -> &TriMat<N> { &self.A } 
+    fn hphi(&self) -> &TriMat<N> { &self.hphi }
+    fn a(&self) -> &TriMat<N> { &self.a } 
     fn b(&self) -> &[N] { &self.b }
     fn f(&self) -> &[N] { &self.f }
-    fn J(&self) -> &TriMat<N> { &self.J } 
-    fn H(&self) -> &Vec<TriMat<N>> { &self.H } 
-    fn Hcomb(&self) -> &TriMat<N> { &self.Hcomb }
+    fn j(&self) -> &TriMat<N> { &self.j } 
+    fn h(&self) -> &Vec<TriMat<N>> { &self.h } 
+    fn hcomb(&self) -> &TriMat<N> { &self.hcomb }
     fn l(&self) -> &[N] { &self.l }
     fn u(&self) -> &[N] { &self.u }
-    fn P(&self) -> Option<&[bool]> { 
-        match self.P.as_ref() {
+    fn p(&self) -> Option<&[bool]> { 
+        match self.p.as_ref() {
             Some(p) => Some(p),
             None => None
         }
@@ -163,21 +163,26 @@ impl<N: Float + FromStr + LowerExp + Debug + Mul > ProblemBase for Problem<N> {
     fn evaluate(&mut self, x: &[N]) -> () {
         (self.eval_fn)(&mut self.phi, 
                        &mut self.gphi,
-                       &mut self.Hphi,
+                       &mut self.hphi,
                        &mut self.f,
-                       &mut self.J,
-                       &mut self.H,
+                       &mut self.j,
+                       &mut self.h,
                        x)
     }
 
-    fn combine_H(&mut self, nu: &[N]) -> () {
+    fn combine_h(&mut self, nu: &[N]) -> () {
+
         assert_eq!(self.nf(), nu.len());
-        let k: usize = 0;
-        let data = self.Hcomb.data();
-        for (HH, nuval) in self.H.iter().zip(nu.iter()) {
-            for val in HH.triplet_iter().into_data() {
-                data[k] = (*nuval)*(*val);
-                k += 1;
+
+        // Just to get a private TripletIndex!
+        let mut k = TriMatBase::from_triplets((1,1), vec![0], vec![0], vec![0.])
+                               .find_locations(0,0)[0];
+        
+        k.0 = 0;
+        for (h, nuval) in self.h.iter().zip(nu.iter()) {
+            for (val, (row, col)) in h.triplet_iter() {
+                self.hcomb.set_triplet(k, row, col, (*nuval)*(*val));
+                k.0 += 1;
             }
         }    
     }

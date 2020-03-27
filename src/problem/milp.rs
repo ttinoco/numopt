@@ -1,10 +1,11 @@
+use std::ops::Mul;
 use std::fs::File;
 use std::str::FromStr;
 use std::io::prelude::*;
-use sprs::{TriMat, CsMat};
 use std::io::{self, BufWriter};
 use std::fmt::{LowerExp, Debug};
 use num_traits::{Float, NumCast};
+use sprs::{TriMat, TriMatBase, CsMat};
  
 use crate::utils::dot;
 use crate::problem::{Problem, 
@@ -17,7 +18,7 @@ pub struct ProblemMilp<T> {
 }
 
 pub trait ProblemMilpBase {
-    type N: Float + FromStr + LowerExp + Debug;
+    type N: Float + FromStr + LowerExp + Debug + Mul;
     fn x(&self) -> &[Self::N];
     fn c(&self) -> &[Self::N];
     fn a(&self) -> &TriMat<Self::N>;
@@ -35,7 +36,7 @@ pub trait ProblemMilpIO {
     fn write_to_lp_file(&self, filename: &str) -> io::Result<()>;
 }
 
-impl<T: 'static + Float + FromStr + LowerExp + Debug> ProblemMilp<T> {
+impl<T: 'static + Float + FromStr + LowerExp + Debug + Mul> ProblemMilp<T> {
     pub fn new(c: Vec<T>,
                a: TriMat<T>,
                b: Vec<T>,  
@@ -43,10 +44,26 @@ impl<T: 'static + Float + FromStr + LowerExp + Debug> ProblemMilp<T> {
                u: Vec<T>, 
                p: Option<Vec<bool>>) -> Self {
         let cc = c.clone();
-        let f = Box::new(move | phi: &mut T, _gphi: &mut Vec<T>, x: &[T] | {
+        let eval_fn = Box::new(move | phi: &mut T, 
+                                      gphi: &mut Vec<T>, 
+                                      _hphi: &mut TriMat<T>,
+                                      _f: &mut Vec<T>,
+                                      _j: &mut TriMat<T>,
+                                      _h: &mut Vec<TriMat<T>>,
+                                      x: &[T] | {
             *phi = dot(&c, x);
+            gphi.copy_from_slice(&c);
         });
-        let base = Problem::new(a, b, l, u, p, f);
+        let nx = a.cols();
+        let base = Problem::new(TriMatBase::new((nx, nx)), // Hphi
+                                a, 
+                                b,
+                                TriMatBase::new((0, nx)),  // J
+                                Vec::new(), 
+                                l, 
+                                u, 
+                                p, 
+                                eval_fn);
         Self {
             c: cc,
             base: base,
@@ -54,7 +71,7 @@ impl<T: 'static + Float + FromStr + LowerExp + Debug> ProblemMilp<T> {
     }
 }
 
-impl<N: Float + FromStr + LowerExp + Debug> ProblemMilpBase for ProblemMilp<N> {
+impl<N: Float + FromStr + LowerExp + Debug + Mul> ProblemMilpBase for ProblemMilp<N> {
     type N = N;
     fn x(&self) -> &[N] { &self.base.x() }
     fn c(&self) -> &[N] { &self.c }
@@ -71,15 +88,21 @@ impl<T: ProblemMilpBase> ProblemBase for T {
     type N = T::N;
     fn x(&self) -> &[Self::N] { self.x() }
     fn phi(&self) -> Self::N { self.base().phi() }
-    fn gphi(&self) -> &[Self::N] { self.c() }
+    fn gphi(&self) -> &[Self::N] { self.base().gphi() }
+    fn hphi(&self) -> &TriMat<Self::N> { self.base().hphi() }
     fn a(&self) -> &TriMat<Self::N> { self.a() }
     fn b(&self) -> &[Self::N] { self.b() }
+    fn f(&self) -> &[Self::N] { self.base().f() }
+    fn j(&self) -> &TriMat<Self::N> { self.base().j() }
+    fn h(&self) -> &Vec<TriMat<Self::N>> { self.base().h() }
+    fn hcomb(&self) -> &TriMat<Self::N> { self.base().hcomb() }
     fn l(&self) -> &[Self::N] { self.l() }
     fn u(&self) -> &[Self::N] { self.u() }
     fn p(&self) -> Option<&[bool]> { self.p() }
-    fn eval(&mut self, x: &[Self::N]) -> () { 
-        self.base_mut().eval(x)
+    fn evaluate(&mut self, x: &[Self::N]) -> () { 
+        self.base_mut().evaluate(x)
     }
+    fn combine_h(&mut self, _nu: &[Self::N]) -> () {}
 }
 
 impl<T: ProblemMilpBase> ProblemMilpIO for T {

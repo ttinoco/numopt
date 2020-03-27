@@ -1,4 +1,5 @@
 use sprs::TriMat; 
+use std::ops::Mul;
 use std::str::FromStr;
 use num_traits::Float;
 use std::fmt::{LowerExp, Debug};
@@ -12,7 +13,7 @@ pub struct ProblemLp<T> {
 }
 
 pub trait ProblemLpBase {
-    type N: Float + FromStr + LowerExp + Debug;
+    type N: Float + FromStr + LowerExp + Debug + Mul;
     fn x(&self) -> &[Self::N];
     fn c(&self) -> &[Self::N];
     fn a(&self) -> &TriMat<Self::N>;
@@ -23,7 +24,7 @@ pub trait ProblemLpBase {
     fn base_mut(&mut self) -> &mut ProblemMilp<Self::N>;
 }
 
-impl<T: 'static + Float + FromStr + LowerExp + Debug> ProblemLp<T> {
+impl<T: 'static + Float + FromStr + LowerExp + Debug + Mul> ProblemLp<T> {
     pub fn new(c: Vec<T>,
                a: TriMat<T>,
                b: Vec<T>,  
@@ -36,7 +37,7 @@ impl<T: 'static + Float + FromStr + LowerExp + Debug> ProblemLp<T> {
     }
 }
 
-impl<N: Float + FromStr + LowerExp + Debug> ProblemLpBase for ProblemLp<N> {
+impl<N: Float + FromStr + LowerExp + Debug + Mul> ProblemLpBase for ProblemLp<N> {
     type N = N;
     fn x(&self) -> &[N] { &self.base.x() }
     fn c(&self) -> &[N] { &self.base.c() }
