@@ -34,7 +34,7 @@ fn main () {
 
     let x = vec![0.5, 2., 1., 2.];
 
-    optrs::ProblemBase::eval(&mut p, &x);
+    optrs::ProblemBase::evaluate(&mut p, &x);
     
     println!("x = {:?}", p.x());
     println!("phi = {}", optrs::ProblemBase::phi(&p));

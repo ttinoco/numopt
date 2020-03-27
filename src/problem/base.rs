@@ -104,7 +104,7 @@ impl<T: Float + FromStr + LowerExp + Debug + Mul> Problem<T>
         }
 
         assert_eq!(l.len(), nx);
-        assert_eq!(u.len(), na);
+        assert_eq!(u.len(), nx);
 
         match &p {
             Some(pp) => assert_eq!(pp.len(), nx),

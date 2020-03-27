@@ -1,4 +1,5 @@
-use sprs::TriMatBase;
+use sprs::{TriMat,
+           TriMatBase};
 use optrs::{Problem, 
             ProblemBase};
 
@@ -18,16 +19,25 @@ fn main () {
     //            x5 <= 0
 
     let mut p = Problem::new(
+        TriMatBase::new((5, 5)),
         TriMatBase::from_triplets(
             (3, 5),
             vec![0,0,0,1,1,1,1,1,1],
             vec![0,1,2,0,1,3,0,1,4],
             vec![6.,1.,1.,3.,1.,1.,4.,6.,1.]),
         vec![12.,8.,24.],
+        TriMatBase::new((0, 5)),
+        Vec::new(),
         vec![0.,0.,-1e8,-1e8,-1e8],
         vec![5.,5.,0.,0.,0.],
         Some(vec![false;5]),
-        Box::new(| phi: &mut f64, gphi: &mut Vec<f64>, x: &[f64] | {
+        Box::new(| phi: &mut f64, 
+                   gphi: &mut Vec<f64>, 
+                   _hphi: &mut TriMat<f64>,
+                   _f: &mut Vec<f64>,
+                   _j: &mut TriMat<f64>,
+                   _h: &mut Vec<TriMat<f64>>,
+                   x: &[f64] | {
             *phi = 180.*x[0] + 160.*x[1];
             gphi[0] = 180.;
             gphi[1] = 160.;
@@ -36,7 +46,7 @@ fn main () {
 
     let x = vec![0.5, 2., 1., 2., 3.];
 
-    p.eval(&x);
+    p.evaluate(&x);
     
     println!("x = {:?}", p.x());
     println!("phi = {}", p.phi());
