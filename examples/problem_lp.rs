@@ -9,7 +9,7 @@ use optrs::{self,
 
 fn main () {
 
-    println!("optrs example LP problem and solution");
+    println!("optrs example Lp problem and solution");
 
     // Sample problem 
     // min        180*x0 + 160*x1 

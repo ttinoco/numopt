@@ -6,14 +6,14 @@ use std::fmt::{self, LowerExp, Debug};
 
 pub trait ProblemFloat: Float + FromStr + LowerExp + Debug + Mul {}
 
-pub type ProblemEval<T> = Box< dyn Fn(&mut T,              // phi
-                                      &mut Vec<T>,         // gphi
-                                      &mut TriMat<T>,      // Hphi
-                                      &mut Vec<T>,         // f
-                                      &mut TriMat<T>,      // J
-                                      &mut Vec<TriMat<T>>, // H
-                                      &[T]                 // x
-                                    ) -> () >;
+pub type ProblemEval<T> = Box<dyn Fn(&mut T,              // phi
+                                     &mut Vec<T>,         // gphi
+                                     &mut TriMat<T>,      // Hphi
+                                     &mut Vec<T>,         // f
+                                     &mut TriMat<T>,      // J
+                                     &mut Vec<TriMat<T>>, // H
+                                     &[T]                 // x
+                                    ) -> ()>;
 
 pub struct Problem<T> 
 {
@@ -21,7 +21,7 @@ pub struct Problem<T>
     
     phi: T,
     gphi: Vec<T>,
-    hphi: TriMat<T>,
+    hphi: TriMat<T>,  // lower triangular
     
     a: TriMat<T>,
     b: Vec<T>,
@@ -29,7 +29,7 @@ pub struct Problem<T>
     f: Vec<T>,
     j: TriMat<T>,
     h: Vec<TriMat<T>>,
-    hcomb: TriMat<T>,
+    hcomb: TriMat<T>, // lower triangular
     
     l: Vec<T>,
     u: Vec<T>,

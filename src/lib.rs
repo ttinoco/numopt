@@ -5,17 +5,21 @@ mod utils;
 mod macros;
 
 pub use problem::{Problem,
+                  ProblemBase,
                   ProblemFloat,
                   ProblemEval,
-                  ProblemBase,
                   ProblemDims,
-                  ProblemSol,
-                  ProblemLp,
-                  ProblemLpBase,
-                  ProblemMilp,
+                  ProblemSol};
+                  
+pub use problem::{ProblemLp,
+                  ProblemLpBase};
+
+pub use problem::{ProblemMilp,
                   ProblemMilpBase,
-                  ProblemMilpIO,
-                  ProblemNlp};
+                  ProblemMilpIO};
+
+pub use problem::{ProblemNlp,
+                  ProblemNlpBase};
                   
 pub use solver::{Solver,
                  SolverStatus,

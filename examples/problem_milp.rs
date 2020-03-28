@@ -8,7 +8,7 @@ use optrs::{self,
 
 fn main () {
 
-    println!("optrs example MILP problem and solution");
+    println!("optrs example Milp problem and solution");
 
     // Sample problem 
     // min        -x0 - x1 
