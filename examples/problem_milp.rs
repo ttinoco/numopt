@@ -47,7 +47,7 @@ fn main () {
     println!("p = {:?}", p.p());
 
     let mut s = SolverCbcCmd::new();
-    s.solve(p).unwrap();
+    s.solve(&mut p).unwrap();
 
     println!("solver status = {}", s.status());
     println!("solution = {:?}", s.solution());
