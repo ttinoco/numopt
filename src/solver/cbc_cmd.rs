@@ -17,12 +17,13 @@ use crate::problem::{ProblemSol,
 
 pub struct SolverCbcCmd<T: ProblemMilpBase> {
     status: SolverStatus,
-    solution: Option<ProblemSol<T>>,
+    solution: Option<ProblemSol<T::N>>,
 }
 
-impl<T: ProblemMilpBase> SolverCbcCmd<T> {
+impl<T: ProblemMilpBase + ProblemDims> SolverCbcCmd<T> {
 
-    pub fn read_sol_file(filename: &str, p: &T, cbc: bool) -> io::Result<(SolverStatus, ProblemSol<T>)> {
+    pub fn read_sol_file(fname: &str, p: &T, cbc: bool) -> 
+                         io::Result<(SolverStatus, ProblemSol<T::N>)> {
         
         let mut name: String;
         let mut dtype: String;
@@ -31,7 +32,7 @@ impl<T: ProblemMilpBase> SolverCbcCmd<T> {
         let mut mul: T::N;
         let mut status = SolverStatus::Unknown;
         let mut solution = ProblemSol::new(p.nx(),p.na(), 0);
-        let f = File::open(filename)?;
+        let f = File::open(fname)?;
         let mut r = BufReader::new(f);
         let mut line = String::new();
         let e = io::Error::new(io::ErrorKind::Other, "bad solution file");
@@ -106,7 +107,7 @@ impl<T: ProblemMilpBase> SolverCbcCmd<T> {
     }
 }
 
-impl<T: ProblemMilpBase> Solver<T> for SolverCbcCmd<T> {
+impl<T: ProblemMilpBase + ProblemMilpIO + ProblemDims> Solver<T, T::N> for SolverCbcCmd<T> {
 
     fn new() -> Self { 
         Self {
@@ -116,9 +117,9 @@ impl<T: ProblemMilpBase> Solver<T> for SolverCbcCmd<T> {
     }
 
     fn status(&self) -> &SolverStatus { &self.status }
-    fn solution(&self) -> &Option<ProblemSol<T>> { &self.solution }
+    fn solution(&self) -> &Option<ProblemSol<T::N>> { &self.solution }
 
-    fn solve(&mut self, p: T) -> Result<(), SimpleError> {
+    fn solve(&mut self, p: &mut T) -> Result<(), SimpleError> {
 
         // Reset
         self.status = SolverStatus::Error;

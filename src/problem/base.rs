@@ -64,12 +64,12 @@ pub trait ProblemDims {
     fn nf(&self) -> usize;
 }
 
-pub struct ProblemSol<T: ProblemBase> {
-    pub x: Vec<T::N>,
-    pub lam: Vec<T::N>,
-    pub nu: Vec<T::N>,
-    pub mu: Vec<T::N>,
-    pub pi: Vec<T::N>,
+pub struct ProblemSol<T: ProblemFloat> {
+    pub x: Vec<T>,
+    pub lam: Vec<T>,
+    pub nu: Vec<T>,
+    pub mu: Vec<T>,
+    pub pi: Vec<T>,
 }
 
 impl<T: Float + FromStr + LowerExp + Debug + Mul> ProblemFloat for T { }
@@ -190,7 +190,7 @@ impl<T: ProblemBase> ProblemDims for T {
     fn nf(&self) -> usize { self.f().len() }
 }
 
-impl<T: ProblemBase> ProblemSol<T> {
+impl<T: ProblemFloat> ProblemSol<T> {
     pub fn new(nx: usize, na: usize, nf: usize) -> Self {
         let z = NumCast::from(0.).unwrap();
         Self {
@@ -203,7 +203,7 @@ impl<T: ProblemBase> ProblemSol<T> {
     }
 }
 
-impl<T: ProblemBase> Debug for ProblemSol<T> {
+impl<T: ProblemFloat> Debug for ProblemSol<T> {
 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ProblemSol")

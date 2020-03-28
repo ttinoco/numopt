@@ -1,6 +1,7 @@
 use sprs::TriMat; 
 
 use crate::problem::{Problem,
+                     ProblemBase,
                      ProblemFloat,
                      ProblemMilp,
                      ProblemMilpBase};
@@ -37,25 +38,44 @@ impl<T: 'static + ProblemFloat> ProblemLp<T> {
 
 impl<N: ProblemFloat> ProblemLpBase for ProblemLp<N> {
     type N = N;
-    fn x(&self) -> &[N] { &self.base.x() }
-    fn c(&self) -> &[N] { &self.base.c() }
-    fn a(&self) -> &TriMat<N> { &self.base.a() } 
-    fn b(&self) -> &[N] { &self.base.b() }
-    fn l(&self) -> &[N] { &self.base.l() }
-    fn u(&self) -> &[N] { &self.base.u() }
+    fn x(&self) -> &[N] { ProblemMilpBase::x(&self.base) }
+    fn c(&self) -> &[N] { ProblemMilpBase::c(&self.base) }
+    fn a(&self) -> &TriMat<N> { ProblemMilpBase::a(&self.base) } 
+    fn b(&self) -> &[N] { ProblemMilpBase::b(&self.base) }
+    fn l(&self) -> &[N] { ProblemMilpBase::l(&self.base) }
+    fn u(&self) -> &[N] { ProblemMilpBase::u(&self.base) }
     fn base(&self) -> &ProblemMilp<Self::N> { &self.base }
     fn base_mut(&mut self) -> &mut ProblemMilp<Self::N> { &mut self.base }
 }
 
-impl<T: ProblemLpBase> ProblemMilpBase for T {
-    type N = T::N;
-    fn x(&self) -> &[Self::N] { self.x() }
-    fn c(&self) -> &[Self::N] { self.c() }
-    fn a(&self) -> &TriMat<Self::N> { self.a() }
-    fn b(&self) -> &[Self::N] { self.b() }
-    fn l(&self) -> &[Self::N] { self.l() }
-    fn u(&self) -> &[Self::N] { self.u() }
-    fn p(&self) -> &[bool] { self.base().p() }
-    fn base(&self) -> &Problem<Self::N> { self.base().base() }
-    fn base_mut(&mut self) -> &mut Problem<Self::N> { self.base_mut().base_mut() }
+impl<N: ProblemFloat> ProblemMilpBase for ProblemLp<N> {
+    type N = N;
+    fn x(&self) -> &[N] { ProblemMilpBase::x(&self.base) }
+    fn c(&self) -> &[N] { ProblemMilpBase::c(&self.base) }
+    fn a(&self) -> &TriMat<N> { ProblemMilpBase::a(&self.base) }
+    fn b(&self) -> &[N] { ProblemMilpBase::b(&self.base) }
+    fn l(&self) -> &[N] { ProblemMilpBase::l(&self.base) }
+    fn u(&self) -> &[N] { ProblemMilpBase::u(&self.base) }
+    fn p(&self) -> &[bool] { ProblemMilpBase::p(&self.base) }
+    fn base(&self) -> &Problem<N> { self.base.base() }
+    fn base_mut(&mut self) -> &mut Problem<N> { self.base.base_mut() }
+}
+
+impl<N: ProblemFloat> ProblemBase for ProblemLp<N> {
+    type N = N;
+    fn x(&self) -> &[N] { ProblemBase::x(&self.base) }
+    fn phi(&self) -> N { ProblemBase::phi(&self.base) }
+    fn gphi(&self) -> &[N] { ProblemBase::gphi(&self.base) }
+    fn hphi(&self) -> &TriMat<N> { ProblemBase::hphi(&self.base) }
+    fn a(&self) -> &TriMat<N> { ProblemBase::a(&self.base) }
+    fn b(&self) -> &[N] { ProblemBase::b(&self.base) }
+    fn f(&self) -> &[N] { ProblemBase::f(&self.base) }
+    fn j(&self) -> &TriMat<N> { ProblemBase::j(&self.base) }
+    fn h(&self) -> &Vec<TriMat<N>> { ProblemBase::h(&self.base) }
+    fn hcomb(&self) -> &TriMat<N> { ProblemBase::hcomb(&self.base) }
+    fn l(&self) -> &[N] { ProblemBase::l(&self.base) }
+    fn u(&self) -> &[N] { ProblemBase::u(&self.base) }
+    fn p(&self) -> &[bool] { ProblemBase::p(&self.base) }
+    fn evaluate(&mut self, x: &[N]) -> () { ProblemBase::evaluate(&mut self.base, x) }
+    fn combine_h(&mut self, _nu: &[N]) -> () {}
 }

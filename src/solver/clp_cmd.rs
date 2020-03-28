@@ -13,10 +13,10 @@ use crate::problem::{ProblemSol,
 
 pub struct SolverClpCmd<T: ProblemLpBase> {
     status: SolverStatus,
-    solution: Option<ProblemSol<T>>,
+    solution: Option<ProblemSol<T::N>>,
 }
 
-impl<T: ProblemLpBase> Solver<T> for SolverClpCmd<T> {
+impl<T: ProblemLpBase + ProblemMilpIO> Solver<T, T::N> for SolverClpCmd<T> {
 
     fn new() -> Self { 
         Self {
@@ -26,9 +26,9 @@ impl<T: ProblemLpBase> Solver<T> for SolverClpCmd<T> {
     }
 
     fn status(&self) -> &SolverStatus { &self.status }
-    fn solution(&self) -> &Option<ProblemSol<T>> { &self.solution }
+    fn solution(&self) -> &Option<ProblemSol<T::N>> { &self.solution }
 
-    fn solve(&mut self, p: T) -> Result<(), SimpleError> {
+    fn solve(&mut self, p: &mut T) -> Result<(), SimpleError> {
 
         // Reset
         self.status = SolverStatus::Error;
@@ -87,7 +87,7 @@ impl<T: ProblemLpBase> Solver<T> for SolverClpCmd<T> {
         remove_file(&input_filename).ok();
 
         // Read output file
-        let (status, solution) = match SolverCbcCmd::read_sol_file(&output_filename, &p, false) {
+        let (status, solution) = match SolverCbcCmd::read_sol_file(&output_filename, p.base(), false) {
             Ok((s, sol)) => (s, sol),
             Err(_e) => {
                 remove_file(&output_filename).ok();
