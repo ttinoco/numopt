@@ -96,7 +96,6 @@ fn main () {
         *phi = x0*x3*(x0+x1+x2) + x2;
 
         // gphi
-        //x0*x3*(x0+x1+x2) + x2
         gphi[0] = 2.*x0*x3;
         gphi[1] = x0*x3;
         gphi[2] = x0*x3 + 1.;
@@ -104,9 +103,40 @@ fn main () {
         gphi[4] = 0.;
 
         // hphi
-        
-        
+        hphi.set_data(0, 2.*x3);       // x0, x0
+        hphi.set_data(1, x3);          // x1, x0
+        hphi.set_data(2, x3);          // x2, x0
+        hphi.set_data(3, 2.*x0+x1+x2); // x3, x0
+        hphi.set_data(4, x0);          // x3, x1
+        hphi.set_data(5, x0);          // x3, x2
 
+        // f
+        f[0] = x0*x1*x2*x3 + x4;
+        f[1] = x0*x0 + x1*x1 + x2*x2 + x3*x3 - 40.;
+
+        // j
+        j.set_data(0, x1*x2*x3); // 0, x0
+        j.set_data(1, x0*x2*x3); // 0, x1
+        j.set_data(2, x0*x1*x3); // 0, x2
+        j.set_data(3, x0*x1*x2); // 0, x3
+        j.set_data(4, -1.);      // 0, x4
+        j.set_data(5, 2.*x0);    // 1, x0
+        j.set_data(6, 2.*x1);    // 1, x1
+        j.set_data(7, 2.*x2);    // 1, x2
+        j.set_data(8, 2.*x3);    // 1, x3
+
+        // h0
+        // 0     x2*x3 x1*x3 x1*x2 0 
+        // x2*x3 0     x0*x3 x0*x2 0
+        // x1*x3 x0*x3 0     x0*x1 0
+        // x1*x2 x0*x2 x0*x1 0     0
+        // 0     0     0     0     0
+
+        // h1
+        // 2 0 0 0 0 
+        // 0 2 0 0 0
+        // 0 0 2 0 0
+        // 0 0 0 2 0
+        // 0 0 0 0 0
     };
-
 }
