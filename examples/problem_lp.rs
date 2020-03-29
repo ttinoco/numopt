@@ -1,11 +1,11 @@
-use sprs::TriMatBase;
-use optrs::{self,
-            assert_vec_approx_eq,
-            ProblemLp,
-            ProblemLpBase,
-            Solver,
-            SolverClpCmd,
-            SolverCbcCmd};
+use optrs;
+use optrs::matrix::CooMat;
+use optrs::assert_vec_approx_eq;
+use optrs::problem::{ProblemLp,
+                     ProblemLpBase};
+use optrs::solver::{Solver,
+                    SolverClpCmd,
+                    SolverCbcCmd};
 
 fn main () {
 
@@ -24,7 +24,7 @@ fn main () {
 
     let mut p = ProblemLp::new(
         vec![180.,160., 0., 0., 0.],
-        TriMatBase::from_triplets(
+        CooMat::new(
             (3, 5),
             vec![0,0,0,1,1,1,2,2,2],
             vec![0,1,2,0,1,3,0,1,4],
@@ -36,25 +36,26 @@ fn main () {
 
     let x = vec![0.5, 2., 1., 2., 3.];
 
-    optrs::ProblemBase::evaluate(&mut p, &x);
+    optrs::problem::ProblemBase::evaluate(&mut p, &x);
     
     println!("x = {:?}", p.x());
-    println!("phi = {}", optrs::ProblemBase::phi(&p));
-    println!("gphi = {:?}", optrs::ProblemBase::gphi(&p));
+    println!("phi = {}", optrs::problem::ProblemBase::phi(&p));
+    println!("gphi = {:?}", optrs::problem::ProblemBase::gphi(&p));
     println!("c = {:?}", p.c());
     println!("a = {:?}", p.a());
     println!("b = {:?}", p.b());
     println!("l = {:?}", p.l());
     println!("u = {:?}", p.u());
-    println!("p = {:?}", optrs::ProblemBase::p(&p));
-    println!("p = {:?}", optrs::ProblemMilpBase::p(&p));
+    println!("p = {:?}", optrs::problem::ProblemBase::p(&p));
+    println!("p = {:?}", optrs::problem::ProblemMilpBase::p(&p));
 
     // Solve with Clp as Lp
     let mut s = SolverClpCmd::new();
     s.solve(&mut p).unwrap();
 
+    println!("\n*************");
     println!("solver status = {}", s.status());
-    println!("solution = {:?}", s.solution());
+    println!("solution = {:?}\n", s.solution());
 
     assert!(s.status().is_solved());
     assert!(s.solution().is_some());
@@ -75,6 +76,7 @@ fn main () {
     let mut s = SolverCbcCmd::new();
     s.solve(&mut p).unwrap();
 
+    println!("*************");
     println!("solver status = {}", s.status());
     println!("solution = {:?}", s.solution());
 

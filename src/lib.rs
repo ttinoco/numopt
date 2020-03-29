@@ -1,29 +1,6 @@
-mod problem;
-mod solver;
-mod model;
+pub mod problem;
+pub mod solver;
+pub mod model;
+pub mod matrix;
+pub mod macros;
 mod utils;
-mod macros;
-
-pub use problem::{Problem,
-                  ProblemBase,
-                  ProblemFloat,
-                  ProblemEval,
-                  ProblemDims,
-                  ProblemSol};
-                  
-pub use problem::{ProblemLp,
-                  ProblemLpBase};
-
-pub use problem::{ProblemMilp,
-                  ProblemMilpBase,
-                  ProblemMilpIO};
-
-pub use problem::{ProblemNlp,
-                  ProblemNlpBase};
-                  
-pub use solver::{Solver,
-                 SolverStatus,
-                 SolverClpCmd,
-                 SolverCbcCmd};
-
-//pub use model::;

@@ -1,15 +1,16 @@
 use std::fs::File;
 use num_traits::{Float, NumCast};
 use std::io::{self, Write, BufWriter};
-use sprs::{TriMat, TriMatBase, CsMat};
  
 use crate::utils::dot;
+use crate::matrix::{CooMat,
+                    CsrMat};
 use crate::problem::{Problem, 
                      ProblemFloat,
                      ProblemBase, 
                      ProblemDims};
 
-pub struct ProblemMilp<T> {
+pub struct ProblemMilp<T: ProblemFloat> {
     c: Vec<T>,
     base: Problem<T>,
 }
@@ -18,7 +19,7 @@ pub trait ProblemMilpBase {
     type N: ProblemFloat;
     fn x(&self) -> &[Self::N];
     fn c(&self) -> &[Self::N];
-    fn a(&self) -> &TriMat<Self::N>;
+    fn a(&self) -> &CooMat<Self::N>;
     fn b(&self) -> &[Self::N];
     fn l(&self) -> &[Self::N];
     fn u(&self) -> &[Self::N];
@@ -35,7 +36,7 @@ pub trait ProblemMilpIO {
 
 impl<T: 'static + ProblemFloat> ProblemMilp<T> {
     pub fn new(c: Vec<T>,
-               a: TriMat<T>,
+               a: CooMat<T>,
                b: Vec<T>,  
                l: Vec<T>,
                u: Vec<T>, 
@@ -43,19 +44,19 @@ impl<T: 'static + ProblemFloat> ProblemMilp<T> {
         let cc = c.clone();
         let eval_fn = Box::new(move | phi: &mut T, 
                                       gphi: &mut Vec<T>, 
-                                      _hphi: &mut TriMat<T>,
+                                      _hphi: &mut CooMat<T>,
                                       _f: &mut Vec<T>,
-                                      _j: &mut TriMat<T>,
-                                      _h: &mut Vec<TriMat<T>>,
+                                      _j: &mut CooMat<T>,
+                                      _h: &mut Vec<CooMat<T>>,
                                       x: &[T] | {
             *phi = dot(&c, x);
             gphi.copy_from_slice(&c);
         });
         let nx = a.cols();
-        let base = Problem::new(TriMatBase::new((nx, nx)), // Hphi
+        let base = Problem::new(CooMat::from_nnz((nx, nx), 0), // Hphi
                                 a, 
                                 b,
-                                TriMatBase::new((0, nx)),  // J
+                                CooMat::from_nnz((0, nx), 0),  // J
                                 Vec::new(), 
                                 l, 
                                 u, 
@@ -72,7 +73,7 @@ impl<N: ProblemFloat> ProblemMilpBase for ProblemMilp<N> {
     type N = N;
     fn x(&self) -> &[N] { &self.base.x() }
     fn c(&self) -> &[N] { &self.c }
-    fn a(&self) -> &TriMat<N> { &self.base.a() } 
+    fn a(&self) -> &CooMat<N> { &self.base.a() } 
     fn b(&self) -> &[N] { &self.base.b() }
     fn l(&self) -> &[N] { &self.base.l() }
     fn u(&self) -> &[N] { &self.base.u() }
@@ -86,13 +87,13 @@ impl<N: ProblemFloat> ProblemBase for ProblemMilp<N> {
     fn x(&self) -> &[N] { self.base.x() }
     fn phi(&self) -> N { self.base().phi() }
     fn gphi(&self) -> &[N] { self.base().gphi() }
-    fn hphi(&self) -> &TriMat<N> { self.base().hphi() }
-    fn a(&self) -> &TriMat<N> { self.base.a() }
+    fn hphi(&self) -> &CooMat<N> { self.base().hphi() }
+    fn a(&self) -> &CooMat<N> { self.base.a() }
     fn b(&self) -> &[N] { self.base.b() }
     fn f(&self) -> &[N] { self.base().f() }
-    fn j(&self) -> &TriMat<N> { self.base().j() }
-    fn h(&self) -> &Vec<TriMat<N>> { self.base().h() }
-    fn hcomb(&self) -> &TriMat<N> { self.base().hcomb() }
+    fn j(&self) -> &CooMat<N> { self.base().j() }
+    fn h(&self) -> &Vec<CooMat<N>> { self.base().h() }
+    fn hcomb(&self) -> &CooMat<N> { self.base().hcomb() }
     fn l(&self) -> &[N] { self.base.l() }
     fn u(&self) -> &[N] { self.base.u() }
     fn p(&self) -> &[bool] { self.base.p() }
@@ -145,13 +146,13 @@ impl<T: ProblemMilpBase + ProblemDims> ProblemMilpIO for T {
 
         // Constraints
         w.write("Subject to\n".as_bytes())?;
-        let a: CsMat<T::N> = self.a().to_csr();
+        let a: CsrMat<T::N> = self.a().to_csr();
         for i in 0..a.rows() {
             b = self.b()[i];
             w.write(format!("  c_{}:\n", i).as_bytes())?;
-            for k in a.indptr()[i]..a.indptr()[i+1] {
-                j = a.indices()[k];
-                d = a.data()[k];
+            for k in a.indptr[i]..a.indptr[i+1] {
+                j = a.indices[k];
+                d = a.data[k];
                 if d > NumCast::from(0.).unwrap() {
                     pre = '+';
                 }

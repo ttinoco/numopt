@@ -1,7 +1,6 @@
-use sprs::{TriMat,
-           TriMatBase};
-use optrs::{Problem, 
-            ProblemBase};
+use optrs::matrix::CooMat;
+use optrs::problem::{Problem, 
+                     ProblemBase};
 
 fn main () {
 
@@ -19,24 +18,24 @@ fn main () {
     //            x5 <= 0
 
     let mut p = Problem::new(
-        TriMatBase::new((5, 5)),
-        TriMatBase::from_triplets(
+        CooMat::from_nnz((5, 5), 0),
+        CooMat::new(
             (3, 5),
             vec![0,0,0,1,1,1,1,1,1],
             vec![0,1,2,0,1,3,0,1,4],
             vec![6.,1.,1.,3.,1.,1.,4.,6.,1.]),
         vec![12.,8.,24.],
-        TriMatBase::new((0, 5)),
+        CooMat::from_nnz((0, 5), 0),
         Vec::new(),
         vec![0.,0.,-1e8,-1e8,-1e8],
         vec![5.,5.,0.,0.,0.],
         vec![false;5],
         Box::new(| phi: &mut f64, 
                    gphi: &mut Vec<f64>, 
-                   _hphi: &mut TriMat<f64>,
+                   _hphi: &mut CooMat<f64>,
                    _f: &mut Vec<f64>,
-                   _j: &mut TriMat<f64>,
-                   _h: &mut Vec<TriMat<f64>>,
+                   _j: &mut CooMat<f64>,
+                   _h: &mut Vec<CooMat<f64>>,
                    x: &[f64] | {
             *phi = 180.*x[0] + 160.*x[1];
             gphi[0] = 180.;

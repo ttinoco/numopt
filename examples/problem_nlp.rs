@@ -1,10 +1,8 @@
-use sprs::{TriMat,
-           TriMatI,
-           TriMatBase};
-use optrs::{self,
-            assert_vec_approx_eq,
-            ProblemNlp,
-            ProblemNlpBase};
+use optrs;
+use optrs::matrix::CooMat;
+use optrs::assert_vec_approx_eq;
+use optrs::problem::{ProblemNlp,
+                     ProblemNlpBase};
 
 fn main () {
 
@@ -26,20 +24,20 @@ fn main () {
     // x3           0   0  x0           0
     // (2*x0+x1+x2) x0  x0 0            0
     // 0            0   0  0            0
-    let hphi: TriMatI<f64, usize> = TriMatBase::from_triplets(
+    let hphi: CooMat<f64> = CooMat::new(
         (5, 5),
         vec![0, 1, 2, 3, 3, 3],
         vec![0, 0, 0, 0, 1, 1],
         vec![0.; 6]
     );
 
-    let a: TriMatI<f64, usize> = TriMatBase::new((0, 5));
+    let a: CooMat<f64> = CooMat::from_nnz((0, 5), 0);
     let b: Vec<f64> = Vec::new();
 
     // j
     // x1*x2*x3 x0*x2*x3 x0*x1*x3 x0*x1*x2 -1 
     // 2*x0     2*x1     2*x2     2*x3      0
-    let j: TriMatI<f64, usize> = TriMatBase::from_triplets(
+    let j: CooMat<f64> = CooMat::new(
         (2, 5),
         vec![0, 0, 0, 0, 0, 1, 1, 1, 1],
         vec![0, 1, 2, 3, 4, 0, 1, 2, 3],
@@ -58,14 +56,14 @@ fn main () {
     // 0 0 2 0 0
     // 0 0 0 2 0
     // 0 0 0 0 0
-    let h: Vec<TriMatI<f64, usize>> = vec![
-        TriMatBase::from_triplets(
+    let h: Vec<CooMat<f64>> = vec![
+        CooMat::new(
             (5, 5),
             vec![1, 2, 2, 3, 3, 3],
             vec![0, 0, 1, 0, 1, 2],
             vec![0.;6]
         ),
-        TriMatBase::from_triplets(
+        CooMat::new(
             (5, 5),
             vec![0, 1, 2, 3],
             vec![0, 1, 2, 3],
@@ -82,10 +80,10 @@ fn main () {
     // eval_fn
     let eval_fn = | phi: &mut f64, 
                     gphi: &mut Vec<f64>, 
-                    hphi: &mut TriMat<f64>,
+                    hphi: &mut CooMat<f64>,
                     f: &mut Vec<f64>,
-                    j: &mut TriMat<f64>,
-                    h: &mut Vec<TriMat<f64>>,
+                    j: &mut CooMat<f64>,
+                    h: &mut Vec<CooMat<f64>>,
                     x: &[f64] | {
 
         let x0 = x[0];

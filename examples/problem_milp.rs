@@ -1,10 +1,10 @@
-use sprs::TriMatBase;
-use optrs::{self,
-            assert_vec_approx_eq,
-            ProblemMilp,
-            ProblemMilpBase,
-            Solver,
-            SolverCbcCmd};
+use optrs;
+use optrs::matrix::CooMat;
+use optrs::assert_vec_approx_eq;
+use optrs::problem::{ProblemMilp,
+                     ProblemMilpBase};
+use optrs::solver::{Solver,
+                    SolverCbcCmd};
 
 fn main () {
 
@@ -21,7 +21,7 @@ fn main () {
 
     let mut p = ProblemMilp::new(
         vec![-1.,-1., 0., 0.],
-        TriMatBase::from_triplets(
+        CooMat::new(
             (2, 4),
             vec![0,0,0,1,1,1],
             vec![0,1,2,0,1,3],
@@ -34,11 +34,11 @@ fn main () {
 
     let x = vec![0.5, 2., 1., 2.];
 
-    optrs::ProblemBase::evaluate(&mut p, &x);
+    optrs::problem::ProblemBase::evaluate(&mut p, &x);
     
     println!("x = {:?}", p.x());
-    println!("phi = {}", optrs::ProblemBase::phi(&p));
-    println!("gphi = {:?}", optrs::ProblemBase::gphi(&p));
+    println!("phi = {}", optrs::problem::ProblemBase::phi(&p));
+    println!("gphi = {:?}", optrs::problem::ProblemBase::gphi(&p));
     println!("c = {:?}", p.c());
     println!("a = {:?}", p.a());
     println!("b = {:?}", p.b());
@@ -49,6 +49,7 @@ fn main () {
     let mut s = SolverCbcCmd::new();
     s.solve(&mut p).unwrap();
 
+    println!("*************");
     println!("solver status = {}", s.status());
     println!("solution = {:?}", s.solution());
 
@@ -57,5 +58,4 @@ fn main () {
     assert_vec_approx_eq!(s.solution().as_ref().unwrap().x, 
                           &vec![1., 2., -1., 1.0], 
                           epsilon=1e-8);
-    
 }
