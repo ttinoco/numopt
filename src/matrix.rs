@@ -5,10 +5,10 @@ use num_traits::{Float, NumCast};
 pub trait MatFloat: Float + AddAssign + Debug {}
 
 pub struct CooMat<N: MatFloat> {
-    pub shape: (usize, usize),
-    pub row_inds: Vec<usize>,
-    pub col_inds: Vec<usize>,
-    pub data: Vec<N>,
+    shape: (usize, usize),
+    row_inds: Vec<usize>,
+    col_inds: Vec<usize>,
+    data: Vec<N>,
 }
 
 pub struct CooMatIter<'a, N: MatFloat> {
@@ -17,10 +17,10 @@ pub struct CooMatIter<'a, N: MatFloat> {
 }
 
 pub struct CsrMat<N: MatFloat> {
-    pub shape: (usize, usize),
-    pub indptr: Vec<usize>,
-    pub indices: Vec<usize>,
-    pub data: Vec<N>,
+    shape: (usize, usize),
+    indptr: Vec<usize>,
+    indices: Vec<usize>,
+    data: Vec<N>,
 }
 
 impl<T: Float + AddAssign + Debug> MatFloat for T { }
@@ -66,6 +66,12 @@ impl<N: MatFloat> CooMat<N> {
     pub fn rows(&self) -> usize { self.shape.0 }
     pub fn cols(&self) -> usize { self.shape.1 }
     pub fn nnz(&self) -> usize { self.row_inds.len() }
+    pub fn row_inds(&self) -> &[usize] { &self.row_inds }
+    pub fn col_inds(&self) -> &[usize] { &self.col_inds }
+    pub fn data(&self) -> &[N] { &self.data }
+    pub fn set_row_ind(&mut self, k: usize, row: usize) -> () { self.row_inds[k] = row }
+    pub fn set_col_ind(&mut self, k: usize, row: usize) -> () { self.col_inds[k] = row }
+    pub fn set_data(&mut self, k:usize, d: N) -> () { self.data[k] = d }
     pub fn iter(&self) -> CooMatIter<N> { CooMatIter::new(&self) }
 
     pub fn to_csr(&self) -> CsrMat<N> {
@@ -168,6 +174,9 @@ impl<N: MatFloat> CsrMat<N> {
     pub fn rows(&self) -> usize { self.shape.0 }
     pub fn cols(&self) -> usize { self.shape.1 }
     pub fn nnz(&self) -> usize { self.indices.len() }
+    pub fn indptr(&self) -> &[usize] { &self.indptr }
+    pub fn indices(&self) -> &[usize] { &self.indices }
+    pub fn data(&self) -> &[N] { &self.data }
 
     pub fn sum_duplicates(&mut self) -> () {
 

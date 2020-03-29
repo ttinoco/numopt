@@ -151,9 +151,9 @@ impl<T: ProblemMilpBase + ProblemDims> ProblemMilpIO for T {
         for i in 0..a.rows() {
             b = self.b()[i];
             w.write(format!("  c_{}:\n", i).as_bytes())?;
-            for k in a.indptr[i]..a.indptr[i+1] {
-                j = a.indices[k];
-                d = a.data[k];
+            for k in a.indptr()[i]..a.indptr()[i+1] {
+                j = a.indices()[k];
+                d = a.data()[k];
                 if d > NumCast::from(0.).unwrap() {
                     pre = '+';
                 }

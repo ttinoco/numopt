@@ -122,8 +122,8 @@ impl<T: ProblemFloat> Problem<T>
         let mut hcomb: CooMat<T> = CooMat::from_nnz((nx, nx), hcomb_nnz);
         for hh in h.iter() {
             for (row, col, _val) in hh.iter() {
-                hcomb.row_inds[k] = row;
-                hcomb.col_inds[k] = col;
+                hcomb.set_row_ind(k, row);
+                hcomb.set_col_ind(k, col);
                 k += 1;
             }
         }
@@ -180,8 +180,8 @@ impl<N: ProblemFloat> ProblemBase for Problem<N> {
  
         let mut k: usize = 0;
         for (h, nuval) in self.h.iter().zip(nu.iter()) {
-            for val in h.data.iter() {
-                self.hcomb.data[k] = (*nuval)*(*val);
+            for val in h.data().iter() {
+                self.hcomb.set_data(k, (*nuval)*(*val));
                 k += 1;
             }
         }    
