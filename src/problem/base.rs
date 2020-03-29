@@ -1,11 +1,17 @@
-use std::ops::Mul;
+use std::ops::{Mul,
+               AddAssign};
 use std::str::FromStr;
 use num_traits::{Float, NumCast};
 use std::fmt::{self, LowerExp, Debug};
 
 use crate::matrix::CooMat;
 
-pub trait ProblemFloat: Float + FromStr + LowerExp + Debug + Mul {}
+pub trait ProblemFloat: Float + 
+                        FromStr + 
+                        LowerExp + 
+                        Debug + 
+                        Mul + 
+                        AddAssign {}
 
 pub type ProblemEval<T> = Box<dyn Fn(&mut T,              // phi
                                      &mut Vec<T>,         // gphi
@@ -73,7 +79,7 @@ pub struct ProblemSol<T: ProblemFloat> {
     pub pi: Vec<T>,
 }
 
-impl<T: Float + FromStr + LowerExp + Debug + Mul> ProblemFloat for T { }
+impl<T: Float + FromStr + LowerExp + Debug + Mul + AddAssign> ProblemFloat for T { }
 
 impl<T: ProblemFloat> Problem<T> 
 {

@@ -146,7 +146,8 @@ impl<T: ProblemMilpBase + ProblemDims> ProblemMilpIO for T {
 
         // Constraints
         w.write("Subject to\n".as_bytes())?;
-        let a: CsrMat<T::N> = self.a().to_csr();
+        let mut a: CsrMat<T::N> = self.a().to_csr();
+        a.sum_duplicates();
         for i in 0..a.rows() {
             b = self.b()[i];
             w.write(format!("  c_{}:\n", i).as_bytes())?;

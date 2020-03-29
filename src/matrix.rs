@@ -1,26 +1,31 @@
+use std::ops::AddAssign;
 use std::fmt::{self, Debug};
 use num_traits::{Float, NumCast};
 
-pub struct CooMat<N: Float> {
+pub trait MatFloat: Float + AddAssign + Debug {}
+
+pub struct CooMat<N: MatFloat> {
     pub shape: (usize, usize),
     pub row_inds: Vec<usize>,
     pub col_inds: Vec<usize>,
     pub data: Vec<N>,
 }
 
-pub struct CooMatIter<'a, N: Float> {
+pub struct CooMatIter<'a, N: MatFloat> {
     k: usize,
     mat: &'a CooMat<N>,
 }
 
-pub struct CsrMat<N: Float> {
+pub struct CsrMat<N: MatFloat> {
     pub shape: (usize, usize),
     pub indptr: Vec<usize>,
     pub indices: Vec<usize>,
     pub data: Vec<N>,
 }
 
-impl<N: Float> CooMat<N> {
+impl<T: Float + AddAssign + Debug> MatFloat for T { }
+
+impl<N: MatFloat> CooMat<N> {
 
     pub fn new(shape: (usize, usize), 
                row_inds: Vec<usize>,
@@ -105,7 +110,7 @@ impl<N: Float> CooMat<N> {
     }
 }
 
-impl<N: Float + Debug> Debug for CooMat<N> {
+impl<N: MatFloat> Debug for CooMat<N> {
 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CooMat")
@@ -117,7 +122,7 @@ impl<N: Float + Debug> Debug for CooMat<N> {
     }
 }
 
-impl<'a, N: Float> CooMatIter<'a, N> {
+impl<'a, N: MatFloat> CooMatIter<'a, N> {
     fn new(mat: &'a CooMat<N>) -> Self {
         Self {
             k: 0,
@@ -126,7 +131,7 @@ impl<'a, N: Float> CooMatIter<'a, N> {
     }
 }
 
-impl<'a, N: Float> Iterator for CooMatIter<'a, N> {
+impl<'a, N: MatFloat> Iterator for CooMatIter<'a, N> {
     type Item = (usize, usize, N);
     fn next(&mut self) -> Option<Self::Item> {
         if self.k < self.mat.nnz() {
@@ -143,7 +148,7 @@ impl<'a, N: Float> Iterator for CooMatIter<'a, N> {
     }
 }
 
-impl<N: Float> CsrMat<N> {
+impl<N: MatFloat> CsrMat<N> {
 
     pub fn new(shape: (usize, usize), 
                indptr: Vec<usize>,
@@ -163,5 +168,72 @@ impl<N: Float> CsrMat<N> {
     pub fn rows(&self) -> usize { self.shape.0 }
     pub fn cols(&self) -> usize { self.shape.1 }
     pub fn nnz(&self) -> usize { self.indices.len() }
+
+    pub fn sum_duplicates(&mut self) -> () {
+
+        let mut colseen: Vec<bool> = vec![false; self.cols()];
+        let mut colrow: Vec<usize> = vec![0; self.cols()];
+        let mut colnewk: Vec<usize> = vec![0; self.cols()];
+
+        let mut d: N;
+        let mut col: usize;
+        let mut new_k: usize = 0;
+        let mut new_counter: Vec<usize> = vec![0; self.rows()];
+        let mut new_indices: Vec<usize> = Vec::new();
+        let mut new_data: Vec<N> = Vec::new();
+        for row in 0..self.rows() {
+            for k in self.indptr[row]..self.indptr[row+1] {
+                
+                col = self.indices[k];
+                d = self.data[k];
+
+                // New column in row
+                if !colseen[col] || colrow[col] != row {        
+                    colnewk[col] = new_k;
+                    new_counter[row] += 1;
+                    new_indices.push(col);
+                    new_data.push(d);
+                    new_k += 1;
+                }
+                
+                // Duplicate column in row
+                else { 
+                    new_data[colnewk[col]] += d;
+                }
+
+                // Update
+                colseen[col] = true;
+                colrow[col] = row;
+            }
+
+        }
+
+        let mut offset: usize = 0;
+        let mut new_indptr: Vec<usize> = vec![0; self.rows()+1];
+        for (row, c) in new_counter.iter().enumerate() {
+            new_indptr[row+1] = offset + c;
+            offset += c;
+        }
+
+        self.indptr = new_indptr;
+        self.indices = new_indices;
+        self.data = new_data;
+
+        assert_eq!(self.indptr.len(), self.rows()+1);
+        assert_eq!(self.indices.len(), self.indptr[self.rows()]);
+        assert_eq!(self.indices.len(), self.data.len());
+    }
+}
+
+impl<N: MatFloat> Debug for CsrMat<N> {
+
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CsrMat")
+         .field("shape", &self.shape)
+         .field("indptr", &self.indptr)
+         .field("indices", &self.indices)
+         .field("data", &self.data)
+         .finish()
+    }
 }
 
