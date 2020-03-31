@@ -3,4 +3,5 @@
 
 # Rust
 /target
+/libipopt-sys/target
 Cargo.lock
