@@ -1,76 +1,127 @@
-#![allow(non_camel_case_types)]
-#![allow(non_snake_case)]
+mod cipopt;
 
-extern crate libc;
+use libc::c_void;
 
-use libc::{c_int,
-           c_void,
-           c_double};
-           
-#[repr(C)] pub struct IpoptProblemInfo { _private: [u8; 0] }
+pub type IpoptEvalF = Box<dyn Fn() -> bool>;
+pub type IpoptEvalGradF = Box<dyn Fn() -> bool>;
+pub type IpoptEvalG = Box<dyn Fn() -> bool>;
+pub type IpoptEvalJacG = Box<dyn Fn() -> bool>;
+pub type IpoptEvalH = Box<dyn Fn() -> bool>;
 
-type Eval_F_CB = fn(c_int, 
-                    *const c_double, 
-                    c_int, 
-                    *mut c_double, 
-                    c_void) -> c_int;
-
-type Eval_Grad_F_CB = fn(c_int, 
-                         *const c_double, 
-                         c_int,
-                         *mut c_double, 
-                         c_void) -> c_int;
-
-type Eval_G_CB = fn(c_int, 
-                    *const c_double, 
-                    c_int,
-                    c_int, 
-                    *mut c_double, 
-                    c_void) -> c_int;
-
-type Eval_Jac_G_CB = fn(c_int,
-                        *const c_double, 
-                        c_int,
-                        c_int, 
-                        c_int,
-                        *mut c_int, 
-                        *mut c_int, 
-                        *mut c_double,
-                        c_void) -> c_int;
-
-type Eval_H_CB = fn(c_int, 
-                    *const c_double, 
-                    c_int, 
-                    c_double,
-                    c_int, 
-                    *const c_double, 
-                    c_int,
-                    c_int,
-                    *mut c_int, 
-                    *mut c_int, 
-                    *mut c_double,
-                    c_void) -> c_int;
-
-#[link(name = "ipopt")]
-extern {
-
-    fn CreateIpoptProblem(
-        n: c_int,
-        x_L: *const c_double,
-        x_U: *const c_double,
-        m: c_int,
-        g_L: *const c_double,
-        g_U: *const c_double,
-        nele_jac: c_int,
-        nele_hess: c_int,
-        index_style: c_int,
-        eval_f: Eval_F_CB,
-        eval_g: Eval_G_CB,
-        eval_grad_f: Eval_Grad_F_CB,
-        eval_jac_g: Eval_Jac_G_CB,
-        eval_h: Eval_H_CB 
-    ) -> *mut IpoptProblemInfo;
-
-    fn FreeIpoptProblem(ipopt_problem: *mut IpoptProblemInfo) -> ();
-
+pub struct IpoptContext {
+    n: i32,
+    m: i32,
+    nnzj: i32,
+    nnzh: i32,
+    l: Vec<f64>,
+    u: Vec<f64>,
+    gl: Vec<f64>,
+    gu: Vec<f64>,
+    eval_f: IpoptEvalF,
+    eval_grad_f: IpoptEvalGradF,
+    eval_g: IpoptEvalG,
+    eval_jac_g: IpoptEvalJacG,
+    eval_h: IpoptEvalH,
+    p: cipopt::IpoptProblem,
 }
+
+impl IpoptContext {
+
+    pub fn new(n: i32,
+               m: i32,
+               nnzj: i32,
+               nnzh: i32,
+               l: Vec<f64>,
+               u: Vec<f64>,
+               gl: Vec<f64>,
+               gu: Vec<f64>,
+               eval_f: IpoptEvalF,
+               eval_grad_f: IpoptEvalGradF,
+               eval_g: IpoptEvalG,
+               eval_jac_g: IpoptEvalJacG,
+               eval_h: IpoptEvalH) -> () {
+
+
+        // a bunch of asserts
+
+        // problem
+        let p: cipopt::IpoptProblem = unsafe {
+            cipopt::CreateIpoptProblem(n, 
+                                       l.as_ptr(), 
+                                       l.as_ptr(), 
+                                       m, 
+                                       gl.as_ptr(), 
+                                       gu.as_ptr(), 
+                                       nnzj, 
+                                       nnzh, 
+                                       0, 
+                                       eval_f_cb, 
+                                       eval_g_cb, 
+                                       eval_grad_f_cb, 
+                                       eval_jac_g_cb, 
+                                       eval_h_cb)
+        };
+
+        //Self {
+        //}
+    }
+}
+
+extern fn eval_f_cb(n: i32, 
+                           x: *const f64, 
+                           new_x: i32, 
+                           obj_value: *mut f64, 
+                           user_data: *mut c_void) -> i32 {
+
+    1
+}
+
+extern fn eval_grad_f_cb (n: i32, 
+                          x: *const f64, 
+                          new_x: i32, 
+                          grad_f: *mut f64, 
+                          user_data: *mut c_void) -> i32 {
+
+    1
+}
+
+extern fn eval_g_cb (n: i32, 
+                     x: *const f64, 
+                     new_x: i32, 
+                     m: i32,
+                     g: *mut f64, 
+                     user_data: *mut c_void) -> i32 {
+
+    1
+}
+
+extern fn eval_jac_g_cb (n: i32, 
+                         x: *const f64, 
+                         new_x: i32, 
+                         m: i32,
+                         nele_jac: i32,
+                         irow: *mut i32,
+                         jcol: *mut i32,
+                         values: *mut f64, 
+                         user_data: *mut c_void) -> i32 {
+
+    1
+}
+
+extern fn eval_h_cb (n: i32, 
+                     x: *const f64, 
+                     new_x: i32,
+                     obj_factor: f64, 
+                     m: i32,
+                     lambda: *const f64,
+                     new_lambda: i32,
+                     nele_hess: i32,
+                     irow: *mut i32,
+                     jcol: *mut i32,
+                     values: *mut f64, 
+                     user_data: *mut c_void) -> i32 {
+
+    1
+}
+
+
