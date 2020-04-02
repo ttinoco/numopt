@@ -7,9 +7,11 @@ use libc::{c_int,
 
 pub type IpoptEvalF = Box<dyn Fn(usize, &[f64], bool, &mut f64) -> bool>;
 pub type IpoptEvalGradF = Box<dyn Fn(usize, &[f64], bool, &mut Vec<f64>) -> bool>;
-pub type IpoptEvalG = Box<dyn Fn() -> bool>;
-pub type IpoptEvalJacG = Box<dyn Fn() -> bool>;
-pub type IpoptEvalH = Box<dyn Fn() -> bool>;
+pub type IpoptEvalG = Box<dyn Fn(usize, &[f64], bool, usize, &mut Vec<f64>) -> bool>;
+pub type IpoptEvalJacG = Box<dyn Fn(usize, &[f64], bool, usize, usize,
+                                    &mut Vec<i32>, &mut Vec<i32>, &mut Vec<f64>) -> bool>;
+pub type IpoptEvalH = Box<dyn Fn(usize, &[f64], bool, f64, usize, &[f64], bool, usize,
+                                 &mut Vec<i32>, &mut Vec<i32>, &mut Vec<f64>) -> bool>;
 
 pub struct IpoptContext {
     n: usize,
@@ -119,17 +121,27 @@ extern fn eval_grad_f_cb(n: c_int,
 }
 
 extern fn eval_g_cb(n: c_int, 
-                    x: *const c_double, 
+                    x: *mut c_double, 
                     new_x: c_int, 
                     m: c_int,
                     g: *mut c_double, 
                     user_data: *mut IpoptContext) -> c_int {
-
-    1
+    unsafe {
+        let nn: usize = (*user_data).n;
+        let mm: usize = (*user_data).m;
+        match ((*user_data).eval_g)(nn, 
+                                    &Vec::from_raw_parts(x, nn, nn), 
+                                    new_x == 1,
+                                    mm, 
+                                    &mut Vec::from_raw_parts(g, mm, mm)) {
+            true => 0,
+            false => 1
+        }
+    }
 }
 
 extern fn eval_jac_g_cb(n: c_int, 
-                        x: *const c_double, 
+                        x: *mut c_double, 
                         new_x: c_int, 
                         m: c_int,
                         nele_jac: c_int,
@@ -137,24 +149,55 @@ extern fn eval_jac_g_cb(n: c_int,
                         jcol: *mut c_int,
                         values: *mut c_double, 
                         user_data: *mut IpoptContext) -> c_int {
-
-    1
+    unsafe {
+        let nn: usize = (*user_data).n;
+        let mm: usize = (*user_data).m;
+        let nnzj: usize = (*user_data).nnzj;
+        match ((*user_data).eval_jac_g)(nn,
+                                        &Vec::from_raw_parts(x, nn, nn),
+                                        new_x == 1,
+                                        mm,
+                                        nnzj,
+                                        &mut Vec::from_raw_parts(irow, nnzj, nnzj),
+                                        &mut Vec::from_raw_parts(jcol, nnzj, nnzj),
+                                        &mut Vec::from_raw_parts(values, nnzj, nnzj)) {
+            true => 0,
+            false => 1
+        }
+    }
 }
 
 extern fn eval_h_cb(n: c_int, 
-                    x: *const c_double, 
+                    x: *mut c_double, 
                     new_x: c_int,
                     obj_factor: c_double, 
                     m: c_int,
-                    lambda: *const c_double,
+                    lambda: *mut c_double,
                     new_lambda: c_int,
                     nele_hess: c_int,
                     irow: *mut c_int,
                     jcol: *mut c_int,
                     values: *mut c_double, 
                     user_data: *mut IpoptContext) -> c_int {
-
-    1
+    unsafe {
+        let nn: usize = (*user_data).n;
+        let mm: usize = (*user_data).m;
+        let nnzh: usize = (*user_data).nnzh;
+        match ((*user_data).eval_h)(nn,
+                                    &Vec::from_raw_parts(x, nn, nn),
+                                    new_x == 1,
+                                    obj_factor,
+                                    mm,
+                                    &Vec::from_raw_parts(lambda, mm, mm),
+                                    new_lambda == 1,
+                                    nnzh,
+                                    &mut Vec::from_raw_parts(irow, nnzh, nnzh),
+                                    &mut Vec::from_raw_parts(jcol, nnzh, nnzh),
+                                    &mut Vec::from_raw_parts(values, nnzh, nnzh)) {
+            true => 0,
+            false => 1
+        }
+    }
 }           
            
 #[repr(C)] struct IpoptProblemInfo { _private: [u8; 0] }
@@ -174,14 +217,14 @@ type Eval_Grad_F_CB = extern fn(c_int,
                                 *mut IpoptContext) -> c_int;
 
 type Eval_G_CB = extern fn(c_int, 
-                           *const c_double, 
+                           *mut c_double, 
                            c_int,
                            c_int, 
                            *mut c_double, 
                            *mut IpoptContext) -> c_int;
 
 type Eval_Jac_G_CB = extern fn(c_int,
-                               *const c_double, 
+                               *mut c_double, 
                                c_int,
                                c_int, 
                                c_int,
@@ -191,11 +234,11 @@ type Eval_Jac_G_CB = extern fn(c_int,
                                *mut IpoptContext) -> c_int;
 
 type Eval_H_CB = extern fn(c_int, 
-                           *const c_double, 
+                           *mut c_double, 
                            c_int, 
                            c_double,
                            c_int, 
-                           *const c_double, 
+                           *mut c_double, 
                            c_int,
                            c_int,
                            *mut c_int, 
