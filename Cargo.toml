@@ -10,3 +10,5 @@ num-traits = "0.2.11"
 tempfile = "3.1.0"
 simple-error = "0.2.1"
 approx = "0.3.2"
+libc = "0.2.68"
+libipopt-sys = { path = "libipopt-sys", version = "0.1.0" }

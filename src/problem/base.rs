@@ -1,12 +1,12 @@
-use std::ops::{Mul,
-               AddAssign};
 use std::str::FromStr;
-use num_traits::{Float, NumCast};
+use std::ops::{Mul, AddAssign};
 use std::fmt::{self, LowerExp, Debug};
+use num_traits::{Float, NumCast, ToPrimitive};
 
 use crate::matrix::CooMat;
 
 pub trait ProblemFloat: Float + 
+                        ToPrimitive +
                         FromStr + 
                         LowerExp + 
                         Debug + 
@@ -79,7 +79,7 @@ pub struct ProblemSol<T: ProblemFloat> {
     pub pi: Vec<T>,
 }
 
-impl<T: Float + FromStr + LowerExp + Debug + Mul + AddAssign> ProblemFloat for T { }
+impl<T: Float + FromStr + LowerExp + Debug + Mul + AddAssign + ToPrimitive> ProblemFloat for T { }
 
 impl<T: ProblemFloat> Problem<T> 
 {
