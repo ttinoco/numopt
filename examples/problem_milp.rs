@@ -4,7 +4,7 @@ use optrs::assert_vec_approx_eq;
 use optrs::problem::{ProblemMilp,
                      ProblemMilpBase};
 use optrs::solver::{Solver,
-                    SolverCbcCmd};
+                    SolverCbcCmd}; 
 
 fn main () {
 

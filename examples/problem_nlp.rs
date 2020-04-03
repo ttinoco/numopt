@@ -5,6 +5,8 @@ use optrs::matrix::CooMat;
 use optrs::assert_vec_approx_eq;
 use optrs::problem::{ProblemNlp,
                      ProblemNlpBase};
+use optrs::solver::{Solver,
+                    SolverIpopt}; 
 
 fn main () {
 
@@ -204,4 +206,7 @@ fn main () {
     assert_vec_approx_eq!(p.hcomb().data(),
                           data_manual,
                           epsilon=1e-8);
+
+    let mut s = SolverIpopt::new();
+    s.solve(&mut p).unwrap();
 }

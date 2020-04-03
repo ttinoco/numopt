@@ -1,6 +1,6 @@
 use std::ptr;
 use simple_error::SimpleError;
-use num_traits::{ToPrimitive};
+use num_traits::{NumCast, ToPrimitive};
 use libc::{c_int, c_void, c_double};
 
 use libipopt_sys as cipopt;
@@ -8,6 +8,7 @@ use libipopt_sys as cipopt;
 use crate::solver::{Solver, 
                    SolverStatus};
 use crate::problem::{ProblemSol,
+                     ProblemFloat,
                      ProblemDims,
                      ProblemNlpBase};
 
@@ -43,6 +44,7 @@ impl<T: ProblemNlpBase + ProblemDims> Solver<T, T::N> for SolverIpopt<T> {
         let nnzh: c_int = (p.hphi().nnz() + p.hcomb().nnz()).to_i32().unwrap();
 
         // Problem
+        println!("CREATE");
         let cprob: cipopt::IpoptProblem = unsafe {
             cipopt::CreateIpoptProblem(n, 
                                        l.as_ptr(), 
@@ -57,7 +59,7 @@ impl<T: ProblemNlpBase + ProblemDims> Solver<T, T::N> for SolverIpopt<T> {
                                        eval_g_cb, 
                                        eval_grad_f_cb, 
                                        eval_jac_g_cb, 
-                                       eval_h_cb)
+                                       eval_h_cb::<T>)
         };
         if cprob.is_null() {
             return Err(SimpleError::new("failed to create ipopt problem"))
@@ -69,6 +71,7 @@ impl<T: ProblemNlpBase + ProblemDims> Solver<T, T::N> for SolverIpopt<T> {
         let mut mu: Vec<f64> = vec![0.;p.nx()];
 
         // Solve
+        println!("SOLVE");
         let cstatus : c_int = unsafe {
             cipopt::IpoptSolve(cprob, 
                                x.as_mut_ptr(), 
@@ -82,19 +85,42 @@ impl<T: ProblemNlpBase + ProblemDims> Solver<T, T::N> for SolverIpopt<T> {
 
         // Set status and solution
 
+        // Clean up
+        println!("CLEAN");
+        unsafe {
+            cipopt::FreeIpoptProblem(cprob);
+        };
+
         Ok(())
     }
 }
 
-extern fn eval_f_cb<T: ProblemNlpBase>(n: c_int, 
-                                       x: *const c_double, 
-                                       new_x: c_int, 
-                                       obj_value: *mut c_double, 
-                                       user_data: *mut c_void) -> c_int {
+unsafe fn cast_to_vec<S, T>(x: *mut S, len: usize, cap: usize) -> Vec<T> 
+where S: ToPrimitive + Copy,
+      T: ProblemFloat {
+    
+    Vec::from_raw_parts(x, len, cap)
+        .iter()
+        .map(|xx| NumCast::from(*xx).unwrap())
+        .collect()
+}
+
+extern fn eval_f_cb<T>(n: c_int, 
+                       x: *const c_double, 
+                       new_x: c_int, 
+                       obj_value: *mut c_double, 
+                       user_data: *mut c_void) -> c_int 
+where T: ProblemNlpBase + ProblemDims {
+    
     unsafe {
         let p: &mut T = &mut *(user_data as *mut T);
+        let xx = cast_to_vec::<c_double, T::N>(x as *mut c_double, p.nx(), p.nx());
+        if new_x == 1 {
+            p.evaluate(&xx);
+        }
+        *obj_value = p.phi().to_f64().unwrap();
     };
-    1
+    0
 }
 
 extern fn eval_grad_f_cb(n: c_int, 
@@ -102,7 +128,7 @@ extern fn eval_grad_f_cb(n: c_int,
                          new_x: c_int, 
                          grad_f: *mut c_double, 
                          user_data: *mut c_void) -> c_int {
-    1 
+    0 
 }
 
 extern fn eval_g_cb(n: c_int, 
@@ -111,7 +137,7 @@ extern fn eval_g_cb(n: c_int,
                     m: c_int,
                     g: *mut c_double, 
                     user_data: *mut c_void) -> c_int {
-    1
+    0
 }
 
 extern fn eval_jac_g_cb(n: c_int, 
@@ -123,20 +149,26 @@ extern fn eval_jac_g_cb(n: c_int,
                         jcol: *mut c_int,
                         values: *mut c_double, 
                         user_data: *mut c_void) -> c_int {
-    1
+    0
 }
 
-extern fn eval_h_cb(n: c_int, 
-                    x: *const c_double, 
-                    new_x: c_int,
-                    obj_factor: c_double, 
-                    m: c_int,
-                    lambda: *const c_double,
-                    new_lambda: c_int,
-                    nele_hess: c_int,
-                    irow: *mut c_int,
-                    jcol: *mut c_int,
-                    values: *mut c_double, 
-                    user_data: *mut c_void) -> c_int {
-    1
+extern fn eval_h_cb<T>(n: c_int, 
+                       x: *const c_double, 
+                       new_x: c_int,
+                       obj_factor: c_double, 
+                       m: c_int,
+                       lambda: *const c_double,
+                       new_lambda: c_int,
+                       nele_hess: c_int,
+                       irow: *mut c_int,
+                       jcol: *mut c_int,
+                       values: *mut c_double, 
+                       user_data: *mut c_void) -> c_int 
+where T: ProblemNlpBase + ProblemDims {
+    
+    unsafe {
+        let p: &mut T = &mut *(user_data as *mut T);
+        println!("GOT PROBLEM - eval h");
+    };
+    0
 }
