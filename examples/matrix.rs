@@ -1,4 +1,5 @@
 use optrs::matrix::CooMat;
+use optrs::assert_vec_approx_eq;
 
 fn main() {
 
@@ -22,4 +23,11 @@ fn main() {
     b.sum_duplicates();
 
     println!("b = {:?}", b);
+
+    let x = vec![2.,4.,3.,1.,7.];
+
+    let y = (&a)*x;
+
+    println!("a*x = {:?}", y);
+    assert_vec_approx_eq!(y, vec![23., 17., 39.], epsilon = 1e-8);
 }

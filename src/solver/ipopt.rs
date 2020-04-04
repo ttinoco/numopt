@@ -55,8 +55,8 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
                                        nnzh, 
                                        0, 
                                        eval_f_cb::<T>, 
-                                       eval_g_cb, 
-                                       eval_grad_f_cb, 
+                                       eval_g_cb::<T>, 
+                                       eval_grad_f_cb::<T>, 
                                        eval_jac_g_cb, 
                                        eval_h_cb::<T>)
         };
@@ -104,13 +104,12 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
 //        .collect()
 //}
 
-extern fn eval_f_cb<T>(n: c_int, 
+extern fn eval_f_cb<T>(_n: c_int, 
                        x: *const c_double, 
                        new_x: c_int, 
                        obj_value: *mut c_double, 
                        user_data: *mut c_void) -> c_int 
 where T: ProblemNlpBase {
-    
     unsafe {
         let p: &mut T = &mut *(user_data as *mut T);
         let xx = Vec::from_raw_parts(x as *mut c_double, p.nx(), p.nx());
@@ -122,20 +121,40 @@ where T: ProblemNlpBase {
     0
 }
 
-extern fn eval_grad_f_cb(n: c_int, 
-                         x: *const c_double, 
-                         new_x: c_int, 
-                         grad_f: *mut c_double, 
-                         user_data: *mut c_void) -> c_int {
+extern fn eval_grad_f_cb<T>(_n: c_int, 
+                            x: *const c_double, 
+                            new_x: c_int, 
+                            grad_f: *mut c_double, 
+                            user_data: *mut c_void) -> c_int 
+where T: ProblemNlpBase {
+    unsafe {
+        let p: &mut T = &mut *(user_data as *mut T);
+        let xx = Vec::from_raw_parts(x as *mut c_double, p.nx(), p.nx());
+        if new_x == 1 {
+            p.evaluate(&xx);
+        }
+        ptr::copy(p.gphi().as_ptr(), grad_f, p.nx());
+    };
     0 
 }
 
-extern fn eval_g_cb(n: c_int, 
-                    x: *const c_double, 
-                    new_x: c_int, 
-                    m: c_int,
-                    g: *mut c_double, 
-                    user_data: *mut c_void) -> c_int {
+extern fn eval_g_cb<T>(_n: c_int, 
+                       x: *const c_double, 
+                       new_x: c_int, 
+                       _m: c_int,
+                       g: *mut c_double, 
+                       user_data: *mut c_void) -> c_int 
+where T: ProblemNlpBase {
+    unsafe {
+        let p: &mut T = &mut *(user_data as *mut T);
+        let xx = Vec::from_raw_parts(x as *mut c_double, p.nx(), p.nx());
+        if new_x == 1 {
+            p.evaluate(&xx);
+        }
+        let ax = p.a()*xx;
+        ptr::copy(ax.as_ptr(), g, p.na());
+        ptr::copy(p.f().as_ptr(), g.add(p.na()), p.nf());
+    };
     0
 }
 

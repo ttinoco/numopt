@@ -1,3 +1,4 @@
+use std::ops::Mul;
 use std::fmt::{self, Debug};
 
 pub struct CooMat {
@@ -107,6 +108,20 @@ impl CooMat {
             indices: indices,
             data: data,
         }
+    }
+}
+
+impl Mul<Vec<f64>> for &CooMat {
+
+    type Output = Vec<f64>;
+
+    fn mul(self, rhs: Vec<f64>) -> Vec<f64> {
+        assert_eq!(self.cols(), rhs.len());
+        let mut y = vec![0.; self.rows()];
+        for (row, col, val) in self.iter() {
+            y[row] += rhs[col]*val;
+        }
+        y
     }
 }
 
