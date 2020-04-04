@@ -1,97 +1,79 @@
-use std::str::FromStr;
-use std::ops::{Mul, AddAssign};
-use std::fmt::{self, LowerExp, Debug};
-use num_traits::{Float, NumCast, ToPrimitive};
+use std::fmt::{self, Debug};
 
 use crate::matrix::CooMat;
 
-pub trait ProblemFloat: Float + 
-                        ToPrimitive +
-                        FromStr + 
-                        LowerExp + 
-                        Debug + 
-                        Mul + 
-                        AddAssign {}
+pub type ProblemEval = Box<dyn Fn(&mut f64,         // phi
+                                  &mut Vec<f64>,    // gphi
+                                  &mut CooMat,      // Hphi
+                                  &mut Vec<f64>,    // f
+                                  &mut CooMat,      // J
+                                  &mut Vec<CooMat>, // H
+                                  &[f64]            // x
+                                 ) -> ()>;
 
-pub type ProblemEval<T> = Box<dyn Fn(&mut T,              // phi
-                                     &mut Vec<T>,         // gphi
-                                     &mut CooMat<T>,      // Hphi
-                                     &mut Vec<T>,         // f
-                                     &mut CooMat<T>,      // J
-                                     &mut Vec<CooMat<T>>, // H
-                                     &[T]                 // x
-                                    ) -> ()>;
-
-pub struct Problem<T: ProblemFloat> 
+pub struct Problem 
 {
-    x: Vec<T>,
+    x: Vec<f64>,
     
-    phi: T,
-    gphi: Vec<T>,
-    hphi: CooMat<T>,  // lower triangular
+    phi: f64,
+    gphi: Vec<f64>,
+    hphi: CooMat,  // lower triangular
     
-    a: CooMat<T>,
-    b: Vec<T>,
+    a: CooMat,
+    b: Vec<f64>,
     
-    f: Vec<T>,
-    j: CooMat<T>,
-    h: Vec<CooMat<T>>,
-    hcomb: CooMat<T>, // lower triangular
+    f: Vec<f64>,
+    j: CooMat,
+    h: Vec<CooMat>,
+    hcomb: CooMat, // lower triangular
     
-    l: Vec<T>,
-    u: Vec<T>,
+    l: Vec<f64>,
+    u: Vec<f64>,
     
     p: Vec<bool>,
     
-    eval_fn: ProblemEval<T>,
+    eval_fn: ProblemEval,
 }
 
 pub trait ProblemBase {
-    type N: ProblemFloat;
-    fn x(&self) -> &[Self::N];
-    fn phi(&self) -> Self::N;
-    fn gphi(&self) -> &[Self::N];
-    fn hphi(&self) -> &CooMat<Self::N>;
-    fn a(&self) -> &CooMat<Self::N>;
-    fn b(&self) -> &[Self::N];
-    fn f(&self) -> &[Self::N];
-    fn j(&self) -> &CooMat<Self::N>;
-    fn h(&self) -> &Vec<CooMat<Self::N>>;
-    fn hcomb(&self) -> &CooMat<Self::N>; 
-    fn l(&self) -> &[Self::N];
-    fn u(&self) -> &[Self::N];
+    fn x(&self) -> &[f64];
+    fn phi(&self) -> f64;
+    fn gphi(&self) -> &[f64];
+    fn hphi(&self) -> &CooMat;
+    fn a(&self) -> &CooMat;
+    fn b(&self) -> &[f64];
+    fn f(&self) -> &[f64];
+    fn j(&self) -> &CooMat;
+    fn h(&self) -> &Vec<CooMat>;
+    fn hcomb(&self) -> &CooMat; 
+    fn l(&self) -> &[f64];
+    fn u(&self) -> &[f64];
     fn p(&self) -> &[bool];
-    fn evaluate(&mut self, x: &[Self::N]) -> ();
-    fn combine_h(&mut self, nu: &[Self::N]) -> ();
+    fn evaluate(&mut self, x: &[f64]) -> ();
+    fn combine_h(&mut self, nu: &[f64]) -> ();
+    fn nx(&self) -> usize { self.x().len() }
+    fn na(&self) -> usize { self.b().len() }
+    fn nf(&self) -> usize { self.f().len() }
 }
 
-pub trait ProblemDims {
-    fn nx(&self) -> usize;
-    fn na(&self) -> usize;
-    fn nf(&self) -> usize;
+pub struct ProblemSol {
+    pub x: Vec<f64>,
+    pub lam: Vec<f64>,
+    pub nu: Vec<f64>,
+    pub mu: Vec<f64>,
+    pub pi: Vec<f64>,
 }
 
-pub struct ProblemSol<T: ProblemFloat> {
-    pub x: Vec<T>,
-    pub lam: Vec<T>,
-    pub nu: Vec<T>,
-    pub mu: Vec<T>,
-    pub pi: Vec<T>,
-}
-
-impl<T: Float + FromStr + LowerExp + Debug + Mul + AddAssign + ToPrimitive> ProblemFloat for T { }
-
-impl<T: ProblemFloat> Problem<T> 
-{
-    pub fn new(hphi: CooMat<T>, 
-               a: CooMat<T>, 
-               b: Vec<T>,
-               j: CooMat<T>,
-               h: Vec<CooMat<T>>,  
-               l: Vec<T>, 
-               u: Vec<T>, 
+impl Problem {
+    pub fn new(hphi: CooMat, 
+               a: CooMat, 
+               b: Vec<f64>,
+               j: CooMat,
+               h: Vec<CooMat>,  
+               l: Vec<f64>, 
+               u: Vec<f64>, 
                p: Vec<bool>,
-               eval_fn: ProblemEval<T>) -> Self {
+               eval_fn: ProblemEval) -> Self {
 
         let nx = a.cols();
         let na = a.rows();
@@ -119,7 +101,7 @@ impl<T: ProblemFloat> Problem<T>
 
         let mut k: usize = 0;
         let hcomb_nnz = h.iter().map(|h| h.nnz()).sum();
-        let mut hcomb: CooMat<T> = CooMat::from_nnz((nx, nx), hcomb_nnz);
+        let mut hcomb = CooMat::from_nnz((nx, nx), hcomb_nnz);
         for hh in h.iter() {
             for (row, col, _val) in hh.iter() {
                 hcomb.set_row_ind(k, row);
@@ -129,13 +111,13 @@ impl<T: ProblemFloat> Problem<T>
         }
         
         Self {
-            x: vec![NumCast::from(0.).unwrap();nx],
-            phi: NumCast::from(0.).unwrap(),
-            gphi: vec![NumCast::from(0.).unwrap();nx],
+            x: vec![0.;nx],
+            phi: 0.,
+            gphi: vec![0.;nx],
             hphi: hphi,
             a: a,
             b: b,
-            f: vec![NumCast::from(0.).unwrap();nf],
+            f: vec![0.;nf],
             j: j,
             h: h,
             hcomb: hcomb,
@@ -147,24 +129,23 @@ impl<T: ProblemFloat> Problem<T>
     }
 }
 
-impl<N: ProblemFloat> ProblemBase for Problem<N> {
+impl ProblemBase for Problem {
 
-    type N = N;
-    fn x(&self) -> &[N] { &self.x }
-    fn phi(&self) -> N { self.phi }
-    fn gphi(&self) -> &[N] { &self.gphi }
-    fn hphi(&self) -> &CooMat<N> { &self.hphi }
-    fn a(&self) -> &CooMat<N> { &self.a } 
-    fn b(&self) -> &[N] { &self.b }
-    fn f(&self) -> &[N] { &self.f }
-    fn j(&self) -> &CooMat<N> { &self.j } 
-    fn h(&self) -> &Vec<CooMat<N>> { &self.h } 
-    fn hcomb(&self) -> &CooMat<N> { &self.hcomb }
-    fn l(&self) -> &[N] { &self.l }
-    fn u(&self) -> &[N] { &self.u }
+    fn x(&self) -> &[f64] { &self.x }
+    fn phi(&self) -> f64 { self.phi }
+    fn gphi(&self) -> &[f64] { &self.gphi }
+    fn hphi(&self) -> &CooMat { &self.hphi }
+    fn a(&self) -> &CooMat { &self.a } 
+    fn b(&self) -> &[f64] { &self.b }
+    fn f(&self) -> &[f64] { &self.f }
+    fn j(&self) -> &CooMat { &self.j } 
+    fn h(&self) -> &Vec<CooMat> { &self.h } 
+    fn hcomb(&self) -> &CooMat { &self.hcomb }
+    fn l(&self) -> &[f64] { &self.l }
+    fn u(&self) -> &[f64] { &self.u }
     fn p(&self) -> &[bool] { &self.p } 
     
-    fn evaluate(&mut self, x: &[N]) -> () {
+    fn evaluate(&mut self, x: &[f64]) -> () {
         (self.eval_fn)(&mut self.phi, 
                        &mut self.gphi,
                        &mut self.hphi,
@@ -174,7 +155,7 @@ impl<N: ProblemFloat> ProblemBase for Problem<N> {
                        x)
     }
 
-    fn combine_h(&mut self, nu: &[N]) -> () {
+    fn combine_h(&mut self, nu: &[f64]) -> () {
 
         assert_eq!(self.nf(), nu.len());
  
@@ -188,26 +169,19 @@ impl<N: ProblemFloat> ProblemBase for Problem<N> {
     }
 }
 
-impl<T: ProblemBase> ProblemDims for T {
-    fn nx(&self) -> usize { self.x().len() }
-    fn na(&self) -> usize { self.b().len() }
-    fn nf(&self) -> usize { self.f().len() }
-}
-
-impl<T: ProblemFloat> ProblemSol<T> {
+impl ProblemSol {
     pub fn new(nx: usize, na: usize, nf: usize) -> Self {
-        let z = NumCast::from(0.).unwrap();
         Self {
-            x: vec![z;nx],
-            lam: vec![z;na],
-            nu: vec![z;nf],
-            mu: vec![z;nx],
-            pi: vec![z;nx]
+            x: vec![0.;nx],
+            lam: vec![0.;na],
+            nu: vec![0.;nf],
+            mu: vec![0.;nx],
+            pi: vec![0.;nx]
         }
     }
 }
 
-impl<T: ProblemFloat> Debug for ProblemSol<T> {
+impl Debug for ProblemSol {
 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ProblemSol")

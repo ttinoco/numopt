@@ -1,31 +1,29 @@
 use std::fs::File;
-use num_traits::{Float, NumCast};
 use std::io::{self, Write, BufWriter};
  
 use crate::utils::dot;
 use crate::matrix::{CooMat,
                     CsrMat};
 use crate::problem::{Problem, 
-                     ProblemFloat,
-                     ProblemBase, 
-                     ProblemDims};
+                     ProblemBase}; 
 
-pub struct ProblemMilp<T: ProblemFloat> {
-    c: Vec<T>,
-    base: Problem<T>,
+pub struct ProblemMilp {
+    c: Vec<f64>,
+    base: Problem,
 }
 
 pub trait ProblemMilpBase {
-    type N: ProblemFloat;
-    fn x(&self) -> &[Self::N];
-    fn c(&self) -> &[Self::N];
-    fn a(&self) -> &CooMat<Self::N>;
-    fn b(&self) -> &[Self::N];
-    fn l(&self) -> &[Self::N];
-    fn u(&self) -> &[Self::N];
+    fn x(&self) -> &[f64];
+    fn c(&self) -> &[f64];
+    fn a(&self) -> &CooMat;
+    fn b(&self) -> &[f64];
+    fn l(&self) -> &[f64];
+    fn u(&self) -> &[f64];
     fn p(&self) -> &[bool];
-    fn base(&self) -> &Problem<Self::N>;
-    fn base_mut(&mut self) -> &mut Problem<Self::N>;
+    fn base(&self) -> &Problem;
+    fn base_mut(&mut self) -> &mut Problem;
+    fn nx(&self) -> usize { self.x().len() }
+    fn na(&self) -> usize { self.b().len() }
 }
 
 pub trait ProblemMilpIO {
@@ -34,21 +32,21 @@ pub trait ProblemMilpIO {
     fn write_to_lp_file(&self, filename: &str) -> io::Result<()>;
 }
 
-impl<T: 'static + ProblemFloat> ProblemMilp<T> {
-    pub fn new(c: Vec<T>,
-               a: CooMat<T>,
-               b: Vec<T>,  
-               l: Vec<T>,
-               u: Vec<T>, 
+impl ProblemMilp {
+    pub fn new(c: Vec<f64>,
+               a: CooMat,
+               b: Vec<f64>,  
+               l: Vec<f64>,
+               u: Vec<f64>, 
                p: Vec<bool>) -> Self {
         let cc = c.clone();
-        let eval_fn = Box::new(move | phi: &mut T, 
-                                      gphi: &mut Vec<T>, 
-                                      _hphi: &mut CooMat<T>,
-                                      _f: &mut Vec<T>,
-                                      _j: &mut CooMat<T>,
-                                      _h: &mut Vec<CooMat<T>>,
-                                      x: &[T] | {
+        let eval_fn = Box::new(move | phi: &mut f64, 
+                                      gphi: &mut Vec<f64>, 
+                                      _hphi: &mut CooMat,
+                                      _f: &mut Vec<f64>,
+                                      _j: &mut CooMat,
+                                      _h: &mut Vec<CooMat>,
+                                      x: &[f64] | {
             *phi = dot(&c, x);
             gphi.copy_from_slice(&c);
         });
@@ -69,39 +67,37 @@ impl<T: 'static + ProblemFloat> ProblemMilp<T> {
     }
 }
 
-impl<N: ProblemFloat> ProblemMilpBase for ProblemMilp<N> {
-    type N = N;
-    fn x(&self) -> &[N] { &self.base.x() }
-    fn c(&self) -> &[N] { &self.c }
-    fn a(&self) -> &CooMat<N> { &self.base.a() } 
-    fn b(&self) -> &[N] { &self.base.b() }
-    fn l(&self) -> &[N] { &self.base.l() }
-    fn u(&self) -> &[N] { &self.base.u() }
+impl ProblemMilpBase for ProblemMilp {
+    fn x(&self) -> &[f64] { &self.base.x() }
+    fn c(&self) -> &[f64] { &self.c }
+    fn a(&self) -> &CooMat { &self.base.a() } 
+    fn b(&self) -> &[f64] { &self.base.b() }
+    fn l(&self) -> &[f64] { &self.base.l() }
+    fn u(&self) -> &[f64] { &self.base.u() }
     fn p(&self) -> &[bool] { self.base.p() }
-    fn base(&self) -> &Problem<Self::N> { &self.base }
-    fn base_mut(&mut self) -> &mut Problem<Self::N> { &mut self.base }
+    fn base(&self) -> &Problem { &self.base }
+    fn base_mut(&mut self) -> &mut Problem { &mut self.base }
 }
 
-impl<N: ProblemFloat> ProblemBase for ProblemMilp<N> {
-    type N = N;
-    fn x(&self) -> &[N] { self.base.x() }
-    fn phi(&self) -> N { self.base().phi() }
-    fn gphi(&self) -> &[N] { self.base().gphi() }
-    fn hphi(&self) -> &CooMat<N> { self.base().hphi() }
-    fn a(&self) -> &CooMat<N> { self.base.a() }
-    fn b(&self) -> &[N] { self.base.b() }
-    fn f(&self) -> &[N] { self.base().f() }
-    fn j(&self) -> &CooMat<N> { self.base().j() }
-    fn h(&self) -> &Vec<CooMat<N>> { self.base().h() }
-    fn hcomb(&self) -> &CooMat<N> { self.base().hcomb() }
-    fn l(&self) -> &[N] { self.base.l() }
-    fn u(&self) -> &[N] { self.base.u() }
+impl ProblemBase for ProblemMilp {
+    fn x(&self) -> &[f64] { self.base.x() }
+    fn phi(&self) -> f64 { self.base().phi() }
+    fn gphi(&self) -> &[f64] { self.base().gphi() }
+    fn hphi(&self) -> &CooMat { self.base().hphi() }
+    fn a(&self) -> &CooMat { self.base.a() }
+    fn b(&self) -> &[f64] { self.base.b() }
+    fn f(&self) -> &[f64] { self.base().f() }
+    fn j(&self) -> &CooMat { self.base().j() }
+    fn h(&self) -> &Vec<CooMat> { self.base().h() }
+    fn hcomb(&self) -> &CooMat { self.base().hcomb() }
+    fn l(&self) -> &[f64] { self.base.l() }
+    fn u(&self) -> &[f64] { self.base.u() }
     fn p(&self) -> &[bool] { self.base.p() }
-    fn evaluate(&mut self, x: &[N]) -> () { self.base_mut().evaluate(x) }
-    fn combine_h(&mut self, _nu: &[N]) -> () {}
+    fn evaluate(&mut self, x: &[f64]) -> () { self.base_mut().evaluate(x) }
+    fn combine_h(&mut self, _nu: &[f64]) -> () {}
 }
 
-impl<T: ProblemMilpBase + ProblemDims> ProblemMilpIO for T {
+impl<T: ProblemMilpBase> ProblemMilpIO for T {
     
     type P = T;
 
@@ -114,8 +110,8 @@ impl<T: ProblemMilpBase + ProblemDims> ProblemMilpIO for T {
 
         let mut pre: char;
         let mut j: usize;
-        let mut d: T::N;
-        let mut b: T::N;
+        let mut d: f64;
+        let mut b: f64;
 
         let f = File::create(filename)?;
 
@@ -125,16 +121,16 @@ impl<T: ProblemMilpBase + ProblemDims> ProblemMilpIO for T {
         w.write("Minimize\n".as_bytes())?;
         w.write(" obj:\n".as_bytes())?;
         for (i, c) in self.c().iter().enumerate() {
-            if c > &NumCast::from(0.).unwrap() {
+            if *c > 0. {
                 pre = '+';
             }
-            else if c < &NumCast::from(0.).unwrap() {
+            else if *c < 0. {
                 pre = '-';
             }
             else {
                 continue;
             }
-            if c.abs() == NumCast::from(1.).unwrap() {
+            if c.abs() == 1. {
                 w.write(format!("     {} x_{}\n", pre, i).as_bytes())?;
             }
             else {
@@ -146,7 +142,7 @@ impl<T: ProblemMilpBase + ProblemDims> ProblemMilpIO for T {
 
         // Constraints
         w.write("Subject to\n".as_bytes())?;
-        let mut a: CsrMat<T::N> = self.a().to_csr();
+        let mut a: CsrMat = self.a().to_csr();
         a.sum_duplicates();
         for i in 0..a.rows() {
             b = self.b()[i];
@@ -154,16 +150,16 @@ impl<T: ProblemMilpBase + ProblemDims> ProblemMilpIO for T {
             for k in a.indptr()[i]..a.indptr()[i+1] {
                 j = a.indices()[k];
                 d = a.data()[k];
-                if d > NumCast::from(0.).unwrap() {
+                if d > 0. {
                     pre = '+';
                 }
-                else if d < NumCast::from(0.).unwrap() {
+                else if d < 0. {
                     pre = '-';
                 }
                 else {
                     continue;
                 }
-                if d.abs() == NumCast::from(1.).unwrap() {
+                if d.abs() == 1. {
                     w.write(format!("     {} x_{}\n", pre, j).as_bytes())?;
                 }
                 else {

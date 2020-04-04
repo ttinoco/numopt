@@ -2,6 +2,7 @@ use std::ffi::OsStr;
 use tempfile::Builder;
 use std::fs::remove_file;
 use std::process::Command;
+use std::marker::PhantomData;
 use simple_error::SimpleError;
 
 use crate::solver::{Solver, 
@@ -11,22 +12,24 @@ use crate::problem::{ProblemSol,
                      ProblemLpBase, 
                      ProblemMilpIO};
 
-pub struct SolverClpCmd<T: ProblemLpBase> {
+pub struct SolverClpCmd<T> {
     status: SolverStatus,
-    solution: Option<ProblemSol<T::N>>,
+    solution: Option<ProblemSol>,
+    phantom: PhantomData<T>,
 }
 
-impl<T: ProblemLpBase + ProblemMilpIO> Solver<T, T::N> for SolverClpCmd<T> {
+impl<T: ProblemLpBase + ProblemMilpIO> Solver<T> for SolverClpCmd<T> {
 
-    fn new() -> Self { 
+    fn new(p: &T) -> Self { 
         Self {
             status: SolverStatus::Unknown,
             solution: None,
+            phantom: PhantomData,
         } 
     }
 
     fn status(&self) -> &SolverStatus { &self.status }
-    fn solution(&self) -> &Option<ProblemSol<T::N>> { &self.solution }
+    fn solution(&self) -> &Option<ProblemSol> { &self.solution }
 
     fn solve(&mut self, p: &mut T) -> Result<(), SimpleError> {
 

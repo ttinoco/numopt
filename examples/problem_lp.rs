@@ -50,7 +50,7 @@ fn main () {
     println!("p = {:?}", optrs::problem::ProblemMilpBase::p(&p));
 
     // Solve with Clp as Lp
-    let mut s = SolverClpCmd::new();
+    let mut s = SolverClpCmd::new(&p);
     s.solve(&mut p).unwrap();
 
     println!("\n*************");
@@ -73,7 +73,7 @@ fn main () {
                             epsilon=1e-8);
 
     // Solve with Cbc as Milp
-    let mut s = SolverCbcCmd::new();
+    let mut s = SolverCbcCmd::new(&p);
     s.solve(&mut p).unwrap();
 
     println!("*************");

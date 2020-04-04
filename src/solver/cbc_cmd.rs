@@ -1,35 +1,34 @@
 use std::fs::File;
 use std::ffi::OsStr;
 use tempfile::Builder;
-use num_traits::NumCast;
 use std::io::prelude::*;
 use std::fs::remove_file;
 use std::process::Command;
+use std::marker::PhantomData;
 use simple_error::SimpleError;
 use std::io::{self, BufReader};
 
 use crate::solver::{Solver, 
                     SolverStatus};
 use crate::problem::{ProblemSol,
-                     ProblemDims,
                      ProblemMilpBase, 
                      ProblemMilpIO};
 
 pub struct SolverCbcCmd<T: ProblemMilpBase> {
     status: SolverStatus,
-    solution: Option<ProblemSol<T::N>>,
+    solution: Option<ProblemSol>,
+    phantom: PhantomData<T>,
 }
 
-impl<T: ProblemMilpBase + ProblemDims> SolverCbcCmd<T> {
+impl<T: ProblemMilpBase> SolverCbcCmd<T> {
 
-    pub fn read_sol_file(fname: &str, p: &T, cbc: bool) -> 
-                         io::Result<(SolverStatus, ProblemSol<T::N>)> {
+    pub fn read_sol_file(fname: &str, p: &T, cbc: bool) -> io::Result<(SolverStatus, ProblemSol)> {
         
         let mut name: String;
         let mut dtype: String;
         let mut index: usize;
-        let mut value: T::N;
-        let mut mul: T::N;
+        let mut value: f64;
+        let mut mul: f64;
         let mut status = SolverStatus::Unknown;
         let mut solution = ProblemSol::new(p.nx(),p.na(), 0);
         let f = File::open(fname)?;
@@ -86,7 +85,7 @@ impl<T: ProblemMilpBase + ProblemDims> SolverCbcCmd<T> {
             // Variable
              if dtype == "x" {
                 solution.x[index] = value;
-                if mul > NumCast::from(0.).unwrap() {
+                if mul > 0. {
                     solution.pi[index] = mul;
                 }
                 else {
@@ -107,17 +106,18 @@ impl<T: ProblemMilpBase + ProblemDims> SolverCbcCmd<T> {
     }
 }
 
-impl<T: ProblemMilpBase + ProblemMilpIO + ProblemDims> Solver<T, T::N> for SolverCbcCmd<T> {
+impl<T: ProblemMilpBase + ProblemMilpIO>  Solver<T> for SolverCbcCmd<T> {
 
-    fn new() -> Self { 
+    fn new(p: &T) -> Self { 
         Self {
             status: SolverStatus::Unknown,
             solution: None,
+            phantom: PhantomData,
         } 
     }
 
     fn status(&self) -> &SolverStatus { &self.status }
-    fn solution(&self) -> &Option<ProblemSol<T::N>> { &self.solution }
+    fn solution(&self) -> &Option<ProblemSol> { &self.solution }
 
     fn solve(&mut self, p: &mut T) -> Result<(), SimpleError> {
 
@@ -178,7 +178,7 @@ impl<T: ProblemMilpBase + ProblemMilpIO + ProblemDims> Solver<T, T::N> for Solve
         remove_file(&input_filename).ok();
 
         // Read output file
-        let (status, solution) = match Self::read_sol_file(&output_filename, &p, true) {
+        let (status, solution) = match Self::read_sol_file(&output_filename, p, true) {
             Ok((s, sol)) => (s, sol),
             Err(_e) => {
                 remove_file(&output_filename).ok();

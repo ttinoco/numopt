@@ -3,41 +3,42 @@ use crate::matrix::CooMat;
 
 use crate::problem::{Problem, 
                      ProblemEval,
-                     ProblemFloat,
                      ProblemBase};
 
-pub struct ProblemNlp<T: ProblemFloat> {
-    base: Problem<T>,
+pub struct ProblemNlp {
+    base: Problem,
 }
 
 pub trait ProblemNlpBase {
-    type N: ProblemFloat;
-    fn x(&self) -> &[Self::N];
-    fn phi(&self) -> Self::N;
-    fn gphi(&self) -> &[Self::N];
-    fn hphi(&self) -> &CooMat<Self::N>;
-    fn a(&self) -> &CooMat<Self::N>;
-    fn b(&self) -> &[Self::N];
-    fn f(&self) -> &[Self::N];
-    fn j(&self) -> &CooMat<Self::N>;
-    fn h(&self) -> &Vec<CooMat<Self::N>>;
-    fn hcomb(&self) -> &CooMat<Self::N>; 
-    fn l(&self) -> &[Self::N];
-    fn u(&self) -> &[Self::N];
-    fn evaluate(&mut self, x: &[Self::N]) -> ();
-    fn combine_h(&mut self, nu: &[Self::N]) -> ();
-    fn base(&self) -> &Problem<Self::N>;
+    fn x(&self) -> &[f64];
+    fn phi(&self) -> f64;
+    fn gphi(&self) -> &[f64];
+    fn hphi(&self) -> &CooMat;
+    fn a(&self) -> &CooMat;
+    fn b(&self) -> &[f64];
+    fn f(&self) -> &[f64];
+    fn j(&self) -> &CooMat;
+    fn h(&self) -> &Vec<CooMat>;
+    fn hcomb(&self) -> &CooMat; 
+    fn l(&self) -> &[f64];
+    fn u(&self) -> &[f64];
+    fn evaluate(&mut self, x: &[f64]) -> ();
+    fn combine_h(&mut self, nu: &[f64]) -> ();
+    fn base(&self) -> &Problem;
+    fn nx(&self) -> usize { self.x().len() }
+    fn na(&self) -> usize { self.b().len() }
+    fn nf(&self) -> usize { self.f().len() }
 }
 
-impl<T: ProblemFloat> ProblemNlp<T> {
-    pub fn new(hphi: CooMat<T>, 
-               a: CooMat<T>, 
-               b: Vec<T>,
-               j: CooMat<T>,
-               h: Vec<CooMat<T>>,  
-               l: Vec<T>, 
-               u: Vec<T>, 
-               eval_fn: ProblemEval<T>) -> Self {
+impl ProblemNlp {
+    pub fn new(hphi: CooMat, 
+               a: CooMat, 
+               b: Vec<f64>,
+               j: CooMat,
+               h: Vec<CooMat>,  
+               l: Vec<f64>, 
+               u: Vec<f64>, 
+               eval_fn: ProblemEval) -> Self {
         let p = vec![false;a.cols()];
         let base = Problem::new(hphi, a, b, j, h, l, u, p, eval_fn);
         Self {
@@ -46,40 +47,38 @@ impl<T: ProblemFloat> ProblemNlp<T> {
     }
 }
 
-impl<N: ProblemFloat> ProblemNlpBase for ProblemNlp<N> {
-    type N = N;
-    fn x(&self) -> &[N] { &self.base.x() }
-    fn phi(&self) -> N { self.base.phi() }
-    fn gphi(&self) -> &[N] { &self.base.gphi() }
-    fn hphi(&self) -> &CooMat<N> { &self.base.hphi() }
-    fn a(&self) -> &CooMat<N> { &self.base.a() } 
-    fn b(&self) -> &[N] { &self.base.b() }
-    fn f(&self) -> &[N] { &self.base.f() }
-    fn j(&self) -> &CooMat<N> { &self.base.j() } 
-    fn h(&self) -> &Vec<CooMat<N>> { &self.base.h() } 
-    fn hcomb(&self) -> &CooMat<N> { &self.base.hcomb() }
-    fn l(&self) -> &[N] { &self.base.l() }
-    fn u(&self) -> &[N] { &self.base.u() }
-    fn evaluate(&mut self, x: &[N]) -> () { self.base.evaluate(x) }
-    fn combine_h(&mut self, nu: &[N]) -> () { self.base.combine_h(nu) }
-    fn base(&self) -> &Problem<Self::N> { &self.base }
+impl ProblemNlpBase for ProblemNlp {
+    fn x(&self) -> &[f64] { &self.base.x() }
+    fn phi(&self) -> f64 { self.base.phi() }
+    fn gphi(&self) -> &[f64] { &self.base.gphi() }
+    fn hphi(&self) -> &CooMat { &self.base.hphi() }
+    fn a(&self) -> &CooMat { &self.base.a() } 
+    fn b(&self) -> &[f64] { &self.base.b() }
+    fn f(&self) -> &[f64] { &self.base.f() }
+    fn j(&self) -> &CooMat { &self.base.j() } 
+    fn h(&self) -> &Vec<CooMat> { &self.base.h() } 
+    fn hcomb(&self) -> &CooMat { &self.base.hcomb() }
+    fn l(&self) -> &[f64] { &self.base.l() }
+    fn u(&self) -> &[f64] { &self.base.u() }
+    fn evaluate(&mut self, x: &[f64]) -> () { self.base.evaluate(x) }
+    fn combine_h(&mut self, nu: &[f64]) -> () { self.base.combine_h(nu) }
+    fn base(&self) -> &Problem { &self.base }
 }
 
-impl<N: ProblemFloat> ProblemBase for ProblemNlp<N> {
-    type N = N;
-    fn x(&self) -> &[N] { &self.base.x() }
-    fn phi(&self) -> N { self.base.phi() }
-    fn gphi(&self) -> &[N] { &self.base.gphi() }
-    fn hphi(&self) -> &CooMat<N> { &self.base.hphi() }
-    fn a(&self) -> &CooMat<N> { &self.base.a() } 
-    fn b(&self) -> &[N] { &self.base.b() }
-    fn f(&self) -> &[N] { &self.base.f() }
-    fn j(&self) -> &CooMat<N> { &self.base.j() } 
-    fn h(&self) -> &Vec<CooMat<N>> { &self.base.h() } 
-    fn hcomb(&self) -> &CooMat<N> { &self.base.hcomb() }
-    fn l(&self) -> &[N] { &self.base.l() }
-    fn u(&self) -> &[N] { &self.base.u() }
+impl ProblemBase for ProblemNlp {
+    fn x(&self) -> &[f64] { &self.base.x() }
+    fn phi(&self) -> f64 { self.base.phi() }
+    fn gphi(&self) -> &[f64] { &self.base.gphi() }
+    fn hphi(&self) -> &CooMat { &self.base.hphi() }
+    fn a(&self) -> &CooMat { &self.base.a() } 
+    fn b(&self) -> &[f64] { &self.base.b() }
+    fn f(&self) -> &[f64] { &self.base.f() }
+    fn j(&self) -> &CooMat { &self.base.j() } 
+    fn h(&self) -> &Vec<CooMat> { &self.base.h() } 
+    fn hcomb(&self) -> &CooMat { &self.base.hcomb() }
+    fn l(&self) -> &[f64] { &self.base.l() }
+    fn u(&self) -> &[f64] { &self.base.u() }
     fn p(&self) -> &[bool] { self.base.p() }
-    fn evaluate(&mut self, x: &[N]) -> () { self.base.evaluate(x) }
-    fn combine_h(&mut self, nu: &[N]) -> () { self.base.combine_h(nu) }
+    fn evaluate(&mut self, x: &[f64]) -> () { self.base.evaluate(x) }
+    fn combine_h(&mut self, nu: &[f64]) -> () { self.base.combine_h(nu) }
 }

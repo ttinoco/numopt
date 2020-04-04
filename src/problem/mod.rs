@@ -5,9 +5,7 @@ mod nlp;
 
 pub use crate::problem::base::{Problem,
                                ProblemBase,
-                               ProblemFloat,
                                ProblemEval,
-                               ProblemDims,
                                ProblemSol};
 
 pub use crate::problem::lp::{ProblemLp,

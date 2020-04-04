@@ -1,33 +1,34 @@
 use std::ptr;
+use std::marker::PhantomData;
 use simple_error::SimpleError;
-use num_traits::{NumCast, ToPrimitive};
+use num_traits::cast::ToPrimitive;
 use libc::{c_int, c_void, c_double};
 
 use libipopt_sys as cipopt;
 
 use crate::solver::{Solver, 
-                   SolverStatus};
+                    SolverStatus};
 use crate::problem::{ProblemSol,
-                     ProblemFloat,
-                     ProblemDims,
                      ProblemNlpBase};
 
-pub struct SolverIpopt<T: ProblemNlpBase> {
+pub struct SolverIpopt<T> {
     status: SolverStatus,
-    solution: Option<ProblemSol<T::N>>,
+    solution: Option<ProblemSol>,
+    phantom: PhantomData<T>,
 }
 
-impl<T: ProblemNlpBase + ProblemDims> Solver<T, T::N> for SolverIpopt<T> {
+impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
 
-    fn new() -> Self { 
+    fn new(p: &T) -> Self { 
         Self {
             status: SolverStatus::Unknown,
             solution: None,
+            phantom: PhantomData,
         } 
     }
 
     fn status(&self) -> &SolverStatus { &self.status }
-    fn solution(&self) -> &Option<ProblemSol<T::N>> { &self.solution }
+    fn solution(&self) -> &Option<ProblemSol> { &self.solution }
 
     fn solve(&mut self, p: &mut T) -> Result<(), SimpleError> {
 
@@ -37,8 +38,6 @@ impl<T: ProblemNlpBase + ProblemDims> Solver<T, T::N> for SolverIpopt<T> {
 
         let n: c_int = p.nx().to_i32().unwrap();
         let m: c_int = (p.na() + p.nf()).to_i32().unwrap();
-        let l: Vec<f64> = p.l().iter().map(|x| x.to_f64().unwrap()).collect();
-        let u: Vec<f64> = p.u().iter().map(|x| x.to_f64().unwrap()).collect();
         let glu: Vec<f64> = vec![0.; p.na()+p.nf()];
         let nnzj: c_int = (p.a().nnz() + p.j().nnz()).to_i32().unwrap();
         let nnzh: c_int = (p.hphi().nnz() + p.hcomb().nnz()).to_i32().unwrap();
@@ -47,8 +46,8 @@ impl<T: ProblemNlpBase + ProblemDims> Solver<T, T::N> for SolverIpopt<T> {
         println!("CREATE");
         let cprob: cipopt::IpoptProblem = unsafe {
             cipopt::CreateIpoptProblem(n, 
-                                       l.as_ptr(), 
-                                       u.as_ptr(), 
+                                       p.l().as_ptr(), 
+                                       p.u().as_ptr(), 
                                        m, 
                                        glu.as_ptr(), 
                                        glu.as_ptr(), 
@@ -95,30 +94,30 @@ impl<T: ProblemNlpBase + ProblemDims> Solver<T, T::N> for SolverIpopt<T> {
     }
 }
 
-unsafe fn cast_to_vec<S, T>(x: *mut S, len: usize, cap: usize) -> Vec<T> 
-where S: ToPrimitive + Copy,
-      T: ProblemFloat {
-    
-    Vec::from_raw_parts(x, len, cap)
-        .iter()
-        .map(|xx| NumCast::from(*xx).unwrap())
-        .collect()
-}
+//unsafe fn cast_to_vec<S, T>(x: *mut S, len: usize, cap: usize) -> Vec<T> 
+//where S: ToPrimitive + Copy,
+//      T: ProblemFloat {
+//    
+//    Vec::from_raw_parts(x, len, cap)
+//        .iter()
+//        .map(|xx| NumCast::from(*xx).unwrap())
+//        .collect()
+//}
 
 extern fn eval_f_cb<T>(n: c_int, 
                        x: *const c_double, 
                        new_x: c_int, 
                        obj_value: *mut c_double, 
                        user_data: *mut c_void) -> c_int 
-where T: ProblemNlpBase + ProblemDims {
+where T: ProblemNlpBase {
     
     unsafe {
         let p: &mut T = &mut *(user_data as *mut T);
-        let xx = cast_to_vec::<c_double, T::N>(x as *mut c_double, p.nx(), p.nx());
+        let xx = Vec::from_raw_parts(x as *mut c_double, p.nx(), p.nx());
         if new_x == 1 {
             p.evaluate(&xx);
         }
-        *obj_value = p.phi().to_f64().unwrap();
+        *obj_value = p.phi();
     };
     0
 }
@@ -164,7 +163,7 @@ extern fn eval_h_cb<T>(n: c_int,
                        jcol: *mut c_int,
                        values: *mut c_double, 
                        user_data: *mut c_void) -> c_int 
-where T: ProblemNlpBase + ProblemDims {
+where T: ProblemNlpBase {
     
     unsafe {
         let p: &mut T = &mut *(user_data as *mut T);

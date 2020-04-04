@@ -1,8 +1,7 @@
 use std::fmt;
 use simple_error::SimpleError;
 
-use crate::problem::{ProblemFloat, 
-                     ProblemSol};
+use crate::problem::{ProblemSol};
 
 pub enum SolverStatus {
     Solved,
@@ -10,10 +9,10 @@ pub enum SolverStatus {
     Error,
 }
 
-pub trait Solver<T, N: ProblemFloat> {
-    fn new() -> Self;
+pub trait Solver<T> {
+    fn new(p: &T) -> Self;
     fn status(&self) -> &SolverStatus;
-    fn solution(&self) -> &Option<ProblemSol<N>>;
+    fn solution(&self) -> &Option<ProblemSol>;
     fn solve(&mut self, p: &mut T) -> Result<(), SimpleError>;
 }
 

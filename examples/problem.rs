@@ -32,10 +32,10 @@ fn main () {
         vec![false;5],
         Box::new(| phi: &mut f64, 
                    gphi: &mut Vec<f64>, 
-                   _hphi: &mut CooMat<f64>,
+                   _hphi: &mut CooMat,
                    _f: &mut Vec<f64>,
-                   _j: &mut CooMat<f64>,
-                   _h: &mut Vec<CooMat<f64>>,
+                   _j: &mut CooMat,
+                   _h: &mut Vec<CooMat>,
                    x: &[f64] | {
             *phi = 180.*x[0] + 160.*x[1];
             gphi[0] = 180.;

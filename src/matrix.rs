@@ -1,36 +1,30 @@
-use std::ops::AddAssign;
 use std::fmt::{self, Debug};
-use num_traits::{Float, NumCast};
 
-pub trait MatFloat: Float + AddAssign + Debug {}
-
-pub struct CooMat<N: MatFloat> {
+pub struct CooMat {
     shape: (usize, usize),
     row_inds: Vec<usize>,
     col_inds: Vec<usize>,
-    data: Vec<N>,
+    data: Vec<f64>,
 }
 
-pub struct CooMatIter<'a, N: MatFloat> {
+pub struct CooMatIter<'a> {
     k: usize,
-    mat: &'a CooMat<N>,
+    mat: &'a CooMat,
 }
 
-pub struct CsrMat<N: MatFloat> {
+pub struct CsrMat {
     shape: (usize, usize),
     indptr: Vec<usize>,
     indices: Vec<usize>,
-    data: Vec<N>,
+    data: Vec<f64>,
 }
 
-impl<T: Float + AddAssign + Debug> MatFloat for T { }
-
-impl<N: MatFloat> CooMat<N> {
+impl CooMat {
 
     pub fn new(shape: (usize, usize), 
                row_inds: Vec<usize>,
                col_inds: Vec<usize>,
-               data: Vec<N>) -> Self {
+               data: Vec<f64>) -> Self {
         assert_eq!(row_inds.len(), col_inds.len());
         assert_eq!(row_inds.len(), data.len());
         Self {
@@ -45,7 +39,7 @@ impl<N: MatFloat> CooMat<N> {
                         row_inds: Vec<usize>,
                         col_inds: Vec<usize>) -> Self {
         assert_eq!(row_inds.len(), col_inds.len());
-        let data = vec![NumCast::from(0.).unwrap();row_inds.len()];
+        let data = vec![0.;row_inds.len()];
         Self {
             shape: shape,
             row_inds: row_inds,
@@ -59,7 +53,7 @@ impl<N: MatFloat> CooMat<N> {
             shape: shape,
             row_inds: vec![0;nnz],
             col_inds: vec![0;nnz],
-            data: vec![NumCast::from(0.).unwrap();nnz],
+            data: vec![0.;nnz],
         }
     }
 
@@ -68,17 +62,17 @@ impl<N: MatFloat> CooMat<N> {
     pub fn nnz(&self) -> usize { self.row_inds.len() }
     pub fn row_inds(&self) -> &[usize] { &self.row_inds }
     pub fn col_inds(&self) -> &[usize] { &self.col_inds }
-    pub fn data(&self) -> &[N] { &self.data }
+    pub fn data(&self) -> &[f64] { &self.data }
     pub fn set_row_ind(&mut self, k: usize, row: usize) -> () { self.row_inds[k] = row }
     pub fn set_col_ind(&mut self, k: usize, row: usize) -> () { self.col_inds[k] = row }
-    pub fn set_data(&mut self, k:usize, d: N) -> () { self.data[k] = d }
-    pub fn iter(&self) -> CooMatIter<N> { CooMatIter::new(&self) }
+    pub fn set_data(&mut self, k:usize, d: f64) -> () { self.data[k] = d }
+    pub fn iter(&self) -> CooMatIter { CooMatIter::new(&self) }
 
-    pub fn to_csr(&self) -> CsrMat<N> {
+    pub fn to_csr(&self) -> CsrMat {
 
         let mut indptr: Vec<usize> = vec![0; self.rows()+1];
         let mut indices: Vec<usize> = vec![0; self.nnz()];
-        let mut data: Vec<N> = vec![NumCast::from(0.).unwrap(); self.nnz()];
+        let mut data: Vec<f64> = vec![0.; self.nnz()];
 
         let mut counter: Vec<usize> = vec![0; self.rows()];
 
@@ -116,7 +110,7 @@ impl<N: MatFloat> CooMat<N> {
     }
 }
 
-impl<N: MatFloat> Debug for CooMat<N> {
+impl Debug for CooMat {
 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CooMat")
@@ -128,8 +122,8 @@ impl<N: MatFloat> Debug for CooMat<N> {
     }
 }
 
-impl<'a, N: MatFloat> CooMatIter<'a, N> {
-    fn new(mat: &'a CooMat<N>) -> Self {
+impl<'a> CooMatIter<'a> {
+    fn new(mat: &'a CooMat) -> Self {
         Self {
             k: 0,
             mat: mat,
@@ -137,8 +131,8 @@ impl<'a, N: MatFloat> CooMatIter<'a, N> {
     }
 }
 
-impl<'a, N: MatFloat> Iterator for CooMatIter<'a, N> {
-    type Item = (usize, usize, N);
+impl<'a> Iterator for CooMatIter<'a> {
+    type Item = (usize, usize, f64);
     fn next(&mut self) -> Option<Self::Item> {
         if self.k < self.mat.nnz() {
             let item = (self.mat.row_inds[self.k],
@@ -154,12 +148,12 @@ impl<'a, N: MatFloat> Iterator for CooMatIter<'a, N> {
     }
 }
 
-impl<N: MatFloat> CsrMat<N> {
+impl CsrMat {
 
     pub fn new(shape: (usize, usize), 
                indptr: Vec<usize>,
                indices: Vec<usize>,
-               data: Vec<N>) -> Self {
+               data: Vec<f64>) -> Self {
         assert_eq!(indptr.len(), shape.0+1);
         assert_eq!(indices.len(), data.len());
         assert_eq!(*indptr.last().unwrap(), data.len());
@@ -176,7 +170,7 @@ impl<N: MatFloat> CsrMat<N> {
     pub fn nnz(&self) -> usize { self.indices.len() }
     pub fn indptr(&self) -> &[usize] { &self.indptr }
     pub fn indices(&self) -> &[usize] { &self.indices }
-    pub fn data(&self) -> &[N] { &self.data }
+    pub fn data(&self) -> &[f64] { &self.data }
 
     pub fn sum_duplicates(&mut self) -> () {
 
@@ -184,12 +178,12 @@ impl<N: MatFloat> CsrMat<N> {
         let mut colrow: Vec<usize> = vec![0; self.cols()];
         let mut colnewk: Vec<usize> = vec![0; self.cols()];
 
-        let mut d: N;
+        let mut d: f64;
         let mut col: usize;
         let mut new_k: usize = 0;
         let mut new_counter: Vec<usize> = vec![0; self.rows()];
         let mut new_indices: Vec<usize> = Vec::new();
-        let mut new_data: Vec<N> = Vec::new();
+        let mut new_data: Vec<f64> = Vec::new();
         for row in 0..self.rows() {
             for k in self.indptr[row]..self.indptr[row+1] {
                 
@@ -234,7 +228,7 @@ impl<N: MatFloat> CsrMat<N> {
     }
 }
 
-impl<N: MatFloat> Debug for CsrMat<N> {
+impl Debug for CsrMat {
 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CsrMat")
