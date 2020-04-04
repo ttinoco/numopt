@@ -7,6 +7,9 @@ use libc::{c_int,
 
 #[repr(C)] pub struct IpoptProblemInfo { _private: [u8; 0] }
 
+pub const TRUE: c_int = 1;
+pub const FALSE: c_int = 0;
+
 pub type IpoptProblem = *mut IpoptProblemInfo;
 
 type Eval_F_CB = extern fn(c_int, 

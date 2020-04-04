@@ -20,7 +20,7 @@ pub struct SolverClpCmd<T> {
 
 impl<T: ProblemLpBase + ProblemMilpIO> Solver<T> for SolverClpCmd<T> {
 
-    fn new(p: &T) -> Self { 
+    fn new(_p: &T) -> Self { 
         Self {
             status: SolverStatus::Unknown,
             solution: None,

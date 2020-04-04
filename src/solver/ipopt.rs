@@ -19,7 +19,7 @@ pub struct SolverIpopt<T> {
 
 impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
 
-    fn new(p: &T) -> Self { 
+    fn new(_p: &T) -> Self { 
         Self {
             status: SolverStatus::Unknown,
             solution: None,
@@ -43,7 +43,6 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
         let nnzh: c_int = (p.hphi().nnz() + p.hcomb().nnz()).to_i32().unwrap();
 
         // Problem
-        println!("CREATE");
         let cprob: cipopt::IpoptProblem = unsafe {
             cipopt::CreateIpoptProblem(n, 
                                        p.l().as_ptr(), 
@@ -57,7 +56,7 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
                                        eval_f_cb::<T>, 
                                        eval_g_cb::<T>, 
                                        eval_grad_f_cb::<T>, 
-                                       eval_jac_g_cb, 
+                                       eval_jac_g_cb::<T>, 
                                        eval_h_cb::<T>)
         };
         if cprob.is_null() {
@@ -70,7 +69,6 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
         let mut mu: Vec<f64> = vec![0.;p.nx()];
 
         // Solve
-        println!("SOLVE");
         let cstatus : c_int = unsafe {
             cipopt::IpoptSolve(cprob, 
                                x.as_mut_ptr(), 
@@ -85,7 +83,6 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
         // Set status and solution
 
         // Clean up
-        println!("CLEAN");
         unsafe {
             cipopt::FreeIpoptProblem(cprob);
         };
@@ -94,59 +91,74 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
     }
 }
 
-//unsafe fn cast_to_vec<S, T>(x: *mut S, len: usize, cap: usize) -> Vec<T> 
-//where S: ToPrimitive + Copy,
-//      T: ProblemFloat {
-//    
-//    Vec::from_raw_parts(x, len, cap)
-//        .iter()
-//        .map(|xx| NumCast::from(*xx).unwrap())
-//        .collect()
-//}
-
-extern fn eval_f_cb<T>(_n: c_int, 
+extern fn eval_f_cb<T>(n: c_int, 
                        x: *const c_double, 
                        new_x: c_int, 
                        obj_value: *mut c_double, 
                        user_data: *mut c_void) -> c_int 
 where T: ProblemNlpBase {
+    if x.is_null() || obj_value.is_null() || user_data.is_null() {
+        return cipopt::FALSE;
+    }
     unsafe {
         let p: &mut T = &mut *(user_data as *mut T);
+        match n.to_usize() {
+            Some(nn) => { if nn != p.nx() { return cipopt::FALSE; } },
+            None => return cipopt::FALSE,
+        }
         let xx = Vec::from_raw_parts(x as *mut c_double, p.nx(), p.nx());
         if new_x == 1 {
             p.evaluate(&xx);
         }
         *obj_value = p.phi();
     };
-    0
+    cipopt::TRUE
 }
 
-extern fn eval_grad_f_cb<T>(_n: c_int, 
+extern fn eval_grad_f_cb<T>(n: c_int, 
                             x: *const c_double, 
                             new_x: c_int, 
                             grad_f: *mut c_double, 
                             user_data: *mut c_void) -> c_int 
 where T: ProblemNlpBase {
+    if x.is_null() || grad_f.is_null() || user_data.is_null() {
+        return cipopt::FALSE;
+    }
     unsafe {
         let p: &mut T = &mut *(user_data as *mut T);
+        match n.to_usize() {
+            Some(nn) => { if nn != p.nx() { return cipopt::FALSE; } },
+            None => return cipopt::FALSE,
+        }
         let xx = Vec::from_raw_parts(x as *mut c_double, p.nx(), p.nx());
         if new_x == 1 {
             p.evaluate(&xx);
         }
         ptr::copy(p.gphi().as_ptr(), grad_f, p.nx());
     };
-    0 
+    cipopt::TRUE
 }
 
-extern fn eval_g_cb<T>(_n: c_int, 
+extern fn eval_g_cb<T>(n: c_int, 
                        x: *const c_double, 
                        new_x: c_int, 
-                       _m: c_int,
+                       m: c_int,
                        g: *mut c_double, 
                        user_data: *mut c_void) -> c_int 
 where T: ProblemNlpBase {
+    if x.is_null() || g.is_null() || user_data.is_null() {
+        return cipopt::FALSE;
+    }
     unsafe {
         let p: &mut T = &mut *(user_data as *mut T);
+        match n.to_usize() {
+            Some(nn) => { if nn != p.nx() { return cipopt::FALSE; } },
+            None => return cipopt::FALSE,
+        }
+        match m.to_usize() {
+            Some(mm) => { if mm != p.na()+p.nf() { return cipopt::FALSE; } },
+            None => return cipopt::FALSE,
+        }
         let xx = Vec::from_raw_parts(x as *mut c_double, p.nx(), p.nx());
         if new_x == 1 {
             p.evaluate(&xx);
@@ -155,19 +167,66 @@ where T: ProblemNlpBase {
         ptr::copy(ax.as_ptr(), g, p.na());
         ptr::copy(p.f().as_ptr(), g.add(p.na()), p.nf());
     };
-    0
+    cipopt::TRUE
 }
 
-extern fn eval_jac_g_cb(n: c_int, 
-                        x: *const c_double, 
-                        new_x: c_int, 
-                        m: c_int,
-                        nele_jac: c_int,
-                        irow: *mut c_int,
-                        jcol: *mut c_int,
-                        values: *mut c_double, 
-                        user_data: *mut c_void) -> c_int {
-    0
+extern fn eval_jac_g_cb<T>(n: c_int, 
+                           x: *const c_double, 
+                           new_x: c_int, 
+                           m: c_int,
+                           nele_jac: c_int,
+                           irow: *mut c_int,
+                           jcol: *mut c_int,
+                           values: *mut c_double, 
+                           user_data: *mut c_void) -> c_int 
+where T: ProblemNlpBase {
+    if x.is_null() || irow.is_null() || jcol.is_null() || values.is_null() || user_data.is_null() {
+        return cipopt::FALSE;
+    }
+    unsafe {
+        let p: &mut T = &mut *(user_data as *mut T);
+        match n.to_usize() {
+            Some(nn) => { if nn != p.nx() { return cipopt::FALSE; } },
+            None => return cipopt::FALSE,
+        }
+        match m.to_usize() {
+            Some(mm) => { if mm != p.na()+p.nf() { return cipopt::FALSE; } },
+            None => return cipopt::FALSE,
+        }
+        match nele_jac.to_usize() {
+            Some(nnz) => { if nnz != p.a().nnz()+p.j().nnz() { return cipopt::FALSE; } },
+            None => return cipopt::FALSE,
+        }
+        if x.is_null() {
+            let mut k: usize = 0;
+            for (row, col, _val) in p.a().iter() {
+                *irow.add(k) = row.to_i32().unwrap();
+                *jcol.add(k) = col.to_i32().unwrap();
+                k += 1;
+            }
+            for (row, col, _val) in p.j().iter() {
+                *irow.add(k) = row.to_i32().unwrap();
+                *jcol.add(k) = col.to_i32().unwrap();
+                k += 1;
+            }
+        }
+        else {
+            let xx = Vec::from_raw_parts(x as *mut c_double, p.nx(), p.nx());
+            if new_x == 1 {
+                p.evaluate(&xx);
+            }
+            let mut k: usize = 0;
+            for (_row, _col, val) in p.a().iter() {
+                *values.add(k) = val; 
+                k += 1;
+            }
+            for (_row, _col, val) in p.j().iter() {
+                *values.add(k) = val; 
+                k += 1;
+            }   
+        }
+    };
+    cipopt::TRUE
 }
 
 extern fn eval_h_cb<T>(n: c_int, 
@@ -183,10 +242,8 @@ extern fn eval_h_cb<T>(n: c_int,
                        values: *mut c_double, 
                        user_data: *mut c_void) -> c_int 
 where T: ProblemNlpBase {
-    
     unsafe {
         let p: &mut T = &mut *(user_data as *mut T);
-        println!("GOT PROBLEM - eval h");
     };
-    0
+    cipopt::TRUE
 }

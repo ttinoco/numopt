@@ -108,7 +108,7 @@ impl<T: ProblemMilpBase> SolverCbcCmd<T> {
 
 impl<T: ProblemMilpBase + ProblemMilpIO>  Solver<T> for SolverCbcCmd<T> {
 
-    fn new(p: &T) -> Self { 
+    fn new(_p: &T) -> Self { 
         Self {
             status: SolverStatus::Unknown,
             solution: None,
