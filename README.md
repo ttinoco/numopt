@@ -1,6 +1,6 @@
 # optrs
 
-Experimental optimization tools in Rust.
+Optimization tools in Rust.
 
 ## Contents
 
@@ -8,8 +8,10 @@ Experimental optimization tools in Rust.
   * Minlp
   * Milp
   * Lp
+  * Nlp
 * Solver interfaces
   * Cbc (via command-line)
   * Clp (via command-line)
+  * Ipopt (via linking with library)
 * Modeling tools
   * Coming soon
