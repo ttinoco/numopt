@@ -9,7 +9,7 @@ pub struct ProblemLp {
 }
 
 pub trait ProblemLpBase {
-    fn x(&self) -> &[f64];
+    fn x0(&self) -> Option<&[f64]>;
     fn c(&self) -> &[f64];
     fn a(&self) -> &CooMat;
     fn b(&self) -> &[f64];
@@ -17,7 +17,7 @@ pub trait ProblemLpBase {
     fn u(&self) -> &[f64];
     fn base(&self) -> &ProblemMilp;
     fn base_mut(&mut self) -> &mut ProblemMilp;
-    fn nx(&self) -> usize { self.x().len() }
+    fn nx(&self) -> usize { self.c().len() }
     fn na(&self) -> usize { self.b().len() }
 }
 
@@ -26,9 +26,10 @@ impl ProblemLp {
                a: CooMat,
                b: Vec<f64>,  
                l: Vec<f64>,
-               u: Vec<f64>) -> Self {
+               u: Vec<f64>,
+               x0: Option<Vec<f64>>) -> Self {
         let nx = c.len();
-        let base = ProblemMilp::new(c, a, b, l, u, vec![false;nx]);
+        let base = ProblemMilp::new(c, a, b, l, u, vec![false;nx], x0);
         Self {
             base: base,
         }
@@ -36,7 +37,7 @@ impl ProblemLp {
 }
 
 impl ProblemLpBase for ProblemLp {
-    fn x(&self) -> &[f64] { ProblemMilpBase::x(&self.base) }
+    fn x0(&self) -> Option<&[f64]> { ProblemMilpBase::x0(&self.base) }
     fn c(&self) -> &[f64] { ProblemMilpBase::c(&self.base) }
     fn a(&self) -> &CooMat { ProblemMilpBase::a(&self.base) } 
     fn b(&self) -> &[f64] { ProblemMilpBase::b(&self.base) }
@@ -47,7 +48,7 @@ impl ProblemLpBase for ProblemLp {
 }
 
 impl ProblemMilpBase for ProblemLp {
-    fn x(&self) -> &[f64] { ProblemMilpBase::x(&self.base) }
+    fn x0(&self) -> Option<&[f64]> { ProblemMilpBase::x0(&self.base) }
     fn c(&self) -> &[f64] { ProblemMilpBase::c(&self.base) }
     fn a(&self) -> &CooMat { ProblemMilpBase::a(&self.base) }
     fn b(&self) -> &[f64] { ProblemMilpBase::b(&self.base) }
@@ -59,7 +60,7 @@ impl ProblemMilpBase for ProblemLp {
 }
 
 impl ProblemBase for ProblemLp {
-    fn x(&self) -> &[f64] { ProblemBase::x(&self.base) }
+    fn x0(&self) -> Option<&[f64]> { ProblemBase::x0(&self.base) }
     fn phi(&self) -> f64 { ProblemBase::phi(&self.base) }
     fn gphi(&self) -> &[f64] { ProblemBase::gphi(&self.base) }
     fn hphi(&self) -> &CooMat { ProblemBase::hphi(&self.base) }

@@ -5,6 +5,7 @@ use optrs::matrix::CooMat;
 use optrs::assert_vec_approx_eq;
 use optrs::problem::{ProblemNlp,
                      ProblemNlpBase};
+
 use optrs::solver::{Solver,
                     SolverIpopt}; 
 
@@ -21,6 +22,9 @@ fn main () {
     //             1 <= x2 <= 5
     //             1 <= x3 <= 5
     //            25 <= x4 <= inf
+
+    // x0
+    let x0 = vec![1., 5., 5., 1., 0.];
 
     // hphi
     // 2*x3         x3  x3 (2*x0+x1+x2) 0
@@ -154,6 +158,7 @@ fn main () {
         h,
         l,
         u,
+        Some(x0),
         eval_fn
     );
 
@@ -213,4 +218,9 @@ fn main () {
     println!("*************");
     println!("solver status = {}", s.status());
     println!("solution = {:?}", s.solution());
+
+    assert_vec_approx_eq!(s.solution().as_ref().unwrap().x,
+                            &vec![1., 4.742999629, 3.821149993, 1.379408294, 25.],
+                            epsilon=1e-7);
 }
+

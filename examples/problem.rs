@@ -30,6 +30,7 @@ fn main () {
         vec![0.,0.,-1e8,-1e8,-1e8],
         vec![5.,5.,0.,0.,0.],
         vec![false;5],
+        None,
         Box::new(| phi: &mut f64, 
                    gphi: &mut Vec<f64>, 
                    _hphi: &mut CooMat,
@@ -47,7 +48,7 @@ fn main () {
 
     p.evaluate(&x);
     
-    println!("x = {:?}", p.x());
+    println!("x0 = {:?}", p.x0());
     println!("phi = {}", p.phi());
     println!("gphi = {:?}", p.gphi());
     println!("a = {:?}", p.a());

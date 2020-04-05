@@ -13,7 +13,7 @@ pub type ProblemEval = Box<dyn Fn(&mut f64,         // phi
 
 pub struct Problem 
 {
-    x: Vec<f64>,
+    x0: Option<Vec<f64>>,
     
     phi: f64,
     gphi: Vec<f64>,
@@ -36,7 +36,7 @@ pub struct Problem
 }
 
 pub trait ProblemBase {
-    fn x(&self) -> &[f64];
+    fn x0(&self) -> Option<&[f64]>;
     fn phi(&self) -> f64;
     fn gphi(&self) -> &[f64];
     fn hphi(&self) -> &CooMat;
@@ -51,7 +51,7 @@ pub trait ProblemBase {
     fn p(&self) -> &[bool];
     fn evaluate(&mut self, x: &[f64]) -> ();
     fn combine_h(&mut self, nu: &[f64]) -> ();
-    fn nx(&self) -> usize { self.x().len() }
+    fn nx(&self) -> usize { self.gphi().len() }
     fn na(&self) -> usize { self.b().len() }
     fn nf(&self) -> usize { self.f().len() }
 }
@@ -73,6 +73,7 @@ impl Problem {
                l: Vec<f64>, 
                u: Vec<f64>, 
                p: Vec<bool>,
+               x0: Option<Vec<f64>>,
                eval_fn: ProblemEval) -> Self {
 
         let nx = a.cols();
@@ -111,7 +112,7 @@ impl Problem {
         }
         
         Self {
-            x: vec![0.;nx],
+            x0: x0,
             phi: 0.,
             gphi: vec![0.;nx],
             hphi: hphi,
@@ -131,7 +132,12 @@ impl Problem {
 
 impl ProblemBase for Problem {
 
-    fn x(&self) -> &[f64] { &self.x }
+    fn x0(&self) -> Option<&[f64]> { 
+        match &self.x0 { 
+            Some(xx) => Some(&xx),
+            None => None
+        }
+    }
     fn phi(&self) -> f64 { self.phi }
     fn gphi(&self) -> &[f64] { &self.gphi }
     fn hphi(&self) -> &CooMat { &self.hphi }

@@ -1,3 +1,5 @@
+#![cfg(feature = "ipopt")] 
+
 use std::ptr;
 use std::marker::PhantomData;
 use simple_error::SimpleError;
@@ -67,6 +69,12 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
         let mut lamnu: Vec<f64> = vec![0.;p.na()+p.nf()];        
         let mut pi: Vec<f64> = vec![0.;p.nx()];
         let mut mu: Vec<f64> = vec![0.;p.nx()];
+
+        // Initial point
+        match p.x0() {
+            Some(x0) => x.copy_from_slice(x0),
+            None => ()
+        };
 
         // Solve
         let cstatus : c_int = unsafe {

@@ -32,13 +32,14 @@ fn main () {
         vec![12.,8.,24.],
         vec![0.,0.,-1e8,-1e8,-1e8],
         vec![5.,5.,0.,0.,0.],
+        None,
     );
 
     let x = vec![0.5, 2., 1., 2., 3.];
 
     optrs::problem::ProblemBase::evaluate(&mut p, &x);
     
-    println!("x = {:?}", p.x());
+    println!("x0 = {:?}", p.x0());
     println!("phi = {}", optrs::problem::ProblemBase::phi(&p));
     println!("gphi = {:?}", optrs::problem::ProblemBase::gphi(&p));
     println!("c = {:?}", p.c());
@@ -60,17 +61,17 @@ fn main () {
     assert!(s.status().is_solved());
     assert!(s.solution().is_some());
     assert_vec_approx_eq!(s.solution().as_ref().unwrap().x, 
-                            &vec![1.7142857, 2.8571429, -1.1428571, 0., 0.], 
-                            epsilon=1e-8);
+                          &vec![1.7142857, 2.8571429, -1.1428571, 0., 0.], 
+                          epsilon=1e-8);
     assert_vec_approx_eq!(s.solution().as_ref().unwrap().lam, 
-                            &vec![0., 31.428571, 21.428571], 
-                            epsilon=1e-8);
+                          &vec![0., 31.428571, 21.428571], 
+                          epsilon=1e-8);
     assert_vec_approx_eq!(s.solution().as_ref().unwrap().mu, 
-                            &vec![1.4210855e-14, 0., 0., 3.1428571e+01, 2.1428571e+01], 
-                            epsilon=1e-8);
+                          &vec![1.4210855e-14, 0., 0., 3.1428571e+01, 2.1428571e+01], 
+                          epsilon=1e-8);
     assert_vec_approx_eq!(s.solution().as_ref().unwrap().pi, 
-                            &vec![0.;5], 
-                            epsilon=1e-8);
+                          &vec![0.;5], 
+                          epsilon=1e-8);
 
     // Solve with Cbc as Milp
     let mut s = SolverCbcCmd::new(&p);
@@ -83,15 +84,15 @@ fn main () {
     assert!(s.status().is_solved());
     assert!(s.solution().is_some());
     assert_vec_approx_eq!(s.solution().as_ref().unwrap().x, 
-                        &vec![1.7142857, 2.8571429, -1.1428571, 0., 0.], 
-                        epsilon=1e-8);
+                          &vec![1.7142857, 2.8571429, -1.1428571, 0., 0.], 
+                          epsilon=1e-8);
     assert_vec_approx_eq!(s.solution().as_ref().unwrap().lam, 
-                        &vec![0., 31.428571, 21.428571], 
-                        epsilon=1e-8);
+                          &vec![0., 31.428571, 21.428571], 
+                          epsilon=1e-8);
     assert_vec_approx_eq!(s.solution().as_ref().unwrap().mu, 
-                        &vec![1.4210855e-14, 0., 0., 3.1428571e+01, 2.1428571e+01], 
-                        epsilon=1e-8);
+                          &vec![1.4210855e-14, 0., 0., 3.1428571e+01, 2.1428571e+01], 
+                          epsilon=1e-8);
     assert_vec_approx_eq!(s.solution().as_ref().unwrap().pi, 
-                        &vec![0.;5], 
-                        epsilon=1e-8);
+                          &vec![0.;5], 
+                          epsilon=1e-8);
 }

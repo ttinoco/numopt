@@ -13,7 +13,7 @@ pub struct ProblemMilp {
 }
 
 pub trait ProblemMilpBase {
-    fn x(&self) -> &[f64];
+    fn x0(&self) -> Option<&[f64]>;
     fn c(&self) -> &[f64];
     fn a(&self) -> &CooMat;
     fn b(&self) -> &[f64];
@@ -22,7 +22,7 @@ pub trait ProblemMilpBase {
     fn p(&self) -> &[bool];
     fn base(&self) -> &Problem;
     fn base_mut(&mut self) -> &mut Problem;
-    fn nx(&self) -> usize { self.x().len() }
+    fn nx(&self) -> usize { self.c().len() }
     fn na(&self) -> usize { self.b().len() }
 }
 
@@ -38,7 +38,8 @@ impl ProblemMilp {
                b: Vec<f64>,  
                l: Vec<f64>,
                u: Vec<f64>, 
-               p: Vec<bool>) -> Self {
+               p: Vec<bool>,
+               x0: Option<Vec<f64>>) -> Self {
         let cc = c.clone();
         let eval_fn = Box::new(move | phi: &mut f64, 
                                       gphi: &mut Vec<f64>, 
@@ -59,6 +60,7 @@ impl ProblemMilp {
                                 l, 
                                 u, 
                                 p, 
+                                x0,
                                 eval_fn);
         Self {
             c: cc,
@@ -68,7 +70,7 @@ impl ProblemMilp {
 }
 
 impl ProblemMilpBase for ProblemMilp {
-    fn x(&self) -> &[f64] { &self.base.x() }
+    fn x0(&self) -> Option<&[f64]> { self.base.x0() }
     fn c(&self) -> &[f64] { &self.c }
     fn a(&self) -> &CooMat { &self.base.a() } 
     fn b(&self) -> &[f64] { &self.base.b() }
@@ -80,7 +82,7 @@ impl ProblemMilpBase for ProblemMilp {
 }
 
 impl ProblemBase for ProblemMilp {
-    fn x(&self) -> &[f64] { self.base.x() }
+    fn x0(&self) -> Option<&[f64]> { self.base.x0() }
     fn phi(&self) -> f64 { self.base().phi() }
     fn gphi(&self) -> &[f64] { self.base().gphi() }
     fn hphi(&self) -> &CooMat { self.base().hphi() }

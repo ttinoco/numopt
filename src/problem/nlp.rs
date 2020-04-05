@@ -10,7 +10,7 @@ pub struct ProblemNlp {
 }
 
 pub trait ProblemNlpBase {
-    fn x(&self) -> &[f64];
+    fn x0(&self) -> Option<&[f64]>;
     fn phi(&self) -> f64;
     fn gphi(&self) -> &[f64];
     fn hphi(&self) -> &CooMat;
@@ -25,7 +25,7 @@ pub trait ProblemNlpBase {
     fn evaluate(&mut self, x: &[f64]) -> ();
     fn combine_h(&mut self, nu: &[f64]) -> ();
     fn base(&self) -> &Problem;
-    fn nx(&self) -> usize { self.x().len() }
+    fn nx(&self) -> usize { self.gphi().len() }
     fn na(&self) -> usize { self.b().len() }
     fn nf(&self) -> usize { self.f().len() }
 }
@@ -38,9 +38,10 @@ impl ProblemNlp {
                h: Vec<CooMat>,  
                l: Vec<f64>, 
                u: Vec<f64>, 
+               x0: Option<Vec<f64>>,
                eval_fn: ProblemEval) -> Self {
         let p = vec![false;a.cols()];
-        let base = Problem::new(hphi, a, b, j, h, l, u, p, eval_fn);
+        let base = Problem::new(hphi, a, b, j, h, l, u, p, x0, eval_fn);
         Self {
             base: base,
         }       
@@ -48,7 +49,7 @@ impl ProblemNlp {
 }
 
 impl ProblemNlpBase for ProblemNlp {
-    fn x(&self) -> &[f64] { &self.base.x() }
+    fn x0(&self) -> Option<&[f64]> { self.base.x0() }
     fn phi(&self) -> f64 { self.base.phi() }
     fn gphi(&self) -> &[f64] { &self.base.gphi() }
     fn hphi(&self) -> &CooMat { &self.base.hphi() }
@@ -66,7 +67,7 @@ impl ProblemNlpBase for ProblemNlp {
 }
 
 impl ProblemBase for ProblemNlp {
-    fn x(&self) -> &[f64] { &self.base.x() }
+    fn x0(&self) -> Option<&[f64]> { self.base.x0() }
     fn phi(&self) -> f64 { self.base.phi() }
     fn gphi(&self) -> &[f64] { &self.base.gphi() }
     fn hphi(&self) -> &CooMat { &self.base.hphi() }

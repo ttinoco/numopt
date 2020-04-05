@@ -30,13 +30,14 @@ fn main () {
         vec![-1e8,-1e8,-1e8,0.],
         vec![1e8,1e8,0.,1e8],
         vec![true, true, false, false],
+        None,
     );
 
     let x = vec![0.5, 2., 1., 2.];
 
     optrs::problem::ProblemBase::evaluate(&mut p, &x);
     
-    println!("x = {:?}", p.x());
+    println!("x0 = {:?}", p.x0());
     println!("phi = {}", optrs::problem::ProblemBase::phi(&p));
     println!("gphi = {:?}", optrs::problem::ProblemBase::gphi(&p));
     println!("c = {:?}", p.c());
