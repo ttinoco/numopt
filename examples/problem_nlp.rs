@@ -209,4 +209,8 @@ fn main () {
 
     let mut s = SolverIpopt::new(&p);
     s.solve(&mut p).unwrap();
+
+    println!("*************");
+    println!("solver status = {}", s.status());
+    println!("solution = {:?}", s.solution());
 }

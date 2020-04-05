@@ -30,7 +30,7 @@ impl<T: ProblemMilpBase> SolverCbcCmd<T> {
         let mut value: f64;
         let mut mul: f64;
         let mut status = SolverStatus::Unknown;
-        let mut solution = ProblemSol::new(p.nx(),p.na(), 0);
+        let mut solution = ProblemSol::new(p.nx(), p.na(), 0);
         let f = File::open(fname)?;
         let mut r = BufReader::new(f);
         let mut line = String::new();
