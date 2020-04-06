@@ -1,6 +1,7 @@
 #![cfg(feature = "ipopt")] 
 
 use std::ptr;
+use ndarray::ArrayView1;
 use std::marker::PhantomData;
 use simple_error::SimpleError;
 use num_traits::cast::ToPrimitive;
@@ -95,10 +96,10 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
         let mut sol = ProblemSol::new(p.nx(), p.na(), p.nf()); 
         sol.x.copy_from_slice(&x);
         for k in 0..p.na() {
-            sol.lam[k] = lamnu[k];
+            sol.lam[k] = -lamnu[k];
         }
         for k in p.na()..(p.na()+p.nf()) {
-            sol.nu[k-p.na()] = lamnu[k];
+            sol.nu[k-p.na()] = -lamnu[k];
         }
         sol.pi.copy_from_slice(&pi);
         sol.mu.copy_from_slice(&mu);
@@ -186,7 +187,8 @@ where T: ProblemNlpBase {
             p.evaluate(&xx);
         }
         let ax = p.a()*xx;
-        ptr::copy(ax.as_ptr(), g, p.na());
+        let axmb = &ArrayView1::from(&ax)-&ArrayView1::from(p.b());
+        ptr::copy(axmb.as_slice().unwrap().as_ptr(), g, p.na());
         ptr::copy(p.f().as_ptr(), g.add(p.na()), p.nf());
     };
     cipopt::TRUE
@@ -337,12 +339,15 @@ where T: ProblemNlpBase {
 #[cfg(test)]
 mod tests {
 
+    use serial_test::serial;
+
     use crate::matrix::CooMat;
-    use crate::problem::{ProblemLp, ProblemNlp};
+    use crate::problem::{ProblemLp, ProblemNlpBase, ProblemNlp};
     use crate::solver::{Solver, SolverStatus, SolverIpopt};
     use crate::assert_vec_approx_eq;
 
     #[test]
+    #[serial]
     fn ipopt_solve_nlp() {
 
         // Sample NLP problem 
@@ -505,6 +510,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn ipopt_solve_lp() {
 
         // Sample problem 
@@ -531,6 +537,9 @@ mod tests {
             None,
         );
 
+        let x = vec![1., 2., 3., 4. ,5.];
+        p.evaluate(&x);
+    
         let mut s = SolverIpopt::new(&p);
         s.solve(&mut p).unwrap();
 
@@ -538,16 +547,16 @@ mod tests {
         assert!(s.solution().is_some());
         assert_vec_approx_eq!(s.solution().as_ref().unwrap().x, 
                               &vec![1.7142857, 2.8571429, -1.1428571, 0., 0.], 
-                              epsilon=1e-8);
+                              epsilon=1e-6);
         assert_vec_approx_eq!(s.solution().as_ref().unwrap().lam, 
                               &vec![0., 31.428571, 21.428571], 
-                              epsilon=1e-8);
+                              epsilon=1e-6);
         assert_vec_approx_eq!(s.solution().as_ref().unwrap().mu, 
                               &vec![1.4210855e-14, 0., 0., 3.1428571e+01, 2.1428571e+01], 
-                              epsilon=1e-8);
+                              epsilon=1e-6);
         assert_vec_approx_eq!(s.solution().as_ref().unwrap().pi, 
                               &vec![0.;5], 
-                              epsilon=1e-8);
+                              epsilon=1e-6);
 
     }
 }

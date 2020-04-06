@@ -201,12 +201,15 @@ impl<T: ProblemMilpBase + ProblemMilpIO>  Solver<T> for SolverCbcCmd<T> {
 #[cfg(test)]
 mod tests {
 
+    use serial_test::serial;
+
     use crate::matrix::CooMat;
     use crate::problem::{ProblemLp, ProblemMilp};
     use crate::solver::{Solver, SolverStatus, SolverCbcCmd};
     use crate::assert_vec_approx_eq;
 
     #[test]
+    #[serial]
     fn cbc_solve_milp() {
 
         // Sample problem 
@@ -243,6 +246,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn cbc_solve_lp() {
 
         // Sample problem 

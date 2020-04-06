@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{self, Write, BufWriter};
  
-use crate::vector::dot;
+use ndarray::ArrayView1;
 use crate::matrix::{CooMat,
                     CsrMat};
 use crate::problem::{Problem, 
@@ -48,7 +48,7 @@ impl ProblemMilp {
                                       _j: &mut CooMat,
                                       _h: &mut Vec<CooMat>,
                                       x: &[f64] | {
-            *phi = dot(&c, x);
+            *phi = ArrayView1::from(&c).dot(&ArrayView1::from(x));
             gphi.copy_from_slice(&c);
         });
         let nx = a.cols();

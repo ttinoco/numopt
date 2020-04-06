@@ -113,12 +113,15 @@ impl<T: ProblemLpBase + ProblemMilpIO> Solver<T> for SolverClpCmd<T> {
 #[cfg(test)]
 mod tests {
 
+    use serial_test::serial;
+
     use crate::matrix::CooMat;
     use crate::problem::ProblemLp;
     use crate::solver::{Solver, SolverStatus, SolverClpCmd};
     use crate::assert_vec_approx_eq;
 
     #[test]
+    #[serial]
     fn clp_solve_lp() {
 
         // Sample problem 
