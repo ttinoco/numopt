@@ -12,6 +12,6 @@ Optimization tools in Rust.
 * Solver interfaces
   * Cbc (via command-line)
   * Clp (via command-line)
-  * Ipopt (via linking with library)
+  * Ipopt (via linking with library) (feature "ipopt")
 * Modeling tools
   * Coming soon
