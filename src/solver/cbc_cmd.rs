@@ -197,3 +197,95 @@ impl<T: ProblemMilpBase + ProblemMilpIO>  Solver<T> for SolverCbcCmd<T> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use crate::matrix::CooMat;
+    use crate::problem::{ProblemLp, ProblemMilp};
+    use crate::solver::{Solver, SolverStatus, SolverCbcCmd};
+    use crate::assert_vec_approx_eq;
+
+    #[test]
+    fn cbc_solve_milp() {
+
+        // Sample problem 
+        // min        -x0 - x1 
+        // subject to -2*x0 +  2*x1 + x2 == 1
+        //            -8*x0 + 10*x1 + x3 ==  13
+        //            x2 <= 0
+        //            x3 >= 0
+        //            x0 integer
+        //            x1 integer
+
+        let mut p = ProblemMilp::new(
+            vec![-1.,-1., 0., 0.],
+            CooMat::new(
+                (2, 4),
+                vec![0,0,0,1,1,1],
+                vec![0,1,2,0,1,3],
+                vec![-2.,2.,1.,-8.,10.,1.]),
+            vec![1.,13.],
+            vec![-1e8,-1e8,-1e8,0.],
+            vec![1e8,1e8,0.,1e8],
+            vec![true, true, false, false],
+            None,
+        );
+
+        let mut s = SolverCbcCmd::new(&p);
+        s.solve(&mut p).unwrap();
+
+        assert_eq!(*s.status(), SolverStatus::Solved);
+        assert!(s.solution().is_some());
+        assert_vec_approx_eq!(s.solution().as_ref().unwrap().x, 
+                              &vec![1., 2., -1., 1.0], 
+                              epsilon=1e-8);
+    }
+
+    #[test]
+    fn cbc_solve_lp() {
+
+        // Sample problem 
+        // min        180*x0 + 160*x1 
+        // subject to 6*x0 +   x1 + x2 == 12
+        //            3*x0 +   x1 + x3 ==  8
+        //            4*x0 + 6*x1 + x4 == 24
+        //            0 <= x0 <= 5
+        //            0 <= x1 <= 5
+        //            x2 <= 0
+        //            x3 <= 0
+        //            x4 <= 0
+
+        let mut p = ProblemLp::new(
+            vec![180.,160., 0., 0., 0.],
+            CooMat::new(
+                (3, 5),
+                vec![0,0,0,1,1,1,2,2,2],
+                vec![0,1,2,0,1,3,0,1,4],
+                vec![6.,1.,1.,3.,1.,1.,4.,6.,1.]),
+            vec![12.,8.,24.],
+            vec![0.,0.,-1e8,-1e8,-1e8],
+            vec![5.,5.,0.,0.,0.],
+            None,
+        );
+
+        let mut s = SolverCbcCmd::new(&p);
+        s.solve(&mut p).unwrap();
+
+        assert_eq!(*s.status(), SolverStatus::Solved);
+        assert!(s.solution().is_some());
+        assert_vec_approx_eq!(s.solution().as_ref().unwrap().x, 
+                              &vec![1.7142857, 2.8571429, -1.1428571, 0., 0.], 
+                              epsilon=1e-8);
+        assert_vec_approx_eq!(s.solution().as_ref().unwrap().lam, 
+                              &vec![0., 31.428571, 21.428571], 
+                              epsilon=1e-8);
+        assert_vec_approx_eq!(s.solution().as_ref().unwrap().mu, 
+                              &vec![1.4210855e-14, 0., 0., 3.1428571e+01, 2.1428571e+01], 
+                              epsilon=1e-8);
+        assert_vec_approx_eq!(s.solution().as_ref().unwrap().pi, 
+                              &vec![0.;5], 
+                              epsilon=1e-8);
+
+    }
+}

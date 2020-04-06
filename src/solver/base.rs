@@ -3,6 +3,7 @@ use simple_error::SimpleError;
 
 use crate::problem::{ProblemSol};
 
+#[derive(Debug, PartialEq)]
 pub enum SolverStatus {
     Solved,
     Unknown,

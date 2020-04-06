@@ -333,3 +333,221 @@ where T: ProblemNlpBase {
     };
     cipopt::TRUE
 }
+
+#[cfg(test)]
+mod tests {
+
+    use crate::matrix::CooMat;
+    use crate::problem::{ProblemLp, ProblemNlp};
+    use crate::solver::{Solver, SolverStatus, SolverIpopt};
+    use crate::assert_vec_approx_eq;
+
+    #[test]
+    fn ipopt_solve_nlp() {
+
+        // Sample NLP problem 
+        // min        x0*x3*(x0+x1+x2) + x2 = x0*x3*x0 + x0*x3*x1 + x0*x3*x2 + x2
+        // subject to x0*x1*x2*x3 - x4 == 0
+        //            x0*x0 + x1*x1 + x2*x2 + x3*x3 - 40 == 0
+        //             1 <= x0 <= 5
+        //             1 <= x1 <= 5
+        //             1 <= x2 <= 5
+        //             1 <= x3 <= 5
+        //            25 <= x4 <= inf
+
+        // x0
+        let x0 = vec![1., 5., 5., 1., 0.];
+
+        // hphi
+        // 2*x3         x3  x3 (2*x0+x1+x2) 0
+        // x3           0   0  x0           0
+        // x3           0   0  x0           0
+        // (2*x0+x1+x2) x0  x0 0            0
+        // 0            0   0  0            0
+        let hphi: CooMat = CooMat::new(
+            (5, 5),
+            vec![0, 1, 2, 3, 3, 3],
+            vec![0, 0, 0, 0, 1, 2],
+            vec![0.; 6]
+        );
+
+        let a: CooMat = CooMat::from_nnz((0, 5), 0);
+        let b: Vec<f64> = Vec::new();
+
+        // j
+        // x1*x2*x3 x0*x2*x3 x0*x1*x3 x0*x1*x2 -1 
+        // 2*x0     2*x1     2*x2     2*x3      0
+        let j: CooMat = CooMat::new(
+            (2, 5),
+            vec![0, 0, 0, 0, 0, 1, 1, 1, 1],
+            vec![0, 1, 2, 3, 4, 0, 1, 2, 3],
+            vec![0.;9]
+        );
+
+        // h0
+        // 0     x2*x3 x1*x3 x1*x2 0 
+        // x2*x3 0     x0*x3 x0*x2 0
+        // x1*x3 x0*x3 0     x0*x1 0
+        // x1*x2 x0*x2 x0*x1 0     0
+        // 0     0     0     0     0
+        // h1
+        // 2 0 0 0 0 
+        // 0 2 0 0 0
+        // 0 0 2 0 0
+        // 0 0 0 2 0
+        // 0 0 0 0 0
+        let h: Vec<CooMat> = vec![
+            CooMat::new(
+                (5, 5),
+                vec![1, 2, 2, 3, 3, 3],
+                vec![0, 0, 1, 0, 1, 2],
+                vec![0.;6]
+            ),
+            CooMat::new(
+                (5, 5),
+                vec![0, 1, 2, 3],
+                vec![0, 1, 2, 3],
+                vec![0.;4]
+            )
+        ];
+
+        // l
+        let l = vec![1., 1., 1., 1., 25.];
+
+        // u
+        let u = vec![5., 5., 5., 5., 1e8];
+        
+        // eval_fn
+        let eval_fn = Box::new(move | phi: &mut f64, 
+                                      gphi: &mut Vec<f64>, 
+                                      hphi: &mut CooMat,
+                                      f: &mut Vec<f64>,
+                                      j: &mut CooMat,
+                                      h: &mut Vec<CooMat>,
+                                      x: &[f64] | {
+
+            assert_eq!(gphi.len(), x.len());
+
+            let x0 = x[0];
+            let x1 = x[1];
+            let x2 = x[2];
+            let x3 = x[3];
+            let x4 = x[4];
+
+            // phi
+            *phi = x0*x3*(x0+x1+x2) + x2;
+
+            // gphi
+            gphi[0] = 2.*x0*x3 + x1*x3 + x2*x3;
+            gphi[1] = x0*x3;
+            gphi[2] = x0*x3 + 1.;
+            gphi[3] = x0*(x0+x1+x2);
+            gphi[4] = 0.;
+
+            // hphi
+            hphi.set_data(0, 2.*x3);       // x0, x0
+            hphi.set_data(1, x3);          // x1, x0
+            hphi.set_data(2, x3);          // x2, x0
+            hphi.set_data(3, 2.*x0+x1+x2); // x3, x0
+            hphi.set_data(4, x0);          // x3, x1
+            hphi.set_data(5, x0);          // x3, x2
+
+            // f
+            f[0] = x0*x1*x2*x3 - x4;
+            f[1] = x0*x0 + x1*x1 + x2*x2 + x3*x3 - 40.;
+
+            // j
+            j.set_data(0, x1*x2*x3); // 0, x0
+            j.set_data(1, x0*x2*x3); // 0, x1
+            j.set_data(2, x0*x1*x3); // 0, x2
+            j.set_data(3, x0*x1*x2); // 0, x3
+            j.set_data(4, -1.);      // 0, x4
+            j.set_data(5, 2.*x0);    // 1, x0
+            j.set_data(6, 2.*x1);    // 1, x1
+            j.set_data(7, 2.*x2);    // 1, x2
+            j.set_data(8, 2.*x3);    // 1, x3
+
+            // h0
+            h[0].set_data(0, x2*x3);
+            h[0].set_data(1, x1*x3);
+            h[0].set_data(2, x0*x3);
+            h[0].set_data(3, x1*x2);
+            h[0].set_data(4, x0*x2);
+            h[0].set_data(5, x0*x1);
+
+            // h1
+            h[1].set_data(0, 2.);
+            h[1].set_data(1, 2.);
+            h[1].set_data(2, 2.);
+            h[1].set_data(3, 2.);
+        });
+
+        let mut p = ProblemNlp::new(
+            hphi, 
+            a,
+            b,
+            j,
+            h,
+            l,
+            u,
+            Some(x0),
+            eval_fn
+        );
+
+        let mut s = SolverIpopt::new(&p);
+        s.solve(&mut p).unwrap();
+
+        assert_eq!(*s.status(), SolverStatus::Solved);
+        assert_vec_approx_eq!(s.solution().as_ref().unwrap().x,
+                              &vec![1., 4.742999629, 3.821149993, 1.379408294, 25.],
+                              epsilon=1e-7);
+
+    }
+
+    #[test]
+    fn ipopt_solve_lp() {
+
+        // Sample problem 
+        // min        180*x0 + 160*x1 
+        // subject to 6*x0 +   x1 + x2 == 12
+        //            3*x0 +   x1 + x3 ==  8
+        //            4*x0 + 6*x1 + x4 == 24
+        //            0 <= x0 <= 5
+        //            0 <= x1 <= 5
+        //            x2 <= 0
+        //            x3 <= 0
+        //            x4 <= 0
+
+        let mut p = ProblemLp::new(
+            vec![180.,160., 0., 0., 0.],
+            CooMat::new(
+                (3, 5),
+                vec![0,0,0,1,1,1,2,2,2],
+                vec![0,1,2,0,1,3,0,1,4],
+                vec![6.,1.,1.,3.,1.,1.,4.,6.,1.]),
+            vec![12.,8.,24.],
+            vec![0.,0.,-1e8,-1e8,-1e8],
+            vec![5.,5.,0.,0.,0.],
+            None,
+        );
+
+        let mut s = SolverIpopt::new(&p);
+        s.solve(&mut p).unwrap();
+
+        assert_eq!(*s.status(), SolverStatus::Solved);
+        assert!(s.solution().is_some());
+        assert_vec_approx_eq!(s.solution().as_ref().unwrap().x, 
+                              &vec![1.7142857, 2.8571429, -1.1428571, 0., 0.], 
+                              epsilon=1e-8);
+        assert_vec_approx_eq!(s.solution().as_ref().unwrap().lam, 
+                              &vec![0., 31.428571, 21.428571], 
+                              epsilon=1e-8);
+        assert_vec_approx_eq!(s.solution().as_ref().unwrap().mu, 
+                              &vec![1.4210855e-14, 0., 0., 3.1428571e+01, 2.1428571e+01], 
+                              epsilon=1e-8);
+        assert_vec_approx_eq!(s.solution().as_ref().unwrap().pi, 
+                              &vec![0.;5], 
+                              epsilon=1e-8);
+
+    }
+}

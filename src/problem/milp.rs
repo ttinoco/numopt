@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{self, Write, BufWriter};
  
-use crate::utils::dot;
+use crate::vector::dot;
 use crate::matrix::{CooMat,
                     CsrMat};
 use crate::problem::{Problem, 

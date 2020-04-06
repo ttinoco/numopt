@@ -1,6 +1,8 @@
 use std::ops::Mul;
-use std::fmt::{self, Debug};
 
+use crate::matrix::csr::CsrMat;
+
+#[derive(Debug)]
 pub struct CooMat {
     shape: (usize, usize),
     row_inds: Vec<usize>,
@@ -11,13 +13,6 @@ pub struct CooMat {
 pub struct CooMatIter<'a> {
     k: usize,
     mat: &'a CooMat,
-}
-
-pub struct CsrMat {
-    shape: (usize, usize),
-    indptr: Vec<usize>,
-    indices: Vec<usize>,
-    data: Vec<f64>,
 }
 
 impl CooMat {
@@ -102,12 +97,12 @@ impl CooMat {
         }
         
         // Return
-        CsrMat {
-            shape: self.shape,
-            indptr: indptr,
-            indices: indices,
-            data: data,
-        }
+        CsrMat::new(
+            self.shape,
+            indptr,
+            indices,
+            data
+        )
     }
 }
 
@@ -122,18 +117,6 @@ impl Mul<Vec<f64>> for &CooMat {
             y[row] += rhs[col]*val;
         }
         y
-    }
-}
-
-impl Debug for CooMat {
-
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("CooMat")
-         .field("shape", &self.shape)
-         .field("row_inds", &self.row_inds)
-         .field("col_inds", &self.col_inds)
-         .field("data", &self.data)
-         .finish()
     }
 }
 
@@ -163,95 +146,59 @@ impl<'a> Iterator for CooMatIter<'a> {
     }
 }
 
-impl CsrMat {
+#[cfg(test)]
+mod tests {
+    
+    use crate::matrix::CooMat;
+    use crate::assert_vec_approx_eq;
 
-    pub fn new(shape: (usize, usize), 
-               indptr: Vec<usize>,
-               indices: Vec<usize>,
-               data: Vec<f64>) -> Self {
-        assert_eq!(indptr.len(), shape.0+1);
-        assert_eq!(indices.len(), data.len());
-        assert_eq!(*indptr.last().unwrap(), data.len());
-        Self {
-            shape: shape,
-            indptr: indptr,
-            indices: indices,
-            data: data,
-        }
+    #[test]
+    fn coo_to_csr() {
+
+        // 6 2 1 0 0
+        // 3 1 0 7 0
+        // 4 6 0 0 1
+
+        let a = CooMat::new(
+            (3, 5),
+            vec![0 ,2 ,0 ,0 ,1 ,2  ,1 ,1 ,2 ,0 ,2],
+            vec![0 ,1 ,2 ,0 ,0 ,4  ,1 ,3 ,0 ,1 ,4],
+            vec![5.,6.,1.,1.,3.,-2.,1.,7.,4.,2.,3.],
+        );
+
+        let b = a.to_csr();
+
+        assert_eq!(b.rows(), 3);
+        assert_eq!(b.cols(), 5);
+        assert_eq!(b.nnz(), 11);
+        assert_vec_approx_eq!(b.indptr(),
+                              vec![0, 4, 7, 11],
+                              epsilon=0);
+        assert_vec_approx_eq!(b.indices(),
+                              vec![0, 2, 0, 1, 0, 1, 3, 1, 4, 0, 4],
+                              epsilon=0);
+        assert_vec_approx_eq!(b.data(),
+                              vec![5., 1., 1., 2., 3., 1., 7., 6., -2., 4., 3.],
+                              epsilon=1e-8);
     }
 
-    pub fn rows(&self) -> usize { self.shape.0 }
-    pub fn cols(&self) -> usize { self.shape.1 }
-    pub fn nnz(&self) -> usize { self.indices.len() }
-    pub fn indptr(&self) -> &[usize] { &self.indptr }
-    pub fn indices(&self) -> &[usize] { &self.indices }
-    pub fn data(&self) -> &[f64] { &self.data }
+    #[test]
+    fn coo_times_vec() {
 
-    pub fn sum_duplicates(&mut self) -> () {
+        // 6 2 1 0 0
+        // 3 1 0 7 0
+        // 4 6 0 0 1
 
-        let mut colseen: Vec<bool> = vec![false; self.cols()];
-        let mut colrow: Vec<usize> = vec![0; self.cols()];
-        let mut colnewk: Vec<usize> = vec![0; self.cols()];
+        let a = CooMat::new(
+            (3, 5),
+            vec![0 ,2 ,0 ,0 ,1 ,2  ,1 ,1 ,2 ,0 ,2],
+            vec![0 ,1 ,2 ,0 ,0 ,4  ,1 ,3 ,0 ,1 ,4],
+            vec![5.,6.,1.,1.,3.,-2.,1.,7.,4.,2.,3.],
+        );
 
-        let mut d: f64;
-        let mut col: usize;
-        let mut new_k: usize = 0;
-        let mut new_counter: Vec<usize> = vec![0; self.rows()];
-        let mut new_indices: Vec<usize> = Vec::new();
-        let mut new_data: Vec<f64> = Vec::new();
-        for row in 0..self.rows() {
-            for k in self.indptr[row]..self.indptr[row+1] {
-                
-                col = self.indices[k];
-                d = self.data[k];
+        let x = vec![2.,4.,3.,1.,7.];
+        let y = (&a)*x;
 
-                // New column in row
-                if !colseen[col] || colrow[col] != row {        
-                    colnewk[col] = new_k;
-                    new_counter[row] += 1;
-                    new_indices.push(col);
-                    new_data.push(d);
-                    new_k += 1;
-                }
-                
-                // Duplicate column in row
-                else { 
-                    new_data[colnewk[col]] += d;
-                }
-
-                // Update
-                colseen[col] = true;
-                colrow[col] = row;
-            }
-
-        }
-
-        let mut offset: usize = 0;
-        let mut new_indptr: Vec<usize> = vec![0; self.rows()+1];
-        for (row, c) in new_counter.iter().enumerate() {
-            new_indptr[row+1] = offset + c;
-            offset += c;
-        }
-
-        self.indptr = new_indptr;
-        self.indices = new_indices;
-        self.data = new_data;
-
-        assert_eq!(self.indptr.len(), self.rows()+1);
-        assert_eq!(self.indices.len(), self.indptr[self.rows()]);
-        assert_eq!(self.indices.len(), self.data.len());
+        assert_vec_approx_eq!(y, vec![23., 17., 39.], epsilon = 1e-8);
     }
 }
-
-impl Debug for CsrMat {
-
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("CsrMat")
-         .field("shape", &self.shape)
-         .field("indptr", &self.indptr)
-         .field("indices", &self.indices)
-         .field("data", &self.data)
-         .finish()
-    }
-}
-
