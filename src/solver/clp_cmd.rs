@@ -4,8 +4,10 @@ use std::fs::remove_file;
 use std::process::Command;
 use std::marker::PhantomData;
 use simple_error::SimpleError;
+use std::collections::HashMap;
 
 use crate::solver::{Solver, 
+                    SolverParam,
                     SolverStatus,
                     SolverCbcCmd};
 use crate::problem::{ProblemSol,
@@ -16,18 +18,26 @@ pub struct SolverClpCmd<T> {
     status: SolverStatus,
     solution: Option<ProblemSol>,
     phantom: PhantomData<T>,
+    parameters: HashMap<String, SolverParam>,
 }
 
 impl<T: ProblemLpBase + ProblemMilpIO> Solver<T> for SolverClpCmd<T> {
 
     fn new(_p: &T) -> Self { 
+
+        let mut parameters: HashMap<String, SolverParam> = HashMap::new();
+        parameters.insert("logLevel".to_string(), SolverParam::IntParam(1));
+
         Self {
             status: SolverStatus::Unknown,
             solution: None,
             phantom: PhantomData,
+            parameters: parameters,
         } 
     }
 
+    fn get_params(&self) -> &HashMap<String, SolverParam> { &self.parameters }
+    fn get_params_mut(&mut self) -> &mut HashMap<String, SolverParam> { &mut self.parameters }
     fn status(&self) -> &SolverStatus { &self.status }
     fn solution(&self) -> &Option<ProblemSol> { &self.solution }
 
@@ -90,7 +100,9 @@ impl<T: ProblemLpBase + ProblemMilpIO> Solver<T> for SolverClpCmd<T> {
         remove_file(&input_filename).ok();
 
         // Read output file
-        let (status, solution) = match SolverCbcCmd::read_sol_file(&output_filename, p.base(), false) {
+        let (status, solution) = match SolverCbcCmd::read_sol_file(&output_filename, 
+                                                                   p.base(), 
+                                                                   false) {
             Ok((s, sol)) => (s, sol),
             Err(_e) => {
                 remove_file(&output_filename).ok();

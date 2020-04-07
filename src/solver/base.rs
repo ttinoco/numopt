@@ -1,5 +1,6 @@
 use std::fmt;
 use simple_error::SimpleError;
+use std::collections::HashMap;
 
 use crate::problem::{ProblemSol};
 
@@ -10,11 +11,43 @@ pub enum SolverStatus {
     Error,
 }
 
+#[derive(Clone)]
+pub enum SolverParam {
+    IntParam(i32),
+    FloatParam(f64),
+    StrParam(String),
+}
+
 pub trait Solver<T> {
     fn new(p: &T) -> Self;
+    fn get_param(&self, name: &str) -> Option<&SolverParam> { self.get_params().get(name) }
+    fn get_params(&self) -> &HashMap<String, SolverParam>;
+    fn get_params_mut(&mut self) -> &mut HashMap<String, SolverParam>;
     fn status(&self) -> &SolverStatus;
     fn solution(&self) -> &Option<ProblemSol>;
     fn solve(&mut self, p: &mut T) -> Result<(), SimpleError>;
+    fn set_param(&mut self, name: &str, value: SolverParam) -> Result<&mut Self, SimpleError> { 
+       
+        let v = match self.get_params_mut().get_mut(name) {
+            Some(x) => x,
+            None => return Err(SimpleError::new("unknown parameter"))
+        };
+
+        *v = match ((*v).clone(), value) {
+            (SolverParam::IntParam(_x), SolverParam::IntParam(y)) => { 
+                SolverParam::IntParam(y) 
+            },
+            (SolverParam::FloatParam(_x), SolverParam::FloatParam(y)) => { 
+                SolverParam::FloatParam(y)
+            },
+            (SolverParam::StrParam(_x), SolverParam::StrParam(y)) => { 
+                SolverParam::StrParam(y)
+            }, 
+            _ => return Err(SimpleError::new("invalid parameter type"))
+        };    
+
+        Ok(self)
+    }
 }
 
 impl SolverStatus {

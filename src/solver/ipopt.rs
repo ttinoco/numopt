@@ -4,12 +4,14 @@ use std::ptr;
 use ndarray::ArrayView1;
 use std::marker::PhantomData;
 use simple_error::SimpleError;
+use std::collections::HashMap;
 use num_traits::cast::ToPrimitive;
 use libc::{c_int, c_void, c_double};
 
 use libipopt_sys as cipopt;
 
 use crate::solver::{Solver, 
+                    SolverParam,
                     SolverStatus};
 use crate::problem::{ProblemSol,
                      ProblemNlpBase};
@@ -18,18 +20,25 @@ pub struct SolverIpopt<T> {
     status: SolverStatus,
     solution: Option<ProblemSol>,
     phantom: PhantomData<T>,
+    parameters: HashMap<String, SolverParam>,
 }
 
 impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
 
-    fn new(_p: &T) -> Self { 
+    fn new(_p: &T) -> Self {
+        
+        let parameters: HashMap<String, SolverParam> = HashMap::new();
+        
         Self {
             status: SolverStatus::Unknown,
             solution: None,
             phantom: PhantomData,
+            parameters: parameters,
         } 
     }
 
+    fn get_params(&self) -> &HashMap<String, SolverParam> { &self.parameters }
+    fn get_params_mut(&mut self) -> &mut HashMap<String, SolverParam> { &mut self.parameters }
     fn status(&self) -> &SolverStatus { &self.status }
     fn solution(&self) -> &Option<ProblemSol> { &self.solution }
 

@@ -7,8 +7,10 @@ use std::process::Command;
 use std::marker::PhantomData;
 use simple_error::SimpleError;
 use std::io::{self, BufReader};
+use std::collections::HashMap;
 
 use crate::solver::{Solver, 
+                    SolverParam,
                     SolverStatus};
 use crate::problem::{ProblemSol,
                      ProblemMilpBase, 
@@ -18,6 +20,7 @@ pub struct SolverCbcCmd<T: ProblemMilpBase> {
     status: SolverStatus,
     solution: Option<ProblemSol>,
     phantom: PhantomData<T>,
+    parameters: HashMap<String, SolverParam>,
 }
 
 impl<T: ProblemMilpBase> SolverCbcCmd<T> {
@@ -109,13 +112,19 @@ impl<T: ProblemMilpBase> SolverCbcCmd<T> {
 impl<T: ProblemMilpBase + ProblemMilpIO>  Solver<T> for SolverCbcCmd<T> {
 
     fn new(_p: &T) -> Self { 
+
+        let parameters: HashMap<String, SolverParam> = HashMap::new();
+
         Self {
             status: SolverStatus::Unknown,
             solution: None,
             phantom: PhantomData,
+            parameters: parameters,
         } 
     }
 
+    fn get_params(&self) -> &HashMap<String, SolverParam> { &self.parameters }
+    fn get_params_mut(&mut self) -> &mut HashMap<String, SolverParam> { &mut self.parameters }
     fn status(&self) -> &SolverStatus { &self.status }
     fn solution(&self) -> &Option<ProblemSol> { &self.solution }
 
