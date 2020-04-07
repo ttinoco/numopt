@@ -1,26 +1,27 @@
 use std::ops::Mul;
 
+use crate::matrix::item::MatItem;
 use crate::matrix::csr::CsrMat;
 
 #[derive(Debug)]
-pub struct CooMat {
+pub struct CooMat<T> {
     shape: (usize, usize),
     row_inds: Vec<usize>,
     col_inds: Vec<usize>,
-    data: Vec<f64>,
+    data: Vec<T>,
 }
 
-pub struct CooMatIter<'a> {
+pub struct CooMatIter<'a, T> {
     k: usize,
-    mat: &'a CooMat,
+    mat: &'a CooMat<T>,
 }
 
-impl CooMat {
+impl<T: MatItem> CooMat<T> {
 
     pub fn new(shape: (usize, usize), 
                row_inds: Vec<usize>,
                col_inds: Vec<usize>,
-               data: Vec<f64>) -> Self {
+               data: Vec<T>) -> Self {
         assert_eq!(row_inds.len(), col_inds.len());
         assert_eq!(row_inds.len(), data.len());
         Self {
@@ -35,7 +36,7 @@ impl CooMat {
                         row_inds: Vec<usize>,
                         col_inds: Vec<usize>) -> Self {
         assert_eq!(row_inds.len(), col_inds.len());
-        let data = vec![0.;row_inds.len()];
+        let data = vec![T::zero();row_inds.len()];
         Self {
             shape: shape,
             row_inds: row_inds,
@@ -49,7 +50,7 @@ impl CooMat {
             shape: shape,
             row_inds: vec![0;nnz],
             col_inds: vec![0;nnz],
-            data: vec![0.;nnz],
+            data: vec![T::zero();nnz],
         }
     }
 
@@ -58,17 +59,17 @@ impl CooMat {
     pub fn nnz(&self) -> usize { self.row_inds.len() }
     pub fn row_inds(&self) -> &[usize] { &self.row_inds }
     pub fn col_inds(&self) -> &[usize] { &self.col_inds }
-    pub fn data(&self) -> &[f64] { &self.data }
+    pub fn data(&self) -> &[T] { &self.data }
     pub fn set_row_ind(&mut self, k: usize, row: usize) -> () { self.row_inds[k] = row }
     pub fn set_col_ind(&mut self, k: usize, row: usize) -> () { self.col_inds[k] = row }
-    pub fn set_data(&mut self, k:usize, d: f64) -> () { self.data[k] = d }
-    pub fn iter(&self) -> CooMatIter { CooMatIter::new(&self) }
+    pub fn set_data(&mut self, k:usize, d: T) -> () { self.data[k] = d }
+    pub fn iter(&self) -> CooMatIter<T> { CooMatIter::new(&self) }
 
-    pub fn to_csr(&self) -> CsrMat {
+    pub fn to_csr(&self) -> CsrMat<T> {
 
         let mut indptr: Vec<usize> = vec![0; self.rows()+1];
         let mut indices: Vec<usize> = vec![0; self.nnz()];
-        let mut data: Vec<f64> = vec![0.; self.nnz()];
+        let mut data: Vec<T> = vec![T::zero(); self.nnz()];
 
         let mut counter: Vec<usize> = vec![0; self.rows()];
 
@@ -106,13 +107,13 @@ impl CooMat {
     }
 }
 
-impl Mul<Vec<f64>> for &CooMat {
+impl<T: MatItem> Mul<Vec<T>> for &CooMat<T> {
 
-    type Output = Vec<f64>;
+    type Output = Vec<T>;
 
-    fn mul(self, rhs: Vec<f64>) -> Vec<f64> {
+    fn mul(self, rhs: Vec<T>) -> Vec<T> {
         assert_eq!(self.cols(), rhs.len());
-        let mut y = vec![0.; self.rows()];
+        let mut y = vec![T::zero(); self.rows()];
         for (row, col, val) in self.iter() {
             y[row] += rhs[col]*val;
         }
@@ -120,8 +121,8 @@ impl Mul<Vec<f64>> for &CooMat {
     }
 }
 
-impl<'a> CooMatIter<'a> {
-    fn new(mat: &'a CooMat) -> Self {
+impl<'a, T: MatItem> CooMatIter<'a, T> {
+    fn new(mat: &'a CooMat<T>) -> Self {
         Self {
             k: 0,
             mat: mat,
@@ -129,8 +130,8 @@ impl<'a> CooMatIter<'a> {
     }
 }
 
-impl<'a> Iterator for CooMatIter<'a> {
-    type Item = (usize, usize, f64);
+impl<'a, T: MatItem> Iterator for CooMatIter<'a, T> {
+    type Item = (usize, usize, T);
     fn next(&mut self) -> Option<Self::Item> {
         if self.k < self.mat.nnz() {
             let item = (self.mat.row_inds[self.k],

@@ -1,18 +1,19 @@
+use crate::matrix::item::MatItem;
 
 #[derive(Debug)]
-pub struct CsrMat {
+pub struct CsrMat<T> {
     shape: (usize, usize),
     indptr: Vec<usize>,
     indices: Vec<usize>,
-    data: Vec<f64>,
+    data: Vec<T>,
 }
 
-impl CsrMat {
+impl<T: MatItem> CsrMat<T> {
 
     pub fn new(shape: (usize, usize), 
                indptr: Vec<usize>,
                indices: Vec<usize>,
-               data: Vec<f64>) -> Self {
+               data: Vec<T>) -> Self {
         assert_eq!(indptr.len(), shape.0+1);
         assert_eq!(indices.len(), data.len());
         assert_eq!(*indptr.last().unwrap(), data.len());
@@ -29,7 +30,7 @@ impl CsrMat {
     pub fn nnz(&self) -> usize { self.indices.len() }
     pub fn indptr(&self) -> &[usize] { &self.indptr }
     pub fn indices(&self) -> &[usize] { &self.indices }
-    pub fn data(&self) -> &[f64] { &self.data }
+    pub fn data(&self) -> &[T] { &self.data }
 
     pub fn sum_duplicates(&mut self) -> () {
 
@@ -37,12 +38,12 @@ impl CsrMat {
         let mut colrow: Vec<usize> = vec![0; self.cols()];
         let mut colnewk: Vec<usize> = vec![0; self.cols()];
 
-        let mut d: f64;
+        let mut d: T;
         let mut col: usize;
         let mut new_k: usize = 0;
         let mut new_counter: Vec<usize> = vec![0; self.rows()];
         let mut new_indices: Vec<usize> = Vec::new();
-        let mut new_data: Vec<f64> = Vec::new();
+        let mut new_data: Vec<T> = Vec::new();
         for row in 0..self.rows() {
             for k in self.indptr[row]..self.indptr[row+1] {
                 

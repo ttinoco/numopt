@@ -13,13 +13,13 @@ pub trait ProblemNlpBase {
     fn x0(&self) -> Option<&[f64]>;
     fn phi(&self) -> f64;
     fn gphi(&self) -> &[f64];
-    fn hphi(&self) -> &CooMat;
-    fn a(&self) -> &CooMat;
+    fn hphi(&self) -> &CooMat<f64>;
+    fn a(&self) -> &CooMat<f64>;
     fn b(&self) -> &[f64];
     fn f(&self) -> &[f64];
-    fn j(&self) -> &CooMat;
-    fn h(&self) -> &Vec<CooMat>;
-    fn hcomb(&self) -> &CooMat; 
+    fn j(&self) -> &CooMat<f64>;
+    fn h(&self) -> &Vec<CooMat<f64>>;
+    fn hcomb(&self) -> &CooMat<f64>; 
     fn l(&self) -> &[f64];
     fn u(&self) -> &[f64];
     fn evaluate(&mut self, x: &[f64]) -> ();
@@ -31,11 +31,11 @@ pub trait ProblemNlpBase {
 }
 
 impl ProblemNlp {
-    pub fn new(hphi: CooMat, 
-               a: CooMat, 
+    pub fn new(hphi: CooMat<f64>, 
+               a: CooMat<f64>, 
                b: Vec<f64>,
-               j: CooMat,
-               h: Vec<CooMat>,  
+               j: CooMat<f64>,
+               h: Vec<CooMat<f64>>,  
                l: Vec<f64>, 
                u: Vec<f64>, 
                x0: Option<Vec<f64>>,
@@ -52,13 +52,13 @@ impl ProblemNlpBase for ProblemNlp {
     fn x0(&self) -> Option<&[f64]> { self.base.x0() }
     fn phi(&self) -> f64 { self.base.phi() }
     fn gphi(&self) -> &[f64] { &self.base.gphi() }
-    fn hphi(&self) -> &CooMat { &self.base.hphi() }
-    fn a(&self) -> &CooMat { &self.base.a() } 
+    fn hphi(&self) -> &CooMat<f64> { &self.base.hphi() }
+    fn a(&self) -> &CooMat<f64> { &self.base.a() } 
     fn b(&self) -> &[f64] { &self.base.b() }
     fn f(&self) -> &[f64] { &self.base.f() }
-    fn j(&self) -> &CooMat { &self.base.j() } 
-    fn h(&self) -> &Vec<CooMat> { &self.base.h() } 
-    fn hcomb(&self) -> &CooMat { &self.base.hcomb() }
+    fn j(&self) -> &CooMat<f64> { &self.base.j() } 
+    fn h(&self) -> &Vec<CooMat<f64>> { &self.base.h() } 
+    fn hcomb(&self) -> &CooMat<f64> { &self.base.hcomb() }
     fn l(&self) -> &[f64] { &self.base.l() }
     fn u(&self) -> &[f64] { &self.base.u() }
     fn evaluate(&mut self, x: &[f64]) -> () { self.base.evaluate(x) }
@@ -70,13 +70,13 @@ impl ProblemBase for ProblemNlp {
     fn x0(&self) -> Option<&[f64]> { self.base.x0() }
     fn phi(&self) -> f64 { self.base.phi() }
     fn gphi(&self) -> &[f64] { &self.base.gphi() }
-    fn hphi(&self) -> &CooMat { &self.base.hphi() }
-    fn a(&self) -> &CooMat { &self.base.a() } 
+    fn hphi(&self) -> &CooMat<f64> { &self.base.hphi() }
+    fn a(&self) -> &CooMat<f64> { &self.base.a() } 
     fn b(&self) -> &[f64] { &self.base.b() }
     fn f(&self) -> &[f64] { &self.base.f() }
-    fn j(&self) -> &CooMat { &self.base.j() } 
-    fn h(&self) -> &Vec<CooMat> { &self.base.h() } 
-    fn hcomb(&self) -> &CooMat { &self.base.hcomb() }
+    fn j(&self) -> &CooMat<f64> { &self.base.j() } 
+    fn h(&self) -> &Vec<CooMat<f64>> { &self.base.h() } 
+    fn hcomb(&self) -> &CooMat<f64> { &self.base.hcomb() }
     fn l(&self) -> &[f64] { &self.base.l() }
     fn u(&self) -> &[f64] { &self.base.u() }
     fn p(&self) -> &[bool] { self.base.p() }
@@ -114,20 +114,20 @@ mod tests {
         // x3           0   0  x0           0
         // (2*x0+x1+x2) x0  x0 0            0
         // 0            0   0  0            0
-        let hphi: CooMat = CooMat::new(
+        let hphi = CooMat::new(
             (5, 5),
             vec![0, 1, 2, 3, 3, 3],
             vec![0, 0, 0, 0, 1, 2],
             vec![0.; 6]
         );
 
-        let a: CooMat = CooMat::from_nnz((0, 5), 0);
-        let b: Vec<f64> = Vec::new();
+        let a = CooMat::from_nnz((0, 5), 0);
+        let b = Vec::new();
 
         // j
         // x1*x2*x3 x0*x2*x3 x0*x1*x3 x0*x1*x2 -1 
         // 2*x0     2*x1     2*x2     2*x3      0
-        let j: CooMat = CooMat::new(
+        let j = CooMat::new(
             (2, 5),
             vec![0, 0, 0, 0, 0, 1, 1, 1, 1],
             vec![0, 1, 2, 3, 4, 0, 1, 2, 3],
@@ -146,7 +146,7 @@ mod tests {
         // 0 0 2 0 0
         // 0 0 0 2 0
         // 0 0 0 0 0
-        let h: Vec<CooMat> = vec![
+        let h = vec![
             CooMat::new(
                 (5, 5),
                 vec![1, 2, 2, 3, 3, 3],
@@ -170,10 +170,10 @@ mod tests {
         // eval_fn
         let eval_fn = Box::new(move | phi: &mut f64, 
                                       gphi: &mut Vec<f64>, 
-                                      hphi: &mut CooMat,
+                                      hphi: &mut CooMat<f64>,
                                       f: &mut Vec<f64>,
-                                      j: &mut CooMat,
-                                      h: &mut Vec<CooMat>,
+                                      j: &mut CooMat<f64>,
+                                      h: &mut Vec<CooMat<f64>>,
                                       x: &[f64] | {
 
             assert_eq!(gphi.len(), x.len());

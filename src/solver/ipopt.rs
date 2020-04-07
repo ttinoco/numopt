@@ -369,20 +369,20 @@ mod tests {
         // x3           0   0  x0           0
         // (2*x0+x1+x2) x0  x0 0            0
         // 0            0   0  0            0
-        let hphi: CooMat = CooMat::new(
+        let hphi = CooMat::new(
             (5, 5),
             vec![0, 1, 2, 3, 3, 3],
             vec![0, 0, 0, 0, 1, 2],
             vec![0.; 6]
         );
 
-        let a: CooMat = CooMat::from_nnz((0, 5), 0);
-        let b: Vec<f64> = Vec::new();
+        let a = CooMat::from_nnz((0, 5), 0);
+        let b = Vec::new();
 
         // j
         // x1*x2*x3 x0*x2*x3 x0*x1*x3 x0*x1*x2 -1 
         // 2*x0     2*x1     2*x2     2*x3      0
-        let j: CooMat = CooMat::new(
+        let j = CooMat::new(
             (2, 5),
             vec![0, 0, 0, 0, 0, 1, 1, 1, 1],
             vec![0, 1, 2, 3, 4, 0, 1, 2, 3],
@@ -401,7 +401,7 @@ mod tests {
         // 0 0 2 0 0
         // 0 0 0 2 0
         // 0 0 0 0 0
-        let h: Vec<CooMat> = vec![
+        let h = vec![
             CooMat::new(
                 (5, 5),
                 vec![1, 2, 2, 3, 3, 3],
@@ -425,10 +425,10 @@ mod tests {
         // eval_fn
         let eval_fn = Box::new(move | phi: &mut f64, 
                                       gphi: &mut Vec<f64>, 
-                                      hphi: &mut CooMat,
+                                      hphi: &mut CooMat<f64>,
                                       f: &mut Vec<f64>,
-                                      j: &mut CooMat,
-                                      h: &mut Vec<CooMat>,
+                                      j: &mut CooMat<f64>,
+                                      h: &mut Vec<CooMat<f64>>,
                                       x: &[f64] | {
 
             assert_eq!(gphi.len(), x.len());

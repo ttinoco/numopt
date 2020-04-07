@@ -12,7 +12,7 @@ pub struct ProblemLp {
 pub trait ProblemLpBase {
     fn x0(&self) -> Option<&[f64]>;
     fn c(&self) -> &[f64];
-    fn a(&self) -> &CooMat;
+    fn a(&self) -> &CooMat<f64>;
     fn b(&self) -> &[f64];
     fn l(&self) -> &[f64];
     fn u(&self) -> &[f64];
@@ -24,7 +24,7 @@ pub trait ProblemLpBase {
 
 impl ProblemLp {
     pub fn new(c: Vec<f64>,
-               a: CooMat,
+               a: CooMat<f64>,
                b: Vec<f64>,  
                l: Vec<f64>,
                u: Vec<f64>,
@@ -40,7 +40,7 @@ impl ProblemLp {
 impl ProblemLpBase for ProblemLp {
     fn x0(&self) -> Option<&[f64]> { ProblemMilpBase::x0(&self.base) }
     fn c(&self) -> &[f64] { ProblemMilpBase::c(&self.base) }
-    fn a(&self) -> &CooMat { ProblemMilpBase::a(&self.base) } 
+    fn a(&self) -> &CooMat<f64> { ProblemMilpBase::a(&self.base) } 
     fn b(&self) -> &[f64] { ProblemMilpBase::b(&self.base) }
     fn l(&self) -> &[f64] { ProblemMilpBase::l(&self.base) }
     fn u(&self) -> &[f64] { ProblemMilpBase::u(&self.base) }
@@ -51,7 +51,7 @@ impl ProblemLpBase for ProblemLp {
 impl ProblemMilpBase for ProblemLp {
     fn x0(&self) -> Option<&[f64]> { ProblemMilpBase::x0(&self.base) }
     fn c(&self) -> &[f64] { ProblemMilpBase::c(&self.base) }
-    fn a(&self) -> &CooMat { ProblemMilpBase::a(&self.base) }
+    fn a(&self) -> &CooMat<f64> { ProblemMilpBase::a(&self.base) }
     fn b(&self) -> &[f64] { ProblemMilpBase::b(&self.base) }
     fn l(&self) -> &[f64] { ProblemMilpBase::l(&self.base) }
     fn u(&self) -> &[f64] { ProblemMilpBase::u(&self.base) }
@@ -64,13 +64,13 @@ impl ProblemBase for ProblemLp {
     fn x0(&self) -> Option<&[f64]> { ProblemBase::x0(&self.base) }
     fn phi(&self) -> f64 { ProblemBase::phi(&self.base) }
     fn gphi(&self) -> &[f64] { ProblemBase::gphi(&self.base) }
-    fn hphi(&self) -> &CooMat { ProblemBase::hphi(&self.base) }
-    fn a(&self) -> &CooMat { ProblemBase::a(&self.base) }
+    fn hphi(&self) -> &CooMat<f64> { ProblemBase::hphi(&self.base) }
+    fn a(&self) -> &CooMat<f64> { ProblemBase::a(&self.base) }
     fn b(&self) -> &[f64] { ProblemBase::b(&self.base) }
     fn f(&self) -> &[f64] { ProblemBase::f(&self.base) }
-    fn j(&self) -> &CooMat { ProblemBase::j(&self.base) }
-    fn h(&self) -> &Vec<CooMat> { ProblemBase::h(&self.base) }
-    fn hcomb(&self) -> &CooMat { ProblemBase::hcomb(&self.base) }
+    fn j(&self) -> &CooMat<f64> { ProblemBase::j(&self.base) }
+    fn h(&self) -> &Vec<CooMat<f64>> { ProblemBase::h(&self.base) }
+    fn hcomb(&self) -> &CooMat<f64> { ProblemBase::hcomb(&self.base) }
     fn l(&self) -> &[f64] { ProblemBase::l(&self.base) }
     fn u(&self) -> &[f64] { ProblemBase::u(&self.base) }
     fn p(&self) -> &[bool] { ProblemBase::p(&self.base) }
@@ -82,13 +82,13 @@ impl ProblemNlpBase for ProblemLp {
     fn x0(&self) -> Option<&[f64]> { ProblemBase::x0(&self.base) }
     fn phi(&self) -> f64 { ProblemBase::phi(&self.base) }
     fn gphi(&self) -> &[f64] { ProblemBase::gphi(&self.base) }
-    fn hphi(&self) -> &CooMat { ProblemBase::hphi(&self.base) }
-    fn a(&self) -> &CooMat { ProblemBase::a(&self.base) }
+    fn hphi(&self) -> &CooMat<f64> { ProblemBase::hphi(&self.base) }
+    fn a(&self) -> &CooMat<f64> { ProblemBase::a(&self.base) }
     fn b(&self) -> &[f64] { ProblemBase::b(&self.base) }
     fn f(&self) -> &[f64] { ProblemBase::f(&self.base) }
-    fn j(&self) -> &CooMat { ProblemBase::j(&self.base) }
-    fn h(&self) -> &Vec<CooMat> { ProblemBase::h(&self.base) }
-    fn hcomb(&self) -> &CooMat { ProblemBase::hcomb(&self.base) }
+    fn j(&self) -> &CooMat<f64> { ProblemBase::j(&self.base) }
+    fn h(&self) -> &Vec<CooMat<f64>> { ProblemBase::h(&self.base) }
+    fn hcomb(&self) -> &CooMat<f64> { ProblemBase::hcomb(&self.base) }
     fn l(&self) -> &[f64] { ProblemBase::l(&self.base) }
     fn u(&self) -> &[f64] { ProblemBase::u(&self.base) }
     fn evaluate(&mut self, x: &[f64]) -> () { ProblemBase::evaluate(&mut self.base, x) }

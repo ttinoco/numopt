@@ -2,13 +2,13 @@ use std::fmt::{self, Debug};
 
 use crate::matrix::CooMat;
 
-pub type ProblemEval = Box<dyn Fn(&mut f64,         // phi
-                                  &mut Vec<f64>,    // gphi
-                                  &mut CooMat,      // Hphi
-                                  &mut Vec<f64>,    // f
-                                  &mut CooMat,      // J
-                                  &mut Vec<CooMat>, // H
-                                  &[f64]            // x
+pub type ProblemEval = Box<dyn Fn(&mut f64,              // phi
+                                  &mut Vec<f64>,         // gphi
+                                  &mut CooMat<f64>,      // Hphi
+                                  &mut Vec<f64>,         // f
+                                  &mut CooMat<f64>,      // J
+                                  &mut Vec<CooMat<f64>>, // H
+                                  &[f64]                 // x
                                  ) -> ()>;
 
 pub struct Problem 
@@ -17,15 +17,15 @@ pub struct Problem
     
     phi: f64,
     gphi: Vec<f64>,
-    hphi: CooMat,  // lower triangular
+    hphi: CooMat<f64>,  // lower triangular
     
-    a: CooMat,
+    a: CooMat<f64>,
     b: Vec<f64>,
     
     f: Vec<f64>,
-    j: CooMat,
-    h: Vec<CooMat>,
-    hcomb: CooMat, // lower triangular
+    j: CooMat<f64>,
+    h: Vec<CooMat<f64>>,
+    hcomb: CooMat<f64>, // lower triangular
     
     l: Vec<f64>,
     u: Vec<f64>,
@@ -39,13 +39,13 @@ pub trait ProblemBase {
     fn x0(&self) -> Option<&[f64]>;
     fn phi(&self) -> f64;
     fn gphi(&self) -> &[f64];
-    fn hphi(&self) -> &CooMat;
-    fn a(&self) -> &CooMat;
+    fn hphi(&self) -> &CooMat<f64>;
+    fn a(&self) -> &CooMat<f64>;
     fn b(&self) -> &[f64];
     fn f(&self) -> &[f64];
-    fn j(&self) -> &CooMat;
-    fn h(&self) -> &Vec<CooMat>;
-    fn hcomb(&self) -> &CooMat; 
+    fn j(&self) -> &CooMat<f64>;
+    fn h(&self) -> &Vec<CooMat<f64>>;
+    fn hcomb(&self) -> &CooMat<f64>; 
     fn l(&self) -> &[f64];
     fn u(&self) -> &[f64];
     fn p(&self) -> &[bool];
@@ -65,11 +65,11 @@ pub struct ProblemSol {
 }
 
 impl Problem {
-    pub fn new(hphi: CooMat, 
-               a: CooMat, 
+    pub fn new(hphi: CooMat<f64>, 
+               a: CooMat<f64>, 
                b: Vec<f64>,
-               j: CooMat,
-               h: Vec<CooMat>,  
+               j: CooMat<f64>,
+               h: Vec<CooMat<f64>>,  
                l: Vec<f64>, 
                u: Vec<f64>, 
                p: Vec<bool>,
@@ -140,13 +140,13 @@ impl ProblemBase for Problem {
     }
     fn phi(&self) -> f64 { self.phi }
     fn gphi(&self) -> &[f64] { &self.gphi }
-    fn hphi(&self) -> &CooMat { &self.hphi }
-    fn a(&self) -> &CooMat { &self.a } 
+    fn hphi(&self) -> &CooMat<f64> { &self.hphi }
+    fn a(&self) -> &CooMat<f64> { &self.a } 
     fn b(&self) -> &[f64] { &self.b }
     fn f(&self) -> &[f64] { &self.f }
-    fn j(&self) -> &CooMat { &self.j } 
-    fn h(&self) -> &Vec<CooMat> { &self.h } 
-    fn hcomb(&self) -> &CooMat { &self.hcomb }
+    fn j(&self) -> &CooMat<f64> { &self.j } 
+    fn h(&self) -> &Vec<CooMat<f64>> { &self.h } 
+    fn hcomb(&self) -> &CooMat<f64> { &self.hcomb }
     fn l(&self) -> &[f64] { &self.l }
     fn u(&self) -> &[f64] { &self.u }
     fn p(&self) -> &[bool] { &self.p } 

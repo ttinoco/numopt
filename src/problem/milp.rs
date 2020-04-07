@@ -2,8 +2,7 @@ use std::fs::File;
 use std::io::{self, Write, BufWriter};
  
 use ndarray::ArrayView1;
-use crate::matrix::{CooMat,
-                    CsrMat};
+use crate::matrix::CooMat;
 use crate::problem::{Problem, 
                      ProblemBase}; 
 
@@ -15,7 +14,7 @@ pub struct ProblemMilp {
 pub trait ProblemMilpBase {
     fn x0(&self) -> Option<&[f64]>;
     fn c(&self) -> &[f64];
-    fn a(&self) -> &CooMat;
+    fn a(&self) -> &CooMat<f64>;
     fn b(&self) -> &[f64];
     fn l(&self) -> &[f64];
     fn u(&self) -> &[f64];
@@ -34,7 +33,7 @@ pub trait ProblemMilpIO {
 
 impl ProblemMilp {
     pub fn new(c: Vec<f64>,
-               a: CooMat,
+               a: CooMat<f64>,
                b: Vec<f64>,  
                l: Vec<f64>,
                u: Vec<f64>, 
@@ -43,10 +42,10 @@ impl ProblemMilp {
         let cc = c.clone();
         let eval_fn = Box::new(move | phi: &mut f64, 
                                       gphi: &mut Vec<f64>, 
-                                      _hphi: &mut CooMat,
+                                      _hphi: &mut CooMat<f64>,
                                       _f: &mut Vec<f64>,
-                                      _j: &mut CooMat,
-                                      _h: &mut Vec<CooMat>,
+                                      _j: &mut CooMat<f64>,
+                                      _h: &mut Vec<CooMat<f64>>,
                                       x: &[f64] | {
             *phi = ArrayView1::from(&c).dot(&ArrayView1::from(x));
             gphi.copy_from_slice(&c);
@@ -72,7 +71,7 @@ impl ProblemMilp {
 impl ProblemMilpBase for ProblemMilp {
     fn x0(&self) -> Option<&[f64]> { self.base.x0() }
     fn c(&self) -> &[f64] { &self.c }
-    fn a(&self) -> &CooMat { &self.base.a() } 
+    fn a(&self) -> &CooMat<f64> { &self.base.a() } 
     fn b(&self) -> &[f64] { &self.base.b() }
     fn l(&self) -> &[f64] { &self.base.l() }
     fn u(&self) -> &[f64] { &self.base.u() }
@@ -85,13 +84,13 @@ impl ProblemBase for ProblemMilp {
     fn x0(&self) -> Option<&[f64]> { self.base.x0() }
     fn phi(&self) -> f64 { self.base().phi() }
     fn gphi(&self) -> &[f64] { self.base().gphi() }
-    fn hphi(&self) -> &CooMat { self.base().hphi() }
-    fn a(&self) -> &CooMat { self.base.a() }
+    fn hphi(&self) -> &CooMat<f64> { self.base().hphi() }
+    fn a(&self) -> &CooMat<f64> { self.base.a() }
     fn b(&self) -> &[f64] { self.base.b() }
     fn f(&self) -> &[f64] { self.base().f() }
-    fn j(&self) -> &CooMat { self.base().j() }
-    fn h(&self) -> &Vec<CooMat> { self.base().h() }
-    fn hcomb(&self) -> &CooMat { self.base().hcomb() }
+    fn j(&self) -> &CooMat<f64> { self.base().j() }
+    fn h(&self) -> &Vec<CooMat<f64>> { self.base().h() }
+    fn hcomb(&self) -> &CooMat<f64> { self.base().hcomb() }
     fn l(&self) -> &[f64] { self.base.l() }
     fn u(&self) -> &[f64] { self.base.u() }
     fn p(&self) -> &[bool] { self.base.p() }
@@ -144,7 +143,7 @@ impl<T: ProblemMilpBase> ProblemMilpIO for T {
 
         // Constraints
         w.write("Subject to\n".as_bytes())?;
-        let mut a: CsrMat = self.a().to_csr();
+        let mut a = self.a().to_csr();
         a.sum_duplicates();
         for i in 0..a.rows() {
             b = self.b()[i];
