@@ -113,7 +113,8 @@ impl<T: ProblemMilpBase + ProblemMilpIO>  Solver<T> for SolverCbcCmd<T> {
 
     fn new(_p: &T) -> Self { 
 
-        let parameters: HashMap<String, SolverParam> = HashMap::new();
+        let mut parameters: HashMap<String, SolverParam> = HashMap::new();
+        parameters.insert("logLevel".to_string(), SolverParam::IntParam(1));
 
         Self {
             status: SolverStatus::Unknown,
@@ -164,12 +165,20 @@ impl<T: ProblemMilpBase + ProblemMilpIO>  Solver<T> for SolverCbcCmd<T> {
             }
         };
 
+        // Params
+        let log_level= match self.get_param("logLevel") {
+            Some(SolverParam::IntParam(i)) => i,
+            _ => return Err(SimpleError::new("unable to get logLevel parameter"))
+        };
+
         // Call Cbc command
         match Command::new("cbc")
-                      .args(&[&input_filename, 
-                              "solve", 
+                      .args(&[&input_filename,
+                              "logLevel",
+                              format!("{}", log_level).as_ref(),
                               "printingOptions",
-                              "all",
+                              "all", 
+                              "solve", 
                               "solution",
                               &output_filename])
                       .spawn()
@@ -214,7 +223,7 @@ mod tests {
 
     use crate::matrix::CooMat;
     use crate::problem::{ProblemLp, ProblemMilp};
-    use crate::solver::{Solver, SolverStatus, SolverCbcCmd};
+    use crate::solver::{Solver, SolverParam, SolverStatus, SolverCbcCmd};
     use crate::assert_vec_approx_eq;
 
     #[test]
@@ -245,6 +254,7 @@ mod tests {
         );
 
         let mut s = SolverCbcCmd::new(&p);
+        s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
         s.solve(&mut p).unwrap();
 
         assert_eq!(*s.status(), SolverStatus::Solved);
@@ -283,6 +293,7 @@ mod tests {
         );
 
         let mut s = SolverCbcCmd::new(&p);
+        s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
         s.solve(&mut p).unwrap();
 
         assert_eq!(*s.status(), SolverStatus::Solved);

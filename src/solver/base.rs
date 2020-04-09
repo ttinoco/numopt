@@ -26,7 +26,7 @@ pub trait Solver<T> {
     fn status(&self) -> &SolverStatus;
     fn solution(&self) -> &Option<ProblemSol>;
     fn solve(&mut self, p: &mut T) -> Result<(), SimpleError>;
-    fn set_param(&mut self, name: &str, value: SolverParam) -> Result<&mut Self, SimpleError> { 
+    fn set_param(&mut self, name: &str, value: SolverParam) -> Result<(), SimpleError> { 
        
         let v = match self.get_params_mut().get_mut(name) {
             Some(x) => x,
@@ -46,7 +46,7 @@ pub trait Solver<T> {
             _ => return Err(SimpleError::new("invalid parameter type"))
         };    
 
-        Ok(self)
+        Ok(())
     }
 }
 

@@ -1,7 +1,7 @@
 use std::ffi::OsStr;
 use tempfile::Builder;
 use std::fs::remove_file;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::marker::PhantomData;
 use simple_error::SimpleError;
 use std::collections::HashMap;
@@ -77,12 +77,21 @@ impl<T: ProblemLpBase + ProblemMilpIO> Solver<T> for SolverClpCmd<T> {
             }
         };
 
+        // Params
+        let log_level= match self.get_param("logLevel") {
+            Some(SolverParam::IntParam(i)) => i,
+            _ => return Err(SimpleError::new("unable to get logLevel parameter"))
+        };
+
         // Call Clp command
         match Command::new("clp")
+                      .stdout(if *log_level == 0 { Stdio::null() } else { Stdio::inherit() })
                       .args(&[&input_filename, 
-                              "solve", 
+                              "logLevel",
+                              format!("{}", log_level).as_ref(),
                               "printingOptions",
                               "all",
+                              "solve", 
                               "solution",
                               &output_filename])
                       .spawn()
@@ -129,7 +138,7 @@ mod tests {
 
     use crate::matrix::CooMat;
     use crate::problem::ProblemLp;
-    use crate::solver::{Solver, SolverStatus, SolverClpCmd};
+    use crate::solver::{Solver, SolverParam, SolverStatus, SolverClpCmd};
     use crate::assert_vec_approx_eq;
 
     #[test]
@@ -161,6 +170,7 @@ mod tests {
         );
 
         let mut s = SolverClpCmd::new(&p);
+        s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
         s.solve(&mut p).unwrap();
 
         assert_eq!(*s.status(), SolverStatus::Solved);
