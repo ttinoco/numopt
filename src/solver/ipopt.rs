@@ -1,12 +1,13 @@
 #![cfg(feature = "ipopt")] 
 
 use std::ptr;
+use std::ffi::CString;
 use ndarray::ArrayView1;
 use std::marker::PhantomData;
 use simple_error::SimpleError;
 use std::collections::HashMap;
 use num_traits::cast::ToPrimitive;
-use libc::{c_int, c_void, c_double};
+use libc::{c_int, c_void, c_char, c_double};
 
 use libipopt_sys as cipopt;
 
@@ -27,7 +28,9 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
 
     fn new(_p: &T) -> Self {
         
-        let parameters: HashMap<String, SolverParam> = HashMap::new();
+        let mut parameters: HashMap<String, SolverParam> = HashMap::new();
+        parameters.insert("print_level".to_string(), SolverParam::IntParam(5));
+        parameters.insert("sb".to_string(), SolverParam::StrParam(String::from("no")));
         
         Self {
             status: SolverStatus::Unknown,
@@ -75,6 +78,21 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
             return Err(SimpleError::new("failed to create ipopt problem"))
         }
 
+        // Parameter print_level
+        let print_level: &i32 = match self.get_param("print_level") {
+            Some(SolverParam::IntParam(i)) => i,
+            _ => return Err(SimpleError::new("unable to get parameter print_level"))
+        };
+        unsafe { add_int_option(cprob, "print_level", *print_level)? };
+
+        // Parameter sb
+        let sb: &str = match self.get_param("sb") {
+            Some(SolverParam::StrParam(s)) => s.as_ref(),
+            _ => return Err(SimpleError::new("unable to get parameter sb"))
+        };
+        unsafe { add_str_option(cprob, "sb", sb)? };
+        
+        // Buffers
         let mut x: Vec<f64> = vec![0.;p.nx()];
         let mut lamnu: Vec<f64> = vec![0.;p.na()+p.nf()];        
         let mut pi: Vec<f64> = vec![0.;p.nx()];
@@ -345,6 +363,33 @@ where T: ProblemNlpBase {
     cipopt::TRUE
 }
 
+unsafe fn add_int_option(cprob: cipopt::IpoptProblem, 
+                         key: &str, 
+                         val: i32) 
+                         -> Result<(), SimpleError> {
+    let cstr = CString::new(key).unwrap();
+    match cipopt::AddIpoptIntOption(cprob, 
+                                    cstr.as_ptr() as *const c_char, 
+                                    val) {
+        cipopt::TRUE => Ok(()),
+        _ =>  return Err(SimpleError::new(format!("unable to set parameter {}", key)))
+    }
+}
+
+unsafe fn add_str_option(cprob: cipopt::IpoptProblem, 
+                         key: &str, 
+                         val: &str) 
+                         -> Result<(), SimpleError> {
+    let ckey = CString::new(key).unwrap();
+    let cval = CString::new(val).unwrap();
+    match cipopt::AddIpoptStrOption(cprob, 
+                                    ckey.as_ptr() as *const c_char, 
+                                    cval.as_ptr() as *const c_char) {
+        cipopt::TRUE => Ok(()),
+        _ =>  return Err(SimpleError::new(format!("unable to set parameter {}", key)))
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -352,7 +397,7 @@ mod tests {
 
     use crate::matrix::CooMat;
     use crate::problem::{ProblemLp, ProblemNlpBase, ProblemNlp};
-    use crate::solver::{Solver, SolverStatus, SolverIpopt};
+    use crate::solver::{Solver, SolverParam, SolverStatus, SolverIpopt};
     use crate::assert_vec_approx_eq;
 
     #[test]
@@ -509,6 +554,8 @@ mod tests {
         );
 
         let mut s = SolverIpopt::new(&p);
+        s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
+        s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
         s.solve(&mut p).unwrap();
 
         assert_eq!(*s.status(), SolverStatus::Solved);
@@ -550,6 +597,8 @@ mod tests {
         p.evaluate(&x);
     
         let mut s = SolverIpopt::new(&p);
+        s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
+        s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
         s.solve(&mut p).unwrap();
 
         assert_eq!(*s.status(), SolverStatus::Solved);

@@ -3,6 +3,7 @@
 
 use libc::{c_int, 
            c_void, 
+           c_char,
            c_double};
 
 #[repr(C)] pub struct IpoptProblemInfo { _private: [u8; 0] }
@@ -83,6 +84,14 @@ extern {
                       mult_x_L: *mut c_double,
                       mult_x_U: *mut c_double,
                       user_data: *mut c_void) -> c_int;
+
+    pub fn AddIpoptIntOption(ipopt_problem: IpoptProblem, 
+                             keyword: *const c_char, 
+                             val: c_int) -> c_int;
+
+    pub fn AddIpoptStrOption(ipopt_problem: IpoptProblem, 
+                             keyword: *const c_char, 
+                             val: *const c_char) -> c_int;
 }
 
 

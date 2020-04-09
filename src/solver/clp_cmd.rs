@@ -77,10 +77,10 @@ impl<T: ProblemLpBase + ProblemMilpIO> Solver<T> for SolverClpCmd<T> {
             }
         };
 
-        // Params
-        let log_level= match self.get_param("logLevel") {
+        // Parameters
+        let log_level = match self.get_param("logLevel") {
             Some(SolverParam::IntParam(i)) => i,
-            _ => return Err(SimpleError::new("unable to get logLevel parameter"))
+            _ => return Err(SimpleError::new("unable to get parameter logLevel"))
         };
 
         // Call Clp command
