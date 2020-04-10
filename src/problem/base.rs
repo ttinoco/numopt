@@ -2,6 +2,8 @@ use std::fmt::{self, Debug};
 
 use crate::matrix::CooMat;
 
+/// Type that represents the evaluation function
+/// of an optimization problem.
 pub type ProblemEval = Box<dyn Fn(&mut f64,              // phi
                                   &mut Vec<f64>,         // gphi
                                   &mut CooMat<f64>,      // Hphi
@@ -11,10 +13,13 @@ pub type ProblemEval = Box<dyn Fn(&mut f64,              // phi
                                   &[f64]                 // x
                                  ) -> ()>;
 
+/// Generic optimization problem (Minlp).
 pub struct Problem 
 {
+    /// Initial point.
     x0: Option<Vec<f64>>,
     
+    /// Objective function value.
     phi: f64,
     gphi: Vec<f64>,
     hphi: CooMat<f64>,  // lower triangular

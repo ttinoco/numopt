@@ -1,3 +1,5 @@
+//! Optimization problem data structures, types, and traits.
+
 mod base;
 mod milp;
 mod lp;
