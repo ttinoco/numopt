@@ -1,6 +1,6 @@
 # numopt
 
-Optimization problem abstractions, solver interfaces, and more.
+Numerical optimization problem abstractions, solver interfaces, and more.
 
 ## Contents
 
