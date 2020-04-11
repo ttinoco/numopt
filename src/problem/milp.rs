@@ -6,32 +6,75 @@ use crate::matrix::CooMat;
 use crate::problem::{Problem, 
                      ProblemBase}; 
 
+/// Mixed-integer linear optimization problem (Milp).
 pub struct ProblemMilp {
     c: Vec<f64>,
     base: Problem,
 }
 
+/// A trait for mixed-integer linear optimization 
+/// problems (Milp) of the form
+/// ```ignore
+/// minimize   c^T*x
+/// subject to a*x = b
+///            l <= x <= u
+///            p*x in integers
+/// ```
 pub trait ProblemMilpBase {
+
+    /// Initial point.
     fn x0(&self) -> Option<&[f64]>;
+
+    /// Objective function gradient value.
     fn c(&self) -> &[f64];
+
+    /// Jacobian matrix of linear equality constraints.
     fn a(&self) -> &CooMat<f64>;
+
+    /// Right-hand-side vector of linear equality constraints.
     fn b(&self) -> &[f64];
+
+    /// Vector of optimization variable lower limits.
     fn l(&self) -> &[f64];
+
+    /// Vector of optimization variable uppeer limits.
     fn u(&self) -> &[f64];
+
+    /// Vector of boolean values indicating optimization variables that are constrained
+    /// to be integers.
     fn p(&self) -> &[bool];
+
+    /// A reference to the problem as a "general" (Minlp) problem.
     fn base(&self) -> &Problem;
+
+    /// A mutable reference to the problem as a "general" (Minlp) problem.
     fn base_mut(&mut self) -> &mut Problem;
+
+    /// Number of optimization variables.
     fn nx(&self) -> usize { self.c().len() }
+
+    /// Number of linear equality cosntraints.
     fn na(&self) -> usize { self.b().len() }
 }
 
+/// A trait for reading and writing mixed-integer linear 
+/// optimization problems (Milp).
 pub trait ProblemMilpIO {
+
+    /// Optimization problem type.
     type P: ProblemMilpBase;
+
+    /// Reads problem from LP file.
     fn read_from_lp_file(filename: &str) -> io::Result<Self::P>;
+
+    /// Writes problem to LP file.
     fn write_to_lp_file(&self, filename: &str) -> io::Result<()>;
 }
 
 impl ProblemMilp {
+
+    /// Creates new mixed-integer linear optimization
+    /// problem (Milp).
     pub fn new(c: Vec<f64>,
                a: CooMat<f64>,
                b: Vec<f64>,  

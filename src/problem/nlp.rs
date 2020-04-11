@@ -5,32 +5,83 @@ use crate::problem::{Problem,
                      ProblemEval,
                      ProblemBase};
 
+/// Smooth nonlinear optimization problem (Nlp).                     
 pub struct ProblemNlp {
     base: Problem,
 }
 
+/// A trait for smooth nonlinear optimization problems
+/// (Nlp) of the form
+/// ```ignore
+/// minimize   phi(x)
+/// subject to a*x = b
+///            f(x) = 0
+///            l <= x <= u
+/// ```
 pub trait ProblemNlpBase {
+
+    /// Initial point.
     fn x0(&self) -> Option<&[f64]>;
+
+    /// Objective function value.
     fn phi(&self) -> f64;
+
+    /// Objective function gradient value.
     fn gphi(&self) -> &[f64];
+
+    /// Objective function Hessian value (lower triangular part)
     fn hphi(&self) -> &CooMat<f64>;
+
+    /// Jacobian matrix of linear equality constraints.
     fn a(&self) -> &CooMat<f64>;
+
+    /// Right-hand-side vector of linear equality constraints.
     fn b(&self) -> &[f64];
+
+    /// Nonlinear equality constraint function value.
     fn f(&self) -> &[f64];
+
+    /// Nonlinear equality constraint function Jacobian value.
     fn j(&self) -> &CooMat<f64>;
+
+    /// Vector of nonlinear equality constraint function Hessian values
+    /// (lower triangular parts).
     fn h(&self) -> &Vec<CooMat<f64>>;
-    fn hcomb(&self) -> &CooMat<f64>; 
+
+    /// Linear combination of nonlinear equality constraint function Hessian values
+    /// (lower triangular parts).
+    fn hcomb(&self) -> &CooMat<f64>;
+    
+    /// Vector of optimization variable lower limits.
     fn l(&self) -> &[f64];
+
+    /// Vector of optimization variable uppeer limits.
     fn u(&self) -> &[f64];
+
+    /// Function that evaluates objective function and nonlinear equality constraint
+    /// functions for a given vector of optimization variable values.
     fn evaluate(&mut self, x: &[f64]) -> ();
+
+    /// Function that forms a linear combination of nonlinear equality constraint
+    /// function Hessians.
     fn combine_h(&mut self, nu: &[f64]) -> ();
+
+    /// A reference to the problem as a "general" (Minlp) problem.
     fn base(&self) -> &Problem;
+
+    /// Number of optimization variables.
     fn nx(&self) -> usize { self.gphi().len() }
+
+    /// Number of linear equality constraints.
     fn na(&self) -> usize { self.b().len() }
+
+    /// Number of nonlinear equality constraints.
     fn nf(&self) -> usize { self.f().len() }
 }
 
 impl ProblemNlp {
+
+    /// Creates new smooth nonlinear optimization problem (Nlp).
     pub fn new(hphi: CooMat<f64>, 
                a: CooMat<f64>, 
                b: Vec<f64>,
