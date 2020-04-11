@@ -1,6 +1,6 @@
-# optrs
+# numopt
 
-Optimization tools in Rust.
+Optimization problem abstractions, solver interfaces, and more.
 
 ## Contents
 
@@ -12,6 +12,6 @@ Optimization tools in Rust.
 * Solver interfaces
   * Cbc (via command-line)
   * Clp (via command-line)
-  * Ipopt (via linking with library) (feature "ipopt")
+  * Ipopt (via linking with "libipopt" library) (feature "ipopt")
 * Modeling tools
   * Coming soon

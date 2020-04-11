@@ -1,5 +1,5 @@
 [package]
-name = "optrs"
+name = "numopt"
 version = "0.1.0"
 authors = ["Tomas Tinoco De Rubira <ttinoco5687@gmail.com>"]
 edition = "2018"
