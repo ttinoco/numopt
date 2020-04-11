@@ -16,6 +16,9 @@ use crate::problem::{ProblemSol,
                      ProblemMilpBase, 
                      ProblemMilpIO};
 
+/// Interface to the optimization solver Cbc from COIN-OR 
+/// that utilzes the command-line tool "cbc". 
+/// The command-line tool needs to be on the system path.
 pub struct SolverCbcCmd<T: ProblemMilpBase> {
     status: SolverStatus,
     solution: Option<ProblemSol>,
@@ -25,6 +28,7 @@ pub struct SolverCbcCmd<T: ProblemMilpBase> {
 
 impl<T: ProblemMilpBase> SolverCbcCmd<T> {
 
+    /// Reads cbc solver solution file.
     pub fn read_sol_file(fname: &str, p: &T, cbc: bool) -> io::Result<(SolverStatus, ProblemSol)> {
         
         let mut name: String;

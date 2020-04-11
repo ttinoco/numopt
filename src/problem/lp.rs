@@ -5,24 +5,54 @@ use crate::problem::{Problem,
                      ProblemMilp,
                      ProblemMilpBase};
 
+/// Linear optimization problem (Lp).                     
 pub struct ProblemLp {
     base: ProblemMilp,
 }
 
+/// A trait for linear optimization 
+/// problems (Lp) of the form
+/// ```ignore
+/// minimize   c^T*x
+/// subject to a*x = b
+///            l <= x <= u
+/// ```
 pub trait ProblemLpBase {
+
+    /// Initial point.
     fn x0(&self) -> Option<&[f64]>;
+
+    /// Objective function gradient.
     fn c(&self) -> &[f64];
+
+    /// Jacobian matrix of linear equality constraints.
     fn a(&self) -> &CooMat<f64>;
+
+    /// Right-hand-side vector of linear equality constraints.
     fn b(&self) -> &[f64];
+
+    /// Vector of optimization variable lower limits.
     fn l(&self) -> &[f64];
+
+    /// Vector of optimization variable upper limits.
     fn u(&self) -> &[f64];
+
+    /// A reference to the problem as an Milp problem.
     fn base(&self) -> &ProblemMilp;
+
+    /// A mutable reference to the problem as an Milp problem.
     fn base_mut(&mut self) -> &mut ProblemMilp;
+
+    /// Number of optimization variables.
     fn nx(&self) -> usize { self.c().len() }
+
+    /// Number of linear equality cosntraints.
     fn na(&self) -> usize { self.b().len() }
 }
 
 impl ProblemLp {
+
+    /// Creates a new linear optimization problem (Lp).
     pub fn new(c: Vec<f64>,
                a: CooMat<f64>,
                b: Vec<f64>,  

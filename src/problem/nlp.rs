@@ -5,7 +5,7 @@ use crate::problem::{Problem,
                      ProblemEval,
                      ProblemBase};
 
-/// Smooth nonlinear optimization problem (Nlp).                     
+/// Smooth nonlinear optimization problem (Nlp).
 pub struct ProblemNlp {
     base: Problem,
 }
@@ -49,24 +49,24 @@ pub trait ProblemNlpBase {
     fn h(&self) -> &Vec<CooMat<f64>>;
 
     /// Linear combination of nonlinear equality constraint function Hessian values
-    /// (lower triangular parts).
+    /// (lower triangular part).
     fn hcomb(&self) -> &CooMat<f64>;
     
     /// Vector of optimization variable lower limits.
     fn l(&self) -> &[f64];
 
-    /// Vector of optimization variable uppeer limits.
+    /// Vector of optimization variable upper limits.
     fn u(&self) -> &[f64];
 
-    /// Function that evaluates objective function and nonlinear equality constraint
-    /// functions for a given vector of optimization variable values.
+    /// Function that evaluates objective function, nonlinear equality constraint
+    /// functions, and their derivaties for a given vector of optimization variable values.
     fn evaluate(&mut self, x: &[f64]) -> ();
 
     /// Function that forms a linear combination of nonlinear equality constraint
     /// function Hessians.
     fn combine_h(&mut self, nu: &[f64]) -> ();
 
-    /// A reference to the problem as a "general" (Minlp) problem.
+    /// A reference to the problem as a "general" Minlp problem.
     fn base(&self) -> &Problem;
 
     /// Number of optimization variables.

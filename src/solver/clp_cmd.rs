@@ -14,6 +14,9 @@ use crate::problem::{ProblemSol,
                      ProblemLpBase, 
                      ProblemMilpIO};
 
+/// Interface to the optimization solver Clp from COIN-OR 
+/// that utilzes the command-line tool "clp". 
+/// The command-line tool needs to be on the system path.
 pub struct SolverClpCmd<T> {
     status: SolverStatus,
     solution: Option<ProblemSol>,

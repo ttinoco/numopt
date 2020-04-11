@@ -25,7 +25,7 @@ pub trait ProblemMilpBase {
     /// Initial point.
     fn x0(&self) -> Option<&[f64]>;
 
-    /// Objective function gradient value.
+    /// Objective function gradient.
     fn c(&self) -> &[f64];
 
     /// Jacobian matrix of linear equality constraints.
@@ -37,17 +37,17 @@ pub trait ProblemMilpBase {
     /// Vector of optimization variable lower limits.
     fn l(&self) -> &[f64];
 
-    /// Vector of optimization variable uppeer limits.
+    /// Vector of optimization variable upper limits.
     fn u(&self) -> &[f64];
 
     /// Vector of boolean values indicating optimization variables that are constrained
     /// to be integers.
     fn p(&self) -> &[bool];
 
-    /// A reference to the problem as a "general" (Minlp) problem.
+    /// A reference to the problem as a "general" Minlp problem.
     fn base(&self) -> &Problem;
 
-    /// A mutable reference to the problem as a "general" (Minlp) problem.
+    /// A mutable reference to the problem as a "general" Minlp problem.
     fn base_mut(&mut self) -> &mut Problem;
 
     /// Number of optimization variables.

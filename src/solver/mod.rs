@@ -1,3 +1,5 @@
+//! Optimization solver interfaces.
+
 mod base;
 mod clp_cmd;
 mod cbc_cmd;

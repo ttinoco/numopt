@@ -5,7 +5,7 @@ use std::ops::Mul;
 use crate::matrix::item::MatItem;
 use crate::matrix::csr::CsrMat;
 
-/// Matrix in sparse coordinate format.
+/// Sparse matrix in coordinate format.
 #[derive(Debug)]
 pub struct CooMat<T> {
     shape: (usize, usize),
@@ -14,7 +14,7 @@ pub struct CooMat<T> {
     data: Vec<T>,
 }
 
-/// Iterator for non-zero elements of [CooMat](struct.CooMat.html)
+/// Iterator for nonzero elements of [CooMat](struct.CooMat.html)
 pub struct CooMatIter<'a, T> {
     k: usize,
     mat: &'a CooMat<T>,
@@ -51,7 +51,7 @@ impl<T: MatItem> CooMat<T> {
         }
     }
 
-    /// Creates empty [CooMat](struct.CooMat.html) from number of non-zero elements.
+    /// Creates empty [CooMat](struct.CooMat.html) from number of nonzero elements.
     pub fn from_nnz(shape: (usize, usize), nnz: usize) -> Self {
         Self {
             shape: shape,
@@ -88,7 +88,7 @@ impl<T: MatItem> CooMat<T> {
     /// Sets data value.
     pub fn set_data(&mut self, k:usize, d: T) -> () { self.data[k] = d }
 
-    /// Creates iterator for non-zero elements.
+    /// Creates iterator for nonzero elements.
     pub fn iter(&self) -> CooMatIter<T> { CooMatIter::new(&self) }
 
     /// Converts matrix to [CsrMat]((struct.CsrMat.html))

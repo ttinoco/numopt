@@ -2,7 +2,7 @@
 
 use crate::matrix::item::MatItem;
 
-/// Matrix in compressed sparse row format.
+/// Sparse matrix in compressed sparse row format.
 #[derive(Debug)]
 pub struct CsrMat<T> {
     shape: (usize, usize),
@@ -35,7 +35,7 @@ impl<T: MatItem> CsrMat<T> {
     /// Number of columns.
     pub fn cols(&self) -> usize { self.shape.1 }
 
-    /// Number of non-zero elements.
+    /// Number of nonzero elements.
     pub fn nnz(&self) -> usize { self.indices.len() }
 
     /// Vector of index pointers.

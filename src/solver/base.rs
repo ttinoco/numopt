@@ -4,28 +4,60 @@ use std::collections::HashMap;
 
 use crate::problem::{ProblemSol};
 
+/// Optimization solver status.
 #[derive(Debug, PartialEq)]
 pub enum SolverStatus {
+
+    /// Optimization solver successfully solved problem 
+    /// to the specified accuracy.
     Solved,
+
+    /// Optimization solver has unknown status.
     Unknown,
+
+    /// Optimization problem terminated with error.
     Error,
 }
 
+/// Optimization solver parameter.
 #[derive(Clone)]
 pub enum SolverParam {
+
+    /// Integer solver parameter.
     IntParam(i32),
+
+    /// Float solver parameter.
     FloatParam(f64),
+
+    /// String solver parameter. 
     StrParam(String),
 }
 
+/// A trait for optimization solvers.
 pub trait Solver<T> {
+
+    /// Creates new optimization solver.
     fn new(p: &T) -> Self;
+
+    /// Gets optimization solver parameter value.
     fn get_param(&self, name: &str) -> Option<&SolverParam> { self.get_params().get(name) }
+
+    /// Gets reference of optimization solver parameters.
     fn get_params(&self) -> &HashMap<String, SolverParam>;
+
+    /// Gets mutable reference of optimization solver parameters.
     fn get_params_mut(&mut self) -> &mut HashMap<String, SolverParam>;
+    
+    /// Gets optimization solver status.
     fn status(&self) -> &SolverStatus;
+
+    /// Gets solution candidate obtained by optimization solver.
     fn solution(&self) -> &Option<ProblemSol>;
+
+    /// Solves optimization problem.
     fn solve(&mut self, p: &mut T) -> Result<(), SimpleError>;
+
+    /// Sets optimization solver parameter.
     fn set_param(&mut self, name: &str, value: SolverParam) -> Result<(), SimpleError> { 
        
         let v = match self.get_params_mut().get_mut(name) {
@@ -47,15 +79,6 @@ pub trait Solver<T> {
         };    
 
         Ok(())
-    }
-}
-
-impl SolverStatus {
-    pub fn is_solved(&self) -> bool {
-        match self {
-            SolverStatus::Solved => true,
-            _ => false
-        }
     }
 }
 

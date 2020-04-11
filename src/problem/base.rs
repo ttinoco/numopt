@@ -1,6 +1,6 @@
 use std::fmt::{self, Debug};
 
-use crate::matrix::CooMat;
+use crate::matrix::CooMat; 
 
 /// Type that represents the evaluation function
 /// of an optimization problem.
@@ -78,21 +78,21 @@ pub trait ProblemBase {
     fn h(&self) -> &Vec<CooMat<f64>>;
 
     /// Linear combination of nonlinear equality constraint function Hessian values
-    /// (lower triangular parts).
+    /// (lower triangular part).
     fn hcomb(&self) -> &CooMat<f64>;
     
     /// Vector of optimization variable lower limits.
     fn l(&self) -> &[f64];
 
-    /// Vector of optimization variable uppeer limits.
+    /// Vector of optimization variable upper limits.
     fn u(&self) -> &[f64];
 
     /// Vector of boolean values indicating optimization variables that are constrained
     /// to be integers.
     fn p(&self) -> &[bool];
 
-    /// Function that evaluates objective function and nonlinear equality constraint
-    /// functions for a given vector of optimization variable values.
+    /// Function that evaluates objective function, nonlinear equality constraint
+    /// functions, and their derivatives for a given vector of optimization variable values.
     fn evaluate(&mut self, x: &[f64]) -> ();
 
     /// Function that forms a linear combination of nonlinear equality constraint
@@ -243,6 +243,9 @@ impl ProblemBase for Problem {
 }
 
 impl ProblemSol {
+
+    /// Creates new (empty) container for solution associated with 
+    /// optimization problem of specific dimensions.
     pub fn new(nx: usize, na: usize, nf: usize) -> Self {
         Self {
             x: vec![0.;nx],

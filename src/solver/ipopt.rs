@@ -17,6 +17,10 @@ use crate::solver::{Solver,
 use crate::problem::{ProblemSol,
                      ProblemNlpBase};
 
+/// Interface to the optimization solver Ipopt from COIN-OR
+/// that links with the library "libipopt". 
+/// The library needs to be on the linker path.
+/// This solver is available when the feature "ipopt" is enabled.                 
 pub struct SolverIpopt<T> {
     status: SolverStatus,
     solution: Option<ProblemSol>,
