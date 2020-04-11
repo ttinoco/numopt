@@ -9,7 +9,8 @@ use std::collections::HashMap;
 use num_traits::cast::ToPrimitive;
 use libc::{c_int, c_void, c_char, c_double};
 
-use libipopt_sys as cipopt;
+#[path = "cipopt.rs"]
+mod cipopt;
 
 use crate::solver::{Solver, 
                     SolverParam,
