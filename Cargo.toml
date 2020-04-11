@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Tomas Tinoco De Rubira <ttinoco5687@gmail.com>"]
 edition = "2018"
 license = "BSD-2-Clause"
+description = "Optimization problem abstractions, solver interfaces, and more."
 
 [features]
 ipopt = ["libipopt-sys"]
