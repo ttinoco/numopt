@@ -1,4 +1,4 @@
-//! Optimization problem abstractions and solver interfaces.
+//! Numerical optimization problem abstractions and solver interfaces.
 //! 
 //! ## Features
 //! - Abstractions for Minlp, Nlp, Milp, and Lp optimization problems.
