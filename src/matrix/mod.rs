@@ -1,3 +1,5 @@
+//! Sparse matrix data structures and iterators.
+
 pub mod coo;
 pub mod csr;
 mod item;

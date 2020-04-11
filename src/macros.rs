@@ -1,5 +1,9 @@
+//! Helper macros.
+
 pub use approx;
 
+/// Approximate equality of vectors based on
+/// element-wise absolute difference.
 #[macro_export]
 macro_rules! assert_vec_approx_eq {
     ($x:expr, $y:expr, epsilon = $eps:expr) => {

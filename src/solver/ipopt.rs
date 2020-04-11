@@ -423,11 +423,10 @@ mod tests {
         // x3           0   0  x0           0
         // (2*x0+x1+x2) x0  x0 0            0
         // 0            0   0  0            0
-        let hphi = CooMat::new(
+        let hphi = CooMat::from_pattern(
             (5, 5),
             vec![0, 1, 2, 3, 3, 3],
             vec![0, 0, 0, 0, 1, 2],
-            vec![0.; 6]
         );
 
         let a = CooMat::from_nnz((0, 5), 0);
@@ -436,11 +435,10 @@ mod tests {
         // j
         // x1*x2*x3 x0*x2*x3 x0*x1*x3 x0*x1*x2 -1 
         // 2*x0     2*x1     2*x2     2*x3      0
-        let j = CooMat::new(
+        let j = CooMat::from_pattern(
             (2, 5),
             vec![0, 0, 0, 0, 0, 1, 1, 1, 1],
             vec![0, 1, 2, 3, 4, 0, 1, 2, 3],
-            vec![0.;9]
         );
 
         // h0
@@ -456,17 +454,15 @@ mod tests {
         // 0 0 0 2 0
         // 0 0 0 0 0
         let h = vec![
-            CooMat::new(
+            CooMat::from_pattern(
                 (5, 5),
                 vec![1, 2, 2, 3, 3, 3],
                 vec![0, 0, 1, 0, 1, 2],
-                vec![0.;6]
             ),
-            CooMat::new(
+            CooMat::from_pattern(
                 (5, 5),
                 vec![0, 1, 2, 3],
                 vec![0, 1, 2, 3],
-                vec![0.;4]
             )
         ];
 

@@ -1,5 +1,8 @@
+//! Sparse matrix in compressed sparse row format.
+
 use crate::matrix::item::MatItem;
 
+/// Matrix in compressed sparse row format.
 #[derive(Debug)]
 pub struct CsrMat<T> {
     shape: (usize, usize),
@@ -10,6 +13,7 @@ pub struct CsrMat<T> {
 
 impl<T: MatItem> CsrMat<T> {
 
+    /// Creates [CsrMat](struct.CooMat.html) from raw data.
     pub fn new(shape: (usize, usize), 
                indptr: Vec<usize>,
                indices: Vec<usize>,
@@ -25,13 +29,25 @@ impl<T: MatItem> CsrMat<T> {
         }
     }
 
+    /// Number of rows.
     pub fn rows(&self) -> usize { self.shape.0 }
+
+    /// Number of columns.
     pub fn cols(&self) -> usize { self.shape.1 }
+
+    /// Number of non-zero elements.
     pub fn nnz(&self) -> usize { self.indices.len() }
+
+    /// Vector of index pointers.
     pub fn indptr(&self) -> &[usize] { &self.indptr }
+
+    /// Vector of column indices.
     pub fn indices(&self) -> &[usize] { &self.indices }
+
+    /// Vector of data values.
     pub fn data(&self) -> &[T] { &self.data }
 
+    /// Sums duplicate entries in-place.
     pub fn sum_duplicates(&mut self) -> () {
 
         let mut colseen: Vec<bool> = vec![false; self.cols()];

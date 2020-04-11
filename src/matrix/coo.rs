@@ -1,8 +1,11 @@
+//! Sparse matrix in coordinate format.
+
 use std::ops::Mul;
 
 use crate::matrix::item::MatItem;
 use crate::matrix::csr::CsrMat;
 
+/// Matrix in sparse coordinate format.
 #[derive(Debug)]
 pub struct CooMat<T> {
     shape: (usize, usize),
@@ -11,6 +14,7 @@ pub struct CooMat<T> {
     data: Vec<T>,
 }
 
+/// Iterator for non-zero elements of [CooMat](struct.CooMat.html)
 pub struct CooMatIter<'a, T> {
     k: usize,
     mat: &'a CooMat<T>,
@@ -18,6 +22,7 @@ pub struct CooMatIter<'a, T> {
 
 impl<T: MatItem> CooMat<T> {
 
+    /// Creates [CooMat](struct.CooMat.html) from (row, col, value) triplets.
     pub fn new(shape: (usize, usize), 
                row_inds: Vec<usize>,
                col_inds: Vec<usize>,
@@ -32,6 +37,7 @@ impl<T: MatItem> CooMat<T> {
         }
     }
 
+    /// Creates [CooMat](struct.CooMat.html) from sparsity pattern.
     pub fn from_pattern(shape: (usize, usize), 
                         row_inds: Vec<usize>,
                         col_inds: Vec<usize>) -> Self {
@@ -45,6 +51,7 @@ impl<T: MatItem> CooMat<T> {
         }
     }
 
+    /// Creates empty [CooMat](struct.CooMat.html) from number of non-zero elements.
     pub fn from_nnz(shape: (usize, usize), nnz: usize) -> Self {
         Self {
             shape: shape,
@@ -54,17 +61,37 @@ impl<T: MatItem> CooMat<T> {
         }
     }
 
+    /// Number of rows.
     pub fn rows(&self) -> usize { self.shape.0 }
+
+    /// Number of columns.
     pub fn cols(&self) -> usize { self.shape.1 }
+
+    /// Number of nonzero elements.
     pub fn nnz(&self) -> usize { self.row_inds.len() }
+
+    /// Vector of row indices.
     pub fn row_inds(&self) -> &[usize] { &self.row_inds }
+
+    /// Vector of column indices.
     pub fn col_inds(&self) -> &[usize] { &self.col_inds }
+
+    /// Vector of data values.
     pub fn data(&self) -> &[T] { &self.data }
+
+    /// Sets row index.
     pub fn set_row_ind(&mut self, k: usize, row: usize) -> () { self.row_inds[k] = row }
+
+    /// Sets column index.
     pub fn set_col_ind(&mut self, k: usize, row: usize) -> () { self.col_inds[k] = row }
+
+    /// Sets data value.
     pub fn set_data(&mut self, k:usize, d: T) -> () { self.data[k] = d }
+
+    /// Creates iterator for non-zero elements.
     pub fn iter(&self) -> CooMatIter<T> { CooMatIter::new(&self) }
 
+    /// Converts matrix to [CsrMat]((struct.CsrMat.html))
     pub fn to_csr(&self) -> CsrMat<T> {
 
         let mut indptr: Vec<usize> = vec![0; self.rows()+1];
