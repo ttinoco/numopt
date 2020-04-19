@@ -7,10 +7,10 @@ use crate::model::constant::ConstantScalar;
 use crate::model::variable::VariableScalar;
 use crate::model::function::add::FunctionAdd;
 
-pub enum NodeType {
-    ConstantScalarType(Rc<ConstantScalar>),
-    VariableScalarType(Rc<VariableScalar>),
-    FunctionAddType(Rc<FunctionAdd>),
+pub enum NodeRc {
+    ConstantScalarRc(Rc<ConstantScalar>),
+    VariableScalarRc(Rc<VariableScalar>),
+    FunctionAddRc(Rc<FunctionAdd>),
 }
 
 pub trait Node {
@@ -19,89 +19,89 @@ pub trait Node {
     
 }
 
-impl Node for NodeType {
+impl Node for NodeRc {
 
     fn get_value(&self) -> f64 {
         match self {
-           NodeType::ConstantScalarType(x) => x.get_value(),
-           NodeType::VariableScalarType(x) => x.get_value(),
-           NodeType::FunctionAddType(x) => x.get_value(),
+           NodeRc::ConstantScalarRc(x) => x.get_value(),
+           NodeRc::VariableScalarRc(x) => x.get_value(),
+           NodeRc::FunctionAddRc(x) => x.get_value(),
         }
     }
 
 }
 
-impl Clone for NodeType {
+impl Clone for NodeRc {
     fn clone(&self) -> Self {
         match self {
-            NodeType::ConstantScalarType(x) => NodeType::ConstantScalarType(Rc::clone(&x)),
-            NodeType::VariableScalarType(x) => NodeType::VariableScalarType(Rc::clone(&x)),
-            NodeType::FunctionAddType(x) => NodeType::FunctionAddType(Rc::clone(&x)),
+            NodeRc::ConstantScalarRc(x) => NodeRc::ConstantScalarRc(Rc::clone(&x)),
+            NodeRc::VariableScalarRc(x) => NodeRc::VariableScalarRc(Rc::clone(&x)),
+            NodeRc::FunctionAddRc(x) => NodeRc::FunctionAddRc(Rc::clone(&x)),
         }
     }
 }
 
-impl fmt::Display for NodeType {
+impl fmt::Display for NodeRc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            NodeType::ConstantScalarType(x) => write!(f, "{}", x),
-            NodeType::VariableScalarType(x) => write!(f, "{}", x),
-            NodeType::FunctionAddType(x) => write!(f, "{}", x),
+            NodeRc::ConstantScalarRc(x) => write!(f, "{}", x),
+            NodeRc::VariableScalarRc(x) => write!(f, "{}", x),
+            NodeRc::FunctionAddRc(x) => write!(f, "{}", x),
         }
     }
 }
 
-impl Add<&NodeType> for &NodeType {      
-    type Output = NodeType;
-    fn add(self, rhs: &NodeType) -> NodeType {
+impl Add<&NodeRc> for &NodeRc {      
+    type Output = NodeRc;
+    fn add(self, rhs: &NodeRc) -> NodeRc {
         FunctionAdd::new(vec![self.clone(), rhs.clone()])
     } 
 }
 
-impl Add<&NodeType> for NodeType {      
-    type Output = NodeType;
-    fn add(self, rhs: &NodeType) -> NodeType {
+impl Add<&NodeRc> for NodeRc {      
+    type Output = NodeRc;
+    fn add(self, rhs: &NodeRc) -> NodeRc {
         FunctionAdd::new(vec![self.clone(), rhs.clone()])
     } 
 }
 
-impl Add<NodeType> for &NodeType {      
-    type Output = NodeType;
-    fn add(self, rhs: NodeType) -> NodeType {
+impl Add<NodeRc> for &NodeRc {      
+    type Output = NodeRc;
+    fn add(self, rhs: NodeRc) -> NodeRc {
         FunctionAdd::new(vec![self.clone(), rhs.clone()])
     } 
 }
 
-impl Add<f64> for &NodeType {
-    type Output = NodeType;
-    fn add(self, rhs: f64) -> NodeType {
+impl Add<f64> for &NodeRc {
+    type Output = NodeRc;
+    fn add(self, rhs: f64) -> NodeRc {
         FunctionAdd::new(vec![
             self.clone(), 
             ConstantScalar::new(rhs.to_f64().unwrap())])
     }
 }
 
-impl Add<&NodeType> for f64 {
-    type Output = NodeType;
-    fn add(self, rhs: &NodeType) -> NodeType {
+impl Add<&NodeRc> for f64 {
+    type Output = NodeRc;
+    fn add(self, rhs: &NodeRc) -> NodeRc {
         FunctionAdd::new(vec![
             ConstantScalar::new(self.to_f64().unwrap()), 
             rhs.clone()])
     } 
 }
 
-impl Add<f64> for NodeType {
-    type Output = NodeType;
-    fn add(self, rhs: f64) -> NodeType {
+impl Add<f64> for NodeRc {
+    type Output = NodeRc;
+    fn add(self, rhs: f64) -> NodeRc {
         FunctionAdd::new(vec![
             self.clone(), 
             ConstantScalar::new(rhs.to_f64().unwrap())])
     }
 }
 
-impl Add<NodeType> for f64 {
-    type Output = NodeType;
-    fn add(self, rhs: NodeType) -> NodeType {
+impl Add<NodeRc> for f64 {
+    type Output = NodeRc;
+    fn add(self, rhs: NodeRc) -> NodeRc {
         FunctionAdd::new(vec![
             ConstantScalar::new(self.to_f64().unwrap()), 
             rhs.clone()])

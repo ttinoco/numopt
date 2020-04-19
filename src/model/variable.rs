@@ -2,7 +2,7 @@ use std::fmt;
 use std::rc::Rc;
 
 use super::node::{Node,
-                  NodeType};
+                  NodeRc};
 
 pub enum VariableKind {
     VarContinuous,
@@ -17,8 +17,8 @@ pub struct VariableScalar {
 
 impl VariableScalar {
 
-    pub fn new(name: &str, value: f64, kind: VariableKind) -> NodeType {
-        NodeType::VariableScalarType(Rc::new(
+    pub fn new(name: &str, value: f64, kind: VariableKind) -> NodeRc {
+        NodeRc::VariableScalarRc(Rc::new(
             Self {
                 name: name.to_string(),
                 value: value,
@@ -27,11 +27,11 @@ impl VariableScalar {
         ))
     }
 
-    pub fn new_continuous(name: &str, value: f64) -> NodeType {
+    pub fn new_continuous(name: &str, value: f64) -> NodeRc {
         VariableScalar::new(name, value, VariableKind::VarContinuous)
     }
 
-    pub fn new_integer(name: &str, value: f64) -> NodeType {
+    pub fn new_integer(name: &str, value: f64) -> NodeRc {
         VariableScalar::new(name, value, VariableKind::VarInteger)
     }
 }

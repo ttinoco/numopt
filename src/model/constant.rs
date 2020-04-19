@@ -3,7 +3,7 @@ use std::fmt;
 use std::rc::Rc;
 
 use super::node::{Node,
-                  NodeType};
+                  NodeRc};
 
 pub struct ConstantScalar {
     value: f64,
@@ -11,8 +11,8 @@ pub struct ConstantScalar {
 
 impl ConstantScalar {
 
-    pub fn new(value: f64) -> NodeType {
-        NodeType::ConstantScalarType(Rc::new(
+    pub fn new(value: f64) -> NodeRc {
+        NodeRc::ConstantScalarRc(Rc::new(
             Self {
                 value: value,
             }

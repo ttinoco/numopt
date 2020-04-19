@@ -3,18 +3,18 @@ use std::fmt;
 use std::rc::Rc;
 
 use crate::model::node::{Node,
-                         NodeType};
+                         NodeRc};
 
 pub struct FunctionAdd {
-    arguments: Vec<NodeType>,
+    arguments: Vec<NodeRc>,
 }
 
 impl FunctionAdd {
 
-    pub fn new(args: Vec<NodeType>) -> NodeType {
+    pub fn new(args: Vec<NodeRc>) -> NodeRc {
 
         assert!(args.len() >= 2);
-        NodeType::FunctionAddType(Rc::new(
+        NodeRc::FunctionAddRc(Rc::new(
             Self {
                 arguments: args,
             }
