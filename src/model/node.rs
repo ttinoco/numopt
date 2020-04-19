@@ -6,11 +6,13 @@ use num_traits::cast::ToPrimitive;
 use crate::model::constant::ConstantScalar;
 use crate::model::variable::VariableScalar;
 use crate::model::function::add::FunctionAdd;
+use crate::model::function::mul::FunctionMul;
 
 pub enum NodeRc {
     ConstantScalarRc(Rc<ConstantScalar>),
     VariableScalarRc(Rc<VariableScalar>),
     FunctionAddRc(Rc<FunctionAdd>),
+    FunctionMulRc(Rc<FunctionMul>),
 }
 
 pub trait Node {
@@ -20,15 +22,15 @@ pub trait Node {
 }
 
 impl Node for NodeRc {
-
+    
     fn get_value(&self) -> f64 {
         match self {
-           NodeRc::ConstantScalarRc(x) => x.get_value(),
-           NodeRc::VariableScalarRc(x) => x.get_value(),
-           NodeRc::FunctionAddRc(x) => x.get_value(),
+            NodeRc::ConstantScalarRc(x) => x.get_value(),
+            NodeRc::VariableScalarRc(x) => x.get_value(),
+            NodeRc::FunctionAddRc(x) => x.get_value(),
+            NodeRc::FunctionMulRc(x) => x.get_value(),
         }
     }
-
 }
 
 impl Clone for NodeRc {
@@ -37,6 +39,7 @@ impl Clone for NodeRc {
             NodeRc::ConstantScalarRc(x) => NodeRc::ConstantScalarRc(Rc::clone(&x)),
             NodeRc::VariableScalarRc(x) => NodeRc::VariableScalarRc(Rc::clone(&x)),
             NodeRc::FunctionAddRc(x) => NodeRc::FunctionAddRc(Rc::clone(&x)),
+            NodeRc::FunctionMulRc(x) => NodeRc::FunctionMulRc(Rc::clone(&x)),
         }
     }
 }
@@ -47,6 +50,7 @@ impl fmt::Display for NodeRc {
             NodeRc::ConstantScalarRc(x) => write!(f, "{}", x),
             NodeRc::VariableScalarRc(x) => write!(f, "{}", x),
             NodeRc::FunctionAddRc(x) => write!(f, "{}", x),
+            NodeRc::FunctionMulRc(x) => write!(f, "{}", x),
         }
     }
 }
@@ -138,5 +142,14 @@ mod tests {
         let z3 = 2. + &z2 + 6.;
         assert_eq!(format!("{}", z3), "2 + 13 + x + 6");
         assert_eq!(z3.get_value(), 24.);
+    }
+
+    #[test]
+    fn node_mul_mul() {
+
+        let x = VariableScalar::new_continuous("x", 3.);
+        let y = VariableScalar::new_continuous("y", 4.);
+
+        let z = x*y;
     }
 }

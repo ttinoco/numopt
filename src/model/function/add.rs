@@ -6,7 +6,7 @@ use crate::model::node::{Node,
                          NodeRc};
 
 pub struct FunctionAdd {
-    arguments: Vec<NodeRc>,
+    args: Vec<NodeRc>,
 }
 
 impl FunctionAdd {
@@ -16,7 +16,7 @@ impl FunctionAdd {
         assert!(args.len() >= 2);
         NodeRc::FunctionAddRc(Rc::new(
             Self {
-                arguments: args,
+                args: args,
             }
         ))
     }
@@ -25,19 +25,19 @@ impl FunctionAdd {
 impl Node for FunctionAdd {
 
     fn get_value(&self) -> f64 { 
-        self.arguments.iter().map(|x| x.get_value()).sum()
+        self.args.iter().map(|x| x.get_value()).sum()
     }
 }
 
 impl<'a> fmt::Display for FunctionAdd {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let n = self.arguments.len();
+        let n = self.args.len();
         for i in 0..n {
             if i < n-1 {
-                write!(f, "{} + ", self.arguments[i]).unwrap();
+                write!(f, "{} + ", self.args[i]).unwrap();
             }
             else {
-                write!(f, "{}", self.arguments[i]).unwrap();
+                write!(f, "{}", self.args[i]).unwrap();
             }
         };
         Ok(())
