@@ -1,3 +1,6 @@
+use std::fmt;
+use std::rc::Rc;
+
 use super::node::{Node,
                   NodeType};
 
@@ -15,13 +18,13 @@ pub struct VariableScalar {
 impl VariableScalar {
 
     pub fn new(name: &str, value: f64, kind: VariableKind) -> NodeType {
-        NodeType::VariableScalarType(
+        NodeType::VariableScalarType(Rc::new(
             Self {
                 name: name.to_string(),
                 value: value,
                 kind: kind,
             }
-        )
+        ))
     }
 
     pub fn new_continuous(name: &str, value: f64) -> NodeType {
@@ -33,11 +36,16 @@ impl VariableScalar {
     }
 }
 
-impl Node for VariableScalar {
+impl<'a> Node for VariableScalar {
 
     fn get_value(&self) -> f64 { self.value }
 }
 
+impl<'a> fmt::Display for VariableScalar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
 
 #[cfg(test)]
 mod tests {
