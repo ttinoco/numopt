@@ -1,6 +1,6 @@
 use std::fmt;
 use std::rc::Rc;
-use std::ops::Add;
+use std::ops::{Add, Mul};
 use num_traits::cast::ToPrimitive;
 
 use crate::model::constant::ConstantScalar;
@@ -90,11 +90,30 @@ macro_rules! impl_node_add_scalar {
 impl_node_add_node!(&NodeRc, &NodeRc);
 impl_node_add_node!(&NodeRc, NodeRc);
 impl_node_add_node!(NodeRc, &NodeRc);
+impl_node_add_node!(NodeRc, NodeRc);
 impl_node_add_scalar!(&NodeRc, f64);
 impl_node_add_scalar!(NodeRc, f64);
 
+macro_rules! impl_node_mul_node {
+    ($x: ty, $y: ty) => {
+        impl Mul<$y> for $x {
+            type Output = NodeRc;
+            fn mul(self, rhs: $y) -> NodeRc {
+                FunctionMul::new(self.clone(), rhs.clone())
+            }        
+        }
+    };
+}
+
+impl_node_mul_node!(&NodeRc, &NodeRc);
+impl_node_mul_node!(&NodeRc, NodeRc);
+impl_node_mul_node!(NodeRc, &NodeRc);
+impl_node_mul_node!(NodeRc, NodeRc);
+
 #[cfg(test)]
 mod tests {
+
+    use num_traits::pow::Pow;
 
     use crate::model::node::Node;
     use crate::model::variable::VariableScalar;
@@ -124,6 +143,10 @@ mod tests {
         let z5 = &z1 + &z2 + &z3 + &z4;
         assert_eq!(format!("{}", z5), "x + y + y + x + x + y + x + x + y + x");
         assert_eq!(z5.get_value(), 34.);
+    
+        let z6 = (&x + &y) + (&y + &x);
+        assert_eq!(format!("{}", z6), "x + y + y + x");
+        assert_eq!(z6.get_value(), 14.);
     }
 
     #[test]
@@ -145,11 +168,45 @@ mod tests {
     }
 
     #[test]
-    fn node_mul_mul() {
+    fn node_mul_node() {
 
         let x = VariableScalar::new_continuous("x", 3.);
         let y = VariableScalar::new_continuous("y", 4.);
 
-        let z = x*y;
+        let z1 = &x*&y;
+
+        assert_eq!(format!("{}", z1), "x*y");
+        assert_eq!(z1.get_value(), 12.);
+
+        let z2 = &y*&x;
+
+        assert_eq!(format!("{}", z2), "y*x");
+        assert_eq!(z2.get_value(), 12.);
+
+        let z3 = (&y*&x)*&x;
+
+        assert_eq!(format!("{}", z3), "y*x*x");
+        assert_eq!(z3.get_value(), 36.);
+
+        let z4 = &y*(&x*&x);
+
+        assert_eq!(format!("{}", z4), "y*x*x");
+        assert_eq!(z4.get_value(), 36.);
+
+        let z5 = &z4*(&x*&z3);
+
+        assert_eq!(format!("{}", z5), "y*x*x*x*y*x*x");
+        assert_eq!(z5.get_value(), (4.).pow(2.)*((3.).pow(5.)));
+    }
+
+    #[test]
+    fn node_mul_add_node() {
+
+        let x = VariableScalar::new_continuous("x", 3.);
+        let y = VariableScalar::new_continuous("y", 4.);
+
+        let z1 = (&x + &y*&x)*(&y*&x + &y);
+        assert_eq!(format!("{}", z1), "(x + y*x)*(y*x + y)");
+        assert_eq!(z1.get_value(), 15.*16.);
     }
 }
