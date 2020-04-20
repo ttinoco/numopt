@@ -1,18 +1,20 @@
 use std::fmt;
 use std::rc::Rc;
-use std::ops::{Add, Mul, Neg, Sub};
+use std::ops::{Add, Mul, Neg, Sub, Div};
 use num_traits::cast::ToPrimitive;
 
 use crate::model::constant::ConstantScalar;
 use crate::model::variable::VariableScalar;
 use crate::model::function::add::FunctionAdd;
 use crate::model::function::mul::FunctionMul;
+use crate::model::function::div::FunctionDiv;
 
 pub enum NodeRc {
     ConstantScalarRc(Rc<ConstantScalar>),
     VariableScalarRc(Rc<VariableScalar>),
     FunctionAddRc(Rc<FunctionAdd>),
     FunctionMulRc(Rc<FunctionMul>),
+    FunctionDivRc(Rc<FunctionDiv>),
 }
 
 pub trait Node {
@@ -29,6 +31,7 @@ impl Node for NodeRc {
             NodeRc::VariableScalarRc(x) => x.get_value(),
             NodeRc::FunctionAddRc(x) => x.get_value(),
             NodeRc::FunctionMulRc(x) => x.get_value(),
+            NodeRc::FunctionDivRc(x) => x.get_value(),
         }
     }
 }
@@ -40,6 +43,7 @@ impl Clone for NodeRc {
             NodeRc::VariableScalarRc(x) => NodeRc::VariableScalarRc(Rc::clone(&x)),
             NodeRc::FunctionAddRc(x) => NodeRc::FunctionAddRc(Rc::clone(&x)),
             NodeRc::FunctionMulRc(x) => NodeRc::FunctionMulRc(Rc::clone(&x)),
+            NodeRc::FunctionDivRc(x) => NodeRc::FunctionDivRc(Rc::clone(&x)),
         }
     }
 }
@@ -51,6 +55,7 @@ impl fmt::Display for NodeRc {
             NodeRc::VariableScalarRc(x) => write!(f, "{}", x),
             NodeRc::FunctionAddRc(x) => write!(f, "{}", x),
             NodeRc::FunctionMulRc(x) => write!(f, "{}", x),
+            NodeRc::FunctionDivRc(x) => write!(f, "{}", x),
         }
     }
 }
@@ -180,6 +185,43 @@ impl_node_sub_node!(NodeRc, NodeRc);
 impl_node_sub_scalar!(&NodeRc, f64);
 impl_node_sub_scalar!(NodeRc, f64);
 
+macro_rules! impl_node_div_node {
+    ($x: ty, $y: ty) => {
+        impl Div<$y> for $x {
+            type Output = NodeRc;
+            fn div(self, rhs: $y) -> NodeRc {
+                FunctionDiv::new(self.clone(), rhs.clone())
+            }        
+        }
+    };
+}
+
+macro_rules! impl_node_div_scalar {
+    ($x: ty, $y: ty) => {
+        impl Div<$y> for $x {
+            type Output = NodeRc;
+            fn div(self, rhs: $y) -> NodeRc {
+                FunctionDiv::new(self.clone(), 
+                                 ConstantScalar::new(rhs.to_f64().unwrap()))
+            }           
+        }
+        impl Div<$x> for $y {
+            type Output = NodeRc;
+            fn div(self, rhs: $x) -> NodeRc {
+                FunctionDiv::new(ConstantScalar::new(self.to_f64().unwrap()), 
+                                 rhs.clone())
+            }           
+        }
+    };
+}
+
+impl_node_div_node!(&NodeRc, &NodeRc);
+impl_node_div_node!(&NodeRc, NodeRc);
+impl_node_div_node!(NodeRc, &NodeRc);
+impl_node_div_node!(NodeRc, NodeRc);
+impl_node_div_scalar!(&NodeRc, f64);
+impl_node_div_scalar!(NodeRc, f64);
+
 #[cfg(test)]
 mod tests {
 
@@ -244,27 +286,22 @@ mod tests {
         let y = VariableScalar::new_continuous("y", 4.);
 
         let z1 = &x*&y;
-
         assert_eq!(format!("{}", z1), "x*y");
         assert_eq!(z1.get_value(), 12.);
 
         let z2 = &y*&x;
-
         assert_eq!(format!("{}", z2), "y*x");
         assert_eq!(z2.get_value(), 12.);
 
         let z3 = (&y*&x)*&x;
-
         assert_eq!(format!("{}", z3), "y*x*x");
         assert_eq!(z3.get_value(), 36.);
 
         let z4 = &y*(&x*&x);
-
         assert_eq!(format!("{}", z4), "y*x*x");
         assert_eq!(z4.get_value(), 36.);
 
         let z5 = &z4*(&x*&z3);
-
         assert_eq!(format!("{}", z5), "y*x*x*x*y*x*x");
         assert_eq!(z5.get_value(), (4.).pow(2.)*((3.).pow(5.)));
     }
@@ -356,5 +393,15 @@ mod tests {
         let z3 = 2. - &z2 - 6.;
         assert_eq!(format!("{}", z3), "2 + -1*(13 + -1*x) + -1*6");
         assert_eq!(z3.get_value(), -14.);
+    }
+
+    #[test]
+    fn node_div_node() {
+
+        let x = VariableScalar::new_continuous("x", 3.);
+        let y = VariableScalar::new_continuous("y", 4.);
+
+        // HERE
+
     }
 }
