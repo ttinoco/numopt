@@ -1,7 +1,11 @@
 use std::fmt;
+use std::ptr;
 use std::rc::Rc;
-use std::ops::{Add, Mul, Neg, Sub, Div};
+use std::hash::{Hash, Hasher};
+use std::cmp::{PartialEq, Eq};
 use num_traits::cast::ToPrimitive;
+use std::ops::{Add, Mul, Neg, Sub, Div};
+use std::collections::{HashMap, VecDeque};
 
 use crate::model::constant::ConstantScalar;
 use crate::model::variable::VariableScalar;
@@ -23,6 +27,30 @@ pub trait Node {
     
 }
 
+impl NodeRc {
+
+    fn all_simple_paths(&self, vars: Vec<&NodeRc>) -> HashMap<NodeRc, Vec<Vec<NodeRc>>> {
+
+        fn all_simple_paths_acc(vars: Vec<&NodeRc>,
+                                workqueue: &mut VecDeque<Vec<NodeRc>>,
+                                paths: &mut HashMap<NodeRc, Vec<Vec<NodeRc>>>) -> () {
+
+        }
+
+        // Workqueue
+        let mut wq: VecDeque<Vec<NodeRc>> = VecDeque::new();
+        wq.push_front(vec![self.clone()]);
+
+        // Paths
+        let mut paths: HashMap<NodeRc, Vec<Vec<NodeRc>>> = HashMap::new();
+        all_simple_paths_acc(vars, &mut wq, &mut paths);
+
+        // Return paths
+        paths
+    }
+
+}
+
 impl Node for NodeRc {
     
     fn get_value(&self) -> f64 {
@@ -35,6 +63,44 @@ impl Node for NodeRc {
         }
     }
 }
+
+impl Hash for NodeRc {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            NodeRc::ConstantScalarRc(x) => ptr::hash(&**x, state),
+            NodeRc::VariableScalarRc(x) => ptr::hash(&**x, state),
+            NodeRc::FunctionAddRc(x) => ptr::hash(&**x, state),
+            NodeRc::FunctionMulRc(x) => ptr::hash(&**x, state),
+            NodeRc::FunctionDivRc(x) => ptr::hash(&**x, state),
+        };
+    }
+}
+
+impl PartialEq for NodeRc {
+
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (NodeRc::ConstantScalarRc(x), NodeRc::ConstantScalarRc(y)) => {
+                Rc::ptr_eq(x, y)
+            },
+            (NodeRc::VariableScalarRc(x), NodeRc::VariableScalarRc(y)) => {
+                Rc::ptr_eq(x, y)
+            },
+            (NodeRc::FunctionAddRc(x), NodeRc::FunctionAddRc(y)) => {
+                Rc::ptr_eq(x, y)
+            },
+            (NodeRc::FunctionMulRc(x), NodeRc::FunctionMulRc(y)) => {
+                Rc::ptr_eq(x, y)
+            },
+            (NodeRc::FunctionDivRc(x), NodeRc::FunctionDivRc(y)) => {
+                Rc::ptr_eq(x, y)
+            },
+            _ => false,
+        }
+    }
+}
+
+impl Eq for NodeRc {}
 
 impl Clone for NodeRc {
     fn clone(&self) -> Self {
