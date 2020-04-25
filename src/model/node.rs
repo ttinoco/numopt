@@ -365,7 +365,7 @@ mod tests {
 
         let z3 = &x - (&x - &y);
         assert_eq!(z3.get_value(), 4.);
-        assert_eq!(format!("{}", z3), "x + -1*(x + -1*y");
+        assert_eq!(format!("{}", z3), "x + -1*(x + -1*y)");
 
         let z4 = (&x - &y) - &y;
         assert_eq!(z4.get_value(), -5.);
@@ -401,7 +401,46 @@ mod tests {
         let x = VariableScalar::new_continuous("x", 3.);
         let y = VariableScalar::new_continuous("y", 4.);
 
-        // HERE
+        let z1 = &x/&y;
+        assert_eq!(format!("{}", z1), "x/y");
+        assert_eq!(z1.get_value(), 3./4.);
 
+        let z2 = (3.*&x)/(4.*&y);
+        assert_eq!(format!("{}", z2), "3*x/(4*y)");
+        assert_eq!(z2.get_value(), 9./16.);
+
+        let z3 = (3. + &x)/(&y + 4.);
+        assert_eq!(format!("{}", z3), "(3 + x)/(y + 4)");
+        assert_eq!(z3.get_value(), 6./8.);
+
+        let z4 = &x/(3.+&y);
+        assert_eq!(format!("{}", z4), "x/(3 + y)");
+        assert_eq!(z4.get_value(), 3./7.);
+
+        let z5 = (2.+&x)/&y;
+        assert_eq!(format!("{}", z5), "(2 + x)/y");
+        assert_eq!(z5.get_value(), 5./4.);
+    }
+
+    #[test]
+    fn test_node_div_scalar() {
+
+        let x = VariableScalar::new_continuous("x", 4.);
+
+        let z1 = 3./&x;
+        assert_eq!(format!("{}", z1), "3/x");
+        assert_eq!(z1.get_value(), 3./4.);
+
+        let z2 = 3./(&x + 1.);
+        assert_eq!(format!("{}", z2), "3/(x + 1)");
+        assert_eq!(z2.get_value(), 3./5.);
+
+        let z3 = &x/3.;
+        assert_eq!(format!("{}", z3), "x/3");
+        assert_eq!(z3.get_value(), 4./3.);
+
+        let z4 = (&x + 1.)/3.;
+        assert_eq!(format!("{}", z4), "(x + 1)/3");
+        assert_eq!(z4.get_value(), 5./3.);
     }
 }
