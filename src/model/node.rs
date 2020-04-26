@@ -49,6 +49,9 @@ impl NodeRc {
 
         // Paths
         let mut paths: HashMap<NodeRc, Vec<Vec<NodeRc>>> = HashMap::new();
+        for v in &varset {
+            paths.insert((*v).clone(), Vec::new());
+        }
 
         // Process
         loop {
@@ -66,10 +69,7 @@ impl NodeRc {
                     for v in &varset {
                         if node == *v {
                             let new_path = path.iter().map(|x| x.clone()).collect();
-                            match paths.get_mut(node) {
-                                Some(p) => { p.push(new_path); },
-                                None => { paths.insert(node.clone(), vec![new_path]); },
-                            };
+                            paths.get_mut(node).unwrap().push(new_path); 
                         }
                     } 
                 }
@@ -154,6 +154,18 @@ impl Clone for NodeRc {
 }
 
 impl fmt::Display for NodeRc {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            NodeRc::ConstantScalarRc(x) => write!(f, "{}", x),
+            NodeRc::VariableScalarRc(x) => write!(f, "{}", x),
+            NodeRc::FunctionAddRc(x) => write!(f, "{}", x),
+            NodeRc::FunctionMulRc(x) => write!(f, "{}", x),
+            NodeRc::FunctionDivRc(x) => write!(f, "{}", x),
+        }
+    }
+}
+
+impl fmt::Debug for NodeRc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             NodeRc::ConstantScalarRc(x) => write!(f, "{}", x),
@@ -528,7 +540,7 @@ mod tests {
     }
 
     #[test]
-    fn test_node_div_scalar() {
+    fn node_div_scalar() {
 
         let x = VariableScalar::new_continuous("x", 4.);
 
@@ -547,5 +559,47 @@ mod tests {
         let z4 = (&x + 1.)/3.;
         assert_eq!(format!("{}", z4), "(x + 1)/3");
         assert_eq!(z4.get_value(), 5./3.);
+    }
+
+    #[test]
+    fn all_simple_paths() {
+
+        let x = VariableScalar::new_continuous("x", 3.);
+        let y = VariableScalar::new_continuous("y", 4.);
+        let z = VariableScalar::new_continuous("z", 5.);
+
+        let p1 = x.all_simple_paths(&vec![&x, &y, &z]);
+        println!("p1 = {:?}", p1);
+        assert_eq!(p1.get(&x).unwrap().len(), 1);
+        assert_eq!(p1.get(&x).unwrap()[0].len(), 1);
+        assert_eq!(p1.get(&y).unwrap().len(), 0);
+        assert_eq!(p1.get(&z).unwrap().len(), 0);
+
+        let p2 = (&x + 1.).all_simple_paths(&vec![&x, &y, &z]);
+        println!("p2 = {:?}", p2);
+        assert_eq!(p2.get(&x).unwrap().len(), 1);
+        assert_eq!(p2.get(&x).unwrap()[0].len(), 2);
+        assert_eq!(p2.get(&y).unwrap().len(), 0);
+        assert_eq!(p2.get(&z).unwrap().len(), 0);
+
+        let p3 = (4. + 3.*(&z + &x)).all_simple_paths(&vec![&x, &y, &z]);
+        println!("p3 = {:?}", p3);
+        assert_eq!(p3.get(&x).unwrap().len(), 1);
+        assert_eq!(p3.get(&x).unwrap()[0].len(), 4);
+        assert_eq!(p3.get(&y).unwrap().len(), 0);
+        assert_eq!(p3.get(&z).unwrap().len(), 1);
+        assert_eq!(p3.get(&z).unwrap()[0].len(), 4);
+
+        let f4 = &x + 5.;
+        let g4 = &f4*(&z + 3.);
+        let p4 = (f4 + g4).all_simple_paths(&vec![&x, &y, &z]);
+        println!("p4 = {:?}", p4);
+        assert_eq!(p4.get(&x).unwrap().len(), 2);
+        assert_eq!(p4.get(&x).unwrap()[0].len() +
+                   p4.get(&x).unwrap()[1].len(), 7);
+        assert_eq!(p4.get(&y).unwrap().len(), 0);
+        assert_eq!(p4.get(&z).unwrap().len(), 1);
+        assert_eq!(p4.get(&z).unwrap()[0].len(), 4);
+
     }
 }
