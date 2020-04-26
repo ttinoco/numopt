@@ -24,6 +24,10 @@ impl Node for FunctionMul {
     fn get_value(&self) -> f64 { 
         self.args.0.get_value()*self.args.1.get_value()
     }
+
+    fn get_arguments(&self) -> Vec<NodeRc> {
+        vec![self.args.0.clone(), self.args.1.clone()]
+    }
 }
 
 impl<'a> fmt::Display for FunctionMul {

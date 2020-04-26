@@ -1,11 +1,12 @@
 use std::fmt;
 use std::ptr;
 use std::rc::Rc;
+use std::iter::FromIterator;
 use std::hash::{Hash, Hasher};
 use std::cmp::{PartialEq, Eq};
 use num_traits::cast::ToPrimitive;
 use std::ops::{Add, Mul, Neg, Sub, Div};
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::model::constant::ConstantScalar;
 use crate::model::variable::VariableScalar;
@@ -24,18 +25,23 @@ pub enum NodeRc {
 pub trait Node {
 
     fn get_value(&self) -> f64;
-    
+    fn get_arguments(&self) -> Vec<NodeRc> { Vec::new() }
 }
 
 impl NodeRc {
 
-    fn all_simple_paths(&self, vars: Vec<&NodeRc>) -> HashMap<NodeRc, Vec<Vec<NodeRc>>> {
+    fn all_simple_paths(&self, vars: &[&NodeRc]) -> HashMap<NodeRc, Vec<Vec<NodeRc>>> {
 
-        fn all_simple_paths_acc(vars: Vec<&NodeRc>,
-                                workqueue: &mut VecDeque<Vec<NodeRc>>,
-                                paths: &mut HashMap<NodeRc, Vec<Vec<NodeRc>>>) -> () {
-
+        // Check inputs
+        for v in vars {
+            match v {
+                NodeRc::VariableScalarRc(_x) => (),
+                _ => panic!("variable expected")
+            }
         }
+
+        // Vars
+        let varset: HashSet<&NodeRc> = HashSet::from_iter(vars.iter().map(|x| x.clone()));
 
         // Workqueue
         let mut wq: VecDeque<Vec<NodeRc>> = VecDeque::new();
@@ -43,7 +49,40 @@ impl NodeRc {
 
         // Paths
         let mut paths: HashMap<NodeRc, Vec<Vec<NodeRc>>> = HashMap::new();
-        all_simple_paths_acc(vars, &mut wq, &mut paths);
+
+        // Process
+        loop {
+
+            // Pop path
+            let path = match wq.pop_front() {
+                Some(p) => p,
+                None => break
+            };
+            let node = path.last().unwrap();
+
+            // Add paths
+            match node {
+                NodeRc::VariableScalarRc(_x) => {
+                    for v in &varset {
+                        if node == *v {
+                            let new_path = path.iter().map(|x| x.clone()).collect();
+                            match paths.get_mut(node) {
+                                Some(p) => { p.push(new_path); },
+                                None => { paths.insert(node.clone(), vec![new_path]); },
+                            };
+                        }
+                    } 
+                }
+                _ => (),
+            };
+
+            // Process arguments
+            for n in node.get_arguments() {
+                let mut new_path: Vec<NodeRc> = path.iter().map(|x| x.clone()).collect();
+                new_path.push(n.clone());
+                wq.push_front(new_path);
+            }
+        }
 
         // Return paths
         paths
@@ -62,6 +101,16 @@ impl Node for NodeRc {
             NodeRc::FunctionDivRc(x) => x.get_value(),
         }
     }
+
+    fn get_arguments(&self) -> Vec<NodeRc> {
+        match self {
+            NodeRc::ConstantScalarRc(x) => x.get_arguments(),
+            NodeRc::VariableScalarRc(x) => x.get_arguments(),
+            NodeRc::FunctionAddRc(x) => x.get_arguments(),
+            NodeRc::FunctionMulRc(x) => x.get_arguments(),
+            NodeRc::FunctionDivRc(x) => x.get_arguments(),
+        }
+    }   
 }
 
 impl Hash for NodeRc {
@@ -80,21 +129,11 @@ impl PartialEq for NodeRc {
 
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (NodeRc::ConstantScalarRc(x), NodeRc::ConstantScalarRc(y)) => {
-                Rc::ptr_eq(x, y)
-            },
-            (NodeRc::VariableScalarRc(x), NodeRc::VariableScalarRc(y)) => {
-                Rc::ptr_eq(x, y)
-            },
-            (NodeRc::FunctionAddRc(x), NodeRc::FunctionAddRc(y)) => {
-                Rc::ptr_eq(x, y)
-            },
-            (NodeRc::FunctionMulRc(x), NodeRc::FunctionMulRc(y)) => {
-                Rc::ptr_eq(x, y)
-            },
-            (NodeRc::FunctionDivRc(x), NodeRc::FunctionDivRc(y)) => {
-                Rc::ptr_eq(x, y)
-            },
+            (NodeRc::ConstantScalarRc(x), NodeRc::ConstantScalarRc(y)) => Rc::ptr_eq(x, y),
+            (NodeRc::VariableScalarRc(x), NodeRc::VariableScalarRc(y)) => Rc::ptr_eq(x, y),
+            (NodeRc::FunctionAddRc(x), NodeRc::FunctionAddRc(y)) => Rc::ptr_eq(x, y),
+            (NodeRc::FunctionMulRc(x), NodeRc::FunctionMulRc(y)) => Rc::ptr_eq(x, y),
+            (NodeRc::FunctionDivRc(x), NodeRc::FunctionDivRc(y)) => Rc::ptr_eq(x, y),
             _ => false,
         }
     }

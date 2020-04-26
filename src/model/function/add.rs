@@ -27,6 +27,10 @@ impl Node for FunctionAdd {
     fn get_value(&self) -> f64 { 
         self.args.iter().map(|x| x.get_value()).sum()
     }
+
+    fn get_arguments(&self) -> Vec<NodeRc> {
+        self.args.iter().map(|x| x.clone()).collect()
+    }
 }
 
 impl<'a> fmt::Display for FunctionAdd {
