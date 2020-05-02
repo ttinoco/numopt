@@ -24,8 +24,10 @@ pub enum NodeRc {
 
 pub trait Node {
 
-    fn get_value(&self) -> f64;
     fn get_arguments(&self) -> Vec<NodeRc> { Vec::new() }
+    fn get_partial(&self, arg: &NodeRc) -> NodeRc;
+    fn get_value(&self) -> f64;
+
 }
 
 impl NodeRc {
@@ -40,7 +42,7 @@ impl NodeRc {
             }
         }
 
-        // Vars
+        // Vars set
         let varset: HashSet<&NodeRc> = HashSet::from_iter(vars.iter().map(|x| x.clone()));
 
         // Workqueue
@@ -88,10 +90,59 @@ impl NodeRc {
         paths
     }
 
+    pub fn get_derivatives(&self, vars: &[&NodeRc]) -> HashMap<NodeRc, NodeRc> {
+
+        // Check inputs
+        for v in vars {
+            match v {
+                NodeRc::VariableScalarRc(_x) => (),
+                _ => panic!("variable expected")
+            }
+        }
+
+        // Vars set
+        let varset: HashSet<&NodeRc> = HashSet::from_iter(vars.iter().map(|x| x.clone()));
+
+        // Derivatives
+        let paths = self.all_simple_paths(vars);
+        let mut derivs: HashMap<NodeRc, NodeRc> = HashMap::new();
+        for v in varset.iter() {
+            let mut d = ConstantScalar::new(0.);
+            for path in paths.get(v).unwrap() {
+                let mut prod = ConstantScalar::new(1.);
+                for pair in path.as_slice().windows(2) {
+                    prod = prod*pair[0].get_partial(&pair[1]);
+                }
+                d = d + prod;
+            }
+            derivs.insert((**v).clone(), d);
+        }
+        derivs
+    }
 }
 
 impl Node for NodeRc {
     
+    fn get_arguments(&self) -> Vec<NodeRc> {
+        match self {
+            NodeRc::ConstantScalarRc(x) => x.get_arguments(),
+            NodeRc::VariableScalarRc(x) => x.get_arguments(),
+            NodeRc::FunctionAddRc(x) => x.get_arguments(),
+            NodeRc::FunctionMulRc(x) => x.get_arguments(),
+            NodeRc::FunctionDivRc(x) => x.get_arguments(),
+        }
+    }
+    
+    fn get_partial(&self, arg: &NodeRc) -> NodeRc { 
+        match self {
+            NodeRc::ConstantScalarRc(x) => x.get_partial(arg),
+            NodeRc::VariableScalarRc(x) => x.get_partial(arg),
+            NodeRc::FunctionAddRc(x) => x.get_partial(arg),
+            NodeRc::FunctionMulRc(x) => x.get_partial(arg),
+            NodeRc::FunctionDivRc(x) => x.get_partial(arg),
+        }
+    }
+
     fn get_value(&self) -> f64 {
         match self {
             NodeRc::ConstantScalarRc(x) => x.get_value(),
@@ -101,16 +152,6 @@ impl Node for NodeRc {
             NodeRc::FunctionDivRc(x) => x.get_value(),
         }
     }
-
-    fn get_arguments(&self) -> Vec<NodeRc> {
-        match self {
-            NodeRc::ConstantScalarRc(x) => x.get_arguments(),
-            NodeRc::VariableScalarRc(x) => x.get_arguments(),
-            NodeRc::FunctionAddRc(x) => x.get_arguments(),
-            NodeRc::FunctionMulRc(x) => x.get_arguments(),
-            NodeRc::FunctionDivRc(x) => x.get_arguments(),
-        }
-    }   
 }
 
 impl Hash for NodeRc {
@@ -600,6 +641,5 @@ mod tests {
         assert_eq!(p4.get(&y).unwrap().len(), 0);
         assert_eq!(p4.get(&z).unwrap().len(), 1);
         assert_eq!(p4.get(&z).unwrap()[0].len(), 4);
-
     }
 }

@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 use crate::model::node::{Node,
                          NodeRc};
+use crate::model::constant::ConstantScalar;
 
 pub struct FunctionMul {
     args: (NodeRc, NodeRc),
@@ -21,12 +22,24 @@ impl FunctionMul {
 
 impl Node for FunctionMul {
 
-    fn get_value(&self) -> f64 { 
-        self.args.0.get_value()*self.args.1.get_value()
-    }
-
     fn get_arguments(&self) -> Vec<NodeRc> {
         vec![self.args.0.clone(), self.args.1.clone()]
+    }
+
+    fn get_partial(&self, arg: &NodeRc) -> NodeRc { 
+        if self.args.0 == *arg {
+            return self.args.1.clone();
+        }
+        else if self.args.1 == *arg {
+            return self.args.0.clone();
+        }
+        else {
+            return ConstantScalar::new(0.);
+        }
+    }
+
+    fn get_value(&self) -> f64 { 
+        self.args.0.get_value()*self.args.1.get_value()
     }
 }
 

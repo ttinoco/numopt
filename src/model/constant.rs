@@ -22,6 +22,7 @@ impl ConstantScalar {
 
 impl Node for ConstantScalar {
 
+    fn get_partial(&self, arg: &NodeRc) -> NodeRc { ConstantScalar::new(0.) }
     fn get_value(&self) -> f64 { self.value }
 }
 

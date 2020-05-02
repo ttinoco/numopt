@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 use super::node::{Node,
                   NodeRc};
+use super::constant::ConstantScalar;
 
 pub enum VariableKind {
     VarContinuous,
@@ -38,6 +39,19 @@ impl VariableScalar {
 
 impl<'a> Node for VariableScalar {
 
+    fn get_partial(&self, arg: &NodeRc) -> NodeRc { 
+        match arg {
+            NodeRc::VariableScalarRc(x) => {
+                if self as *const VariableScalar == x.as_ref() {
+                    ConstantScalar::new(1.)       
+                }
+                else {
+                    ConstantScalar::new(0.)       
+                }
+            }
+            _ => ConstantScalar::new(0.)  
+        }
+    }
     fn get_value(&self) -> f64 { self.value }
 }
 

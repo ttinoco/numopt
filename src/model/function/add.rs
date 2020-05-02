@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 use crate::model::node::{Node,
                          NodeRc};
+use crate::model::constant::ConstantScalar;
 
 pub struct FunctionAdd {
     args: Vec<NodeRc>,
@@ -24,12 +25,21 @@ impl FunctionAdd {
 
 impl Node for FunctionAdd {
 
-    fn get_value(&self) -> f64 { 
-        self.args.iter().map(|x| x.get_value()).sum()
-    }
-
     fn get_arguments(&self) -> Vec<NodeRc> {
         self.args.iter().map(|x| x.clone()).collect()
+    }
+
+    fn get_partial(&self, arg: &NodeRc) -> NodeRc { 
+        for a in &self.args {
+            if *a == *arg {
+                return ConstantScalar::new(1.);
+            } 
+        }
+        ConstantScalar::new(0.)
+    }
+
+    fn get_value(&self) -> f64 { 
+        self.args.iter().map(|x| x.get_value()).sum()
     }
 }
 
