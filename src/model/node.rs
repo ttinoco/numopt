@@ -119,6 +119,13 @@ impl NodeRc {
         }
         derivs
     }
+
+    pub fn is_constant_with_value(&self, val: f64) -> bool {
+        match self {
+            NodeRc::ConstantScalarRc(x) => x.get_value() == val,
+            _ => false
+        }
+    }
 }
 
 impl Node for NodeRc {

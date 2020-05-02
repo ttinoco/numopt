@@ -58,5 +58,41 @@ impl<'a> fmt::Display for FunctionAdd {
     }
 }
 
+#[cfg(test)]
+mod tests {
 
+    use crate::model::node::Node;
+    use crate::model::variable::VariableScalar;
+
+    #[test]
+    fn get_partial() {
+
+        let x = VariableScalar::new_continuous("x", 2.);
+        let y = VariableScalar::new_continuous("y", 3.);
+        let w = VariableScalar::new_continuous("w", 4.);
+
+        let z = &x + &y; 
+
+        let z1 = z.get_partial(&x);
+        assert!(z1.is_constant_with_value(1.));
+
+        let z2 = z.get_partial(&y);
+        assert!(z2.is_constant_with_value(1.));
+
+        let z3 = z.get_partial(&w);
+        assert!(z3.is_constant_with_value(0.));
+
+        let zz = &x + 2.;
+        let f = &y + &zz;
+
+        let z4 = f.get_partial(&x);
+        assert!(z4.is_constant_with_value(0.));
+
+        let z5 = f.get_partial(&y);
+        assert!(z5.is_constant_with_value(1.));
+
+        let z6 = f.get_partial(&zz);
+        assert!(z6.is_constant_with_value(1.));
+    }
+}
 

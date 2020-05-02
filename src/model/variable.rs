@@ -64,5 +64,19 @@ impl<'a> fmt::Display for VariableScalar {
 #[cfg(test)]
 mod tests {
 
+    use crate::model::node::Node;
+    use crate::model::variable::VariableScalar;
 
+    #[test]
+    fn get_partial() {
+
+        let x = VariableScalar::new_continuous("x", 2.);
+        let y = VariableScalar::new_continuous("y", 3.);
+
+        let z1 = x.get_partial(&x);
+        assert!(z1.is_constant_with_value(1.));
+
+        let z2 = x.get_partial(&y);
+        assert!(z2.is_constant_with_value(0.));
+    }
 }

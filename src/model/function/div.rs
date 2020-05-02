@@ -60,5 +60,30 @@ impl<'a> fmt::Display for FunctionDiv {
     }
 }
 
+#[cfg(test)]
+mod tests {
+
+    use crate::model::node::Node;
+    use crate::model::variable::VariableScalar;
+
+    #[test]
+    fn get_partial() {
+
+        let x = VariableScalar::new_continuous("x", 2.);
+        let y = VariableScalar::new_continuous("y", 3.);
+        let w = VariableScalar::new_continuous("w", 4.);
+
+        let z = &x/&y;
+
+        let z1 = z.get_partial(&x);
+        assert_eq!(format!("{}", z1), "1/y");
+
+        let z2 = z.get_partial(&y);
+        assert_eq!(format!("{}", z2), "-1*x/(y*y)");
+
+        let z3 = z.get_partial(&w);
+        assert!(z3.is_constant_with_value(0.));
+    }
+}
 
 
