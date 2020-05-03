@@ -22,11 +22,11 @@ impl FunctionDiv {
 
 impl Node for FunctionDiv {
 
-    fn get_arguments(&self) -> Vec<NodeRc> {
+    fn arguments(&self) -> Vec<NodeRc> {
         vec![self.args.0.clone(), self.args.1.clone()]
     }
 
-    fn get_partial(&self, arg: &NodeRc) -> NodeRc { 
+    fn partial(&self, arg: &NodeRc) -> NodeRc { 
         if self.args.0 == *arg {
             return 1./&self.args.1;
         }
@@ -38,8 +38,8 @@ impl Node for FunctionDiv {
         }
     }
 
-    fn get_value(&self) -> f64 { 
-        self.args.0.get_value()/self.args.1.get_value()
+    fn value(&self) -> f64 { 
+        self.args.0.value()/self.args.1.value()
     }
 }
 
@@ -67,7 +67,7 @@ mod tests {
     use crate::model::variable::VariableScalar;
 
     #[test]
-    fn get_partial() {
+    fn partial() {
 
         let x = VariableScalar::new_continuous("x", 2.);
         let y = VariableScalar::new_continuous("y", 3.);
@@ -75,13 +75,13 @@ mod tests {
 
         let z = &x/&y;
 
-        let z1 = z.get_partial(&x);
+        let z1 = z.partial(&x);
         assert_eq!(format!("{}", z1), "1/y");
 
-        let z2 = z.get_partial(&y);
+        let z2 = z.partial(&y);
         assert_eq!(format!("{}", z2), "-1*x/(y*y)");
 
-        let z3 = z.get_partial(&w);
+        let z3 = z.partial(&w);
         assert!(z3.is_constant_with_value(0.));
     }
 }

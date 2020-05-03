@@ -39,7 +39,7 @@ impl VariableScalar {
 
 impl<'a> Node for VariableScalar {
 
-    fn get_partial(&self, arg: &NodeRc) -> NodeRc { 
+    fn partial(&self, arg: &NodeRc) -> NodeRc { 
         match arg {
             NodeRc::VariableScalarRc(x) => {
                 if self as *const VariableScalar == x.as_ref() {
@@ -52,7 +52,7 @@ impl<'a> Node for VariableScalar {
             _ => ConstantScalar::new(0.)  
         }
     }
-    fn get_value(&self) -> f64 { self.value }
+    fn value(&self) -> f64 { self.value }
 }
 
 impl<'a> fmt::Display for VariableScalar {
@@ -68,15 +68,15 @@ mod tests {
     use crate::model::variable::VariableScalar;
 
     #[test]
-    fn get_partial() {
+    fn partial() {
 
         let x = VariableScalar::new_continuous("x", 2.);
         let y = VariableScalar::new_continuous("y", 3.);
 
-        let z1 = x.get_partial(&x);
+        let z1 = x.partial(&x);
         assert!(z1.is_constant_with_value(1.));
 
-        let z2 = x.get_partial(&y);
+        let z2 = x.partial(&y);
         assert!(z2.is_constant_with_value(0.));
     }
 }

@@ -24,9 +24,9 @@ pub enum NodeRc {
 
 pub trait Node {
 
-    fn get_arguments(&self) -> Vec<NodeRc> { Vec::new() }
-    fn get_partial(&self, arg: &NodeRc) -> NodeRc;
-    fn get_value(&self) -> f64;
+    fn arguments(&self) -> Vec<NodeRc> { Vec::new() }
+    fn partial(&self, arg: &NodeRc) -> NodeRc;
+    fn value(&self) -> f64;
 
 }
 
@@ -79,7 +79,7 @@ impl NodeRc {
             };
 
             // Process arguments
-            for n in node.get_arguments() {
+            for n in node.arguments() {
                 let mut new_path: Vec<NodeRc> = path.iter().map(|x| x.clone()).collect();
                 new_path.push(n.clone());
                 wq.push_front(new_path);
@@ -90,7 +90,12 @@ impl NodeRc {
         paths
     }
 
-    pub fn get_derivatives(&self, vars: &[&NodeRc]) -> HashMap<NodeRc, NodeRc> {
+    pub fn derivative(&self, var: &NodeRc) -> NodeRc {
+        let derivs = self.derivatives(&vec![var]);
+        derivs.get(var).unwrap().clone()
+    }
+
+    pub fn derivatives(&self, vars: &[&NodeRc]) -> HashMap<NodeRc, NodeRc> {
 
         // Check inputs
         for v in vars {
@@ -111,7 +116,7 @@ impl NodeRc {
             for path in paths.get(v).unwrap() {
                 let mut prod = ConstantScalar::new(1.);
                 for pair in path.as_slice().windows(2) {
-                    prod = prod*pair[0].get_partial(&pair[1]);
+                    prod = prod*pair[0].partial(&pair[1]);
                 }
                 d = d + prod;
             }
@@ -122,7 +127,7 @@ impl NodeRc {
 
     pub fn is_constant_with_value(&self, val: f64) -> bool {
         match self {
-            NodeRc::ConstantScalarRc(x) => x.get_value() == val,
+            NodeRc::ConstantScalarRc(x) => x.value() == val,
             _ => false
         }
     }
@@ -130,33 +135,33 @@ impl NodeRc {
 
 impl Node for NodeRc {
     
-    fn get_arguments(&self) -> Vec<NodeRc> {
+    fn arguments(&self) -> Vec<NodeRc> {
         match self {
-            NodeRc::ConstantScalarRc(x) => x.get_arguments(),
-            NodeRc::VariableScalarRc(x) => x.get_arguments(),
-            NodeRc::FunctionAddRc(x) => x.get_arguments(),
-            NodeRc::FunctionMulRc(x) => x.get_arguments(),
-            NodeRc::FunctionDivRc(x) => x.get_arguments(),
+            NodeRc::ConstantScalarRc(x) => x.arguments(),
+            NodeRc::VariableScalarRc(x) => x.arguments(),
+            NodeRc::FunctionAddRc(x) => x.arguments(),
+            NodeRc::FunctionMulRc(x) => x.arguments(),
+            NodeRc::FunctionDivRc(x) => x.arguments(),
         }
     }
     
-    fn get_partial(&self, arg: &NodeRc) -> NodeRc { 
+    fn partial(&self, arg: &NodeRc) -> NodeRc { 
         match self {
-            NodeRc::ConstantScalarRc(x) => x.get_partial(arg),
-            NodeRc::VariableScalarRc(x) => x.get_partial(arg),
-            NodeRc::FunctionAddRc(x) => x.get_partial(arg),
-            NodeRc::FunctionMulRc(x) => x.get_partial(arg),
-            NodeRc::FunctionDivRc(x) => x.get_partial(arg),
+            NodeRc::ConstantScalarRc(x) => x.partial(arg),
+            NodeRc::VariableScalarRc(x) => x.partial(arg),
+            NodeRc::FunctionAddRc(x) => x.partial(arg),
+            NodeRc::FunctionMulRc(x) => x.partial(arg),
+            NodeRc::FunctionDivRc(x) => x.partial(arg),
         }
     }
 
-    fn get_value(&self) -> f64 {
+    fn value(&self) -> f64 {
         match self {
-            NodeRc::ConstantScalarRc(x) => x.get_value(),
-            NodeRc::VariableScalarRc(x) => x.get_value(),
-            NodeRc::FunctionAddRc(x) => x.get_value(),
-            NodeRc::FunctionMulRc(x) => x.get_value(),
-            NodeRc::FunctionDivRc(x) => x.get_value(),
+            NodeRc::ConstantScalarRc(x) => x.value(),
+            NodeRc::VariableScalarRc(x) => x.value(),
+            NodeRc::FunctionAddRc(x) => x.value(),
+            NodeRc::FunctionMulRc(x) => x.value(),
+            NodeRc::FunctionDivRc(x) => x.value(),
         }
     }
 }
@@ -403,27 +408,27 @@ mod tests {
 
         let z1 = &x + &y;
         assert_eq!(format!("{}", z1), "x + y");
-        assert_eq!(z1.get_value(), 7.);
+        assert_eq!(z1.value(), 7.);
 
         let z2 = &y + &x;
         assert_eq!(format!("{}", z2), "y + x");
-        assert_eq!(z2.get_value(), 7.);
+        assert_eq!(z2.value(), 7.);
 
         let z3 = &x + (&y + &x);
         assert_eq!(format!("{}", z3), "x + y + x");
-        assert_eq!(z3.get_value(), 10.);
+        assert_eq!(z3.value(), 10.);
 
         let z4 = (&x + &y) + &x;
         assert_eq!(format!("{}", z4), "x + y + x");
-        assert_eq!(z4.get_value(), 10.);
+        assert_eq!(z4.value(), 10.);
 
         let z5 = &z1 + &z2 + &z3 + &z4;
         assert_eq!(format!("{}", z5), "x + y + y + x + x + y + x + x + y + x");
-        assert_eq!(z5.get_value(), 34.);
+        assert_eq!(z5.value(), 34.);
     
         let z6 = (&x + &y) + (&y + &x);
         assert_eq!(format!("{}", z6), "x + y + y + x");
-        assert_eq!(z6.get_value(), 14.);
+        assert_eq!(z6.value(), 14.);
     }
 
     #[test]
@@ -433,15 +438,15 @@ mod tests {
 
         let z1 = &x + 15.;
         assert_eq!(format!("{}", z1), "x + 15");
-        assert_eq!(z1.get_value(), 18.);
+        assert_eq!(z1.value(), 18.);
 
         let z2 = 13. + &x;
         assert_eq!(format!("{}", z2), "13 + x");
-        assert_eq!(z2.get_value(), 16.);
+        assert_eq!(z2.value(), 16.);
 
         let z3 = 2. + &z2 + 6.;
         assert_eq!(format!("{}", z3), "2 + 13 + x + 6");
-        assert_eq!(z3.get_value(), 24.);
+        assert_eq!(z3.value(), 24.);
     }
 
     #[test]
@@ -452,23 +457,23 @@ mod tests {
 
         let z1 = &x*&y;
         assert_eq!(format!("{}", z1), "x*y");
-        assert_eq!(z1.get_value(), 12.);
+        assert_eq!(z1.value(), 12.);
 
         let z2 = &y*&x;
         assert_eq!(format!("{}", z2), "y*x");
-        assert_eq!(z2.get_value(), 12.);
+        assert_eq!(z2.value(), 12.);
 
         let z3 = (&y*&x)*&x;
         assert_eq!(format!("{}", z3), "y*x*x");
-        assert_eq!(z3.get_value(), 36.);
+        assert_eq!(z3.value(), 36.);
 
         let z4 = &y*(&x*&x);
         assert_eq!(format!("{}", z4), "y*x*x");
-        assert_eq!(z4.get_value(), 36.);
+        assert_eq!(z4.value(), 36.);
 
         let z5 = &z4*(&x*&z3);
         assert_eq!(format!("{}", z5), "y*x*x*x*y*x*x");
-        assert_eq!(z5.get_value(), (4.).pow(2.)*((3.).pow(5.)));
+        assert_eq!(z5.value(), (4.).pow(2.)*((3.).pow(5.)));
     }
 
     #[test]
@@ -479,7 +484,7 @@ mod tests {
 
         let z1 = (&x + &y*&x)*(&y*&x + &y);
         assert_eq!(format!("{}", z1), "(x + y*x)*(y*x + y)");
-        assert_eq!(z1.get_value(), 15.*16.);
+        assert_eq!(z1.value(), 15.*16.);
     }
 
     #[test]
@@ -489,15 +494,15 @@ mod tests {
 
         let z1 = &x*15.;
         assert_eq!(format!("{}", z1), "x*15");
-        assert_eq!(z1.get_value(), 45.);
+        assert_eq!(z1.value(), 45.);
 
         let z2 = 13.*&x;
         assert_eq!(format!("{}", z2), "13*x");
-        assert_eq!(z2.get_value(), 39.);
+        assert_eq!(z2.value(), 39.);
 
         let z3 = 2.*&z2*6.;
         assert_eq!(format!("{}", z3), "2*13*x*6");
-        assert_eq!(z3.get_value(), 2.*13.*3.*6.);
+        assert_eq!(z3.value(), 2.*13.*3.*6.);
     }
 
     #[test]
@@ -507,11 +512,11 @@ mod tests {
 
         let z1 = -&x;
         assert_eq!(format!("{}", z1), "-1*x");
-        assert_eq!(z1.get_value(), -3.);
+        assert_eq!(z1.value(), -3.);
 
         let z2 = -(&x + 3.);
         assert_eq!(format!("{}", z2), "-1*(x + 3)");
-        assert_eq!(z2.get_value(), -6.);
+        assert_eq!(z2.value(), -6.);
     }
 
     #[test]
@@ -521,25 +526,25 @@ mod tests {
         let y = VariableScalar::new_continuous("y", 4.);
 
         let z1 = &x - &y;
-        assert_eq!(z1.get_value(), -1.);
+        assert_eq!(z1.value(), -1.);
         assert_eq!(format!("{}", z1), "x + -1*y");
 
         let z2 = &y - &x;
-        assert_eq!(z2.get_value(), 1.);
+        assert_eq!(z2.value(), 1.);
         assert_eq!(format!("{}", z2), "y + -1*x");
 
         let z3 = &x - (&x - &y);
-        assert_eq!(z3.get_value(), 4.);
+        assert_eq!(z3.value(), 4.);
         assert_eq!(format!("{}", z3), "x + -1*(x + -1*y)");
 
         let z4 = (&x - &y) - &y;
-        assert_eq!(z4.get_value(), -5.);
+        assert_eq!(z4.value(), -5.);
 
         let z5 = &z4 - &z3 - &x;
-        assert_eq!(z5.get_value(), -12.);
+        assert_eq!(z5.value(), -12.);
 
         let z6 = (&z1 - &z2) - (&z3 - &z4);
-        assert_eq!(z6.get_value(), -2.-9.);
+        assert_eq!(z6.value(), -2.-9.);
     }
 
     #[test]
@@ -549,15 +554,15 @@ mod tests {
 
         let z1 = &x - 15.;
         assert_eq!(format!("{}", z1), "x + -1*15");
-        assert_eq!(z1.get_value(), -12.);
+        assert_eq!(z1.value(), -12.);
 
         let z2 = 13. - &x;
         assert_eq!(format!("{}", z2), "13 + -1*x");
-        assert_eq!(z2.get_value(), 10.);
+        assert_eq!(z2.value(), 10.);
 
         let z3 = 2. - &z2 - 6.;
         assert_eq!(format!("{}", z3), "2 + -1*(13 + -1*x) + -1*6");
-        assert_eq!(z3.get_value(), -14.);
+        assert_eq!(z3.value(), -14.);
     }
 
     #[test]
@@ -568,23 +573,23 @@ mod tests {
 
         let z1 = &x/&y;
         assert_eq!(format!("{}", z1), "x/y");
-        assert_eq!(z1.get_value(), 3./4.);
+        assert_eq!(z1.value(), 3./4.);
 
         let z2 = (3.*&x)/(4.*&y);
         assert_eq!(format!("{}", z2), "3*x/(4*y)");
-        assert_eq!(z2.get_value(), 9./16.);
+        assert_eq!(z2.value(), 9./16.);
 
         let z3 = (3. + &x)/(&y + 4.);
         assert_eq!(format!("{}", z3), "(3 + x)/(y + 4)");
-        assert_eq!(z3.get_value(), 6./8.);
+        assert_eq!(z3.value(), 6./8.);
 
         let z4 = &x/(3.+&y);
         assert_eq!(format!("{}", z4), "x/(3 + y)");
-        assert_eq!(z4.get_value(), 3./7.);
+        assert_eq!(z4.value(), 3./7.);
 
         let z5 = (2.+&x)/&y;
         assert_eq!(format!("{}", z5), "(2 + x)/y");
-        assert_eq!(z5.get_value(), 5./4.);
+        assert_eq!(z5.value(), 5./4.);
     }
 
     #[test]
@@ -594,19 +599,19 @@ mod tests {
 
         let z1 = 3./&x;
         assert_eq!(format!("{}", z1), "3/x");
-        assert_eq!(z1.get_value(), 3./4.);
+        assert_eq!(z1.value(), 3./4.);
 
         let z2 = 3./(&x + 1.);
         assert_eq!(format!("{}", z2), "3/(x + 1)");
-        assert_eq!(z2.get_value(), 3./5.);
+        assert_eq!(z2.value(), 3./5.);
 
         let z3 = &x/3.;
         assert_eq!(format!("{}", z3), "x/3");
-        assert_eq!(z3.get_value(), 4./3.);
+        assert_eq!(z3.value(), 4./3.);
 
         let z4 = (&x + 1.)/3.;
         assert_eq!(format!("{}", z4), "(x + 1)/3");
-        assert_eq!(z4.get_value(), 5./3.);
+        assert_eq!(z4.value(), 5./3.);
     }
 
     #[test]

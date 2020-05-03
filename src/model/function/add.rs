@@ -25,11 +25,11 @@ impl FunctionAdd {
 
 impl Node for FunctionAdd {
 
-    fn get_arguments(&self) -> Vec<NodeRc> {
+    fn arguments(&self) -> Vec<NodeRc> {
         self.args.iter().map(|x| x.clone()).collect()
     }
 
-    fn get_partial(&self, arg: &NodeRc) -> NodeRc { 
+    fn partial(&self, arg: &NodeRc) -> NodeRc { 
         for a in &self.args {
             if *a == *arg {
                 return ConstantScalar::new(1.);
@@ -38,8 +38,8 @@ impl Node for FunctionAdd {
         ConstantScalar::new(0.)
     }
 
-    fn get_value(&self) -> f64 { 
-        self.args.iter().map(|x| x.get_value()).sum()
+    fn value(&self) -> f64 { 
+        self.args.iter().map(|x| x.value()).sum()
     }
 }
 
@@ -65,7 +65,7 @@ mod tests {
     use crate::model::variable::VariableScalar;
 
     #[test]
-    fn get_partial() {
+    fn partial() {
 
         let x = VariableScalar::new_continuous("x", 2.);
         let y = VariableScalar::new_continuous("y", 3.);
@@ -73,25 +73,25 @@ mod tests {
 
         let z = &x + &y; 
 
-        let z1 = z.get_partial(&x);
+        let z1 = z.partial(&x);
         assert!(z1.is_constant_with_value(1.));
 
-        let z2 = z.get_partial(&y);
+        let z2 = z.partial(&y);
         assert!(z2.is_constant_with_value(1.));
 
-        let z3 = z.get_partial(&w);
+        let z3 = z.partial(&w);
         assert!(z3.is_constant_with_value(0.));
 
         let zz = &x + 2.;
         let f = &y + &zz;
 
-        let z4 = f.get_partial(&x);
+        let z4 = f.partial(&x);
         assert!(z4.is_constant_with_value(0.));
 
-        let z5 = f.get_partial(&y);
+        let z5 = f.partial(&y);
         assert!(z5.is_constant_with_value(1.));
 
-        let z6 = f.get_partial(&zz);
+        let z6 = f.partial(&zz);
         assert!(z6.is_constant_with_value(1.));
     }
 }
