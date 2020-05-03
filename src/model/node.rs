@@ -5,6 +5,7 @@ use std::iter::FromIterator;
 use std::hash::{Hash, Hasher};
 use std::cmp::{PartialEq, Eq};
 use num_traits::cast::ToPrimitive;
+use num_traits::identities::{Zero, One};
 use std::ops::{Add, Mul, Neg, Sub, Div};
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -235,7 +236,15 @@ macro_rules! impl_node_add_node {
         impl Add<$y> for $x {
             type Output = NodeRc;
             fn add(self, rhs: $y) -> NodeRc {
-                FunctionAdd::new(vec![self.clone(), rhs.clone()])
+                if self.is_constant_with_value(0.) {
+                    rhs.clone()
+                }
+                else if rhs.is_constant_with_value(0.) {
+                    self.clone()
+                }
+                else {
+                    FunctionAdd::new(vec![self.clone(), rhs.clone()])
+                }
             }        
         }
     };
@@ -246,17 +255,33 @@ macro_rules! impl_node_add_scalar {
         impl Add<$y> for $x {
             type Output = NodeRc;
             fn add(self, rhs: $y) -> NodeRc {
-                FunctionAdd::new(
-                    vec![self.clone(), 
-                         ConstantScalar::new(rhs.to_f64().unwrap())])
+                if self.is_constant_with_value(0.) {
+                    ConstantScalar::new(rhs.to_f64().unwrap())
+                }
+                else if rhs == <$y>::zero() {
+                    self.clone()
+                }
+                else {
+                    FunctionAdd::new(
+                        vec![self.clone(), 
+                        ConstantScalar::new(rhs.to_f64().unwrap())])
+                }
             }           
         }
         impl Add<$x> for $y {
             type Output = NodeRc;
             fn add(self, rhs: $x) -> NodeRc {
-                FunctionAdd::new(
-                    vec![ConstantScalar::new(self.to_f64().unwrap()), 
-                    rhs.clone()])
+                if self == <$y>::zero() {
+                    rhs.clone()
+                }
+                else if rhs.is_constant_with_value(0.) {
+                    ConstantScalar::new(self.to_f64().unwrap())
+                }
+                else {
+                    FunctionAdd::new(
+                        vec![ConstantScalar::new(self.to_f64().unwrap()), 
+                        rhs.clone()])
+                }
             }           
         }
     };
@@ -274,7 +299,18 @@ macro_rules! impl_node_mul_node {
         impl Mul<$y> for $x {
             type Output = NodeRc;
             fn mul(self, rhs: $y) -> NodeRc {
-                FunctionMul::new(self.clone(), rhs.clone())
+                if self.is_constant_with_value(0.) || rhs.is_constant_with_value(0.) {
+                    ConstantScalar::new(0.)
+                }
+                else if self.is_constant_with_value(1.) {
+                    rhs.clone()
+                }
+                else if rhs.is_constant_with_value(1.) {
+                    self.clone()
+                }
+                else {
+                    FunctionMul::new(self.clone(), rhs.clone())
+                }
             }        
         }
     };
@@ -285,15 +321,37 @@ macro_rules! impl_node_mul_scalar {
         impl Mul<$y> for $x {
             type Output = NodeRc;
             fn mul(self, rhs: $y) -> NodeRc {
-                FunctionMul::new(self.clone(), 
-                                 ConstantScalar::new(rhs.to_f64().unwrap()))
+                if self.is_constant_with_value(0.) || rhs == <$y>::zero() {
+                    ConstantScalar::new(0.)
+                }
+                else if self.is_constant_with_value(1.) {
+                    ConstantScalar::new(rhs.to_f64().unwrap())
+                }
+                else if rhs == <$y>::one() {
+                    self.clone()
+                }
+                else {
+                    FunctionMul::new(self.clone(), 
+                                     ConstantScalar::new(rhs.to_f64().unwrap()))
+                }
             }           
         }
         impl Mul<$x> for $y {
             type Output = NodeRc;
             fn mul(self, rhs: $x) -> NodeRc {
-                FunctionMul::new(ConstantScalar::new(self.to_f64().unwrap()), 
-                                 rhs.clone())
+                if self == <$y>::zero() || rhs.is_constant_with_value(0.) {
+                    ConstantScalar::new(0.)
+                }
+                else if self == <$y>::one() {
+                    rhs.clone()
+                }
+                else if rhs.is_constant_with_value(1.) {
+                    ConstantScalar::new(self.to_f64().unwrap())
+                }
+                else {
+                    FunctionMul::new(ConstantScalar::new(self.to_f64().unwrap()), 
+                                     rhs.clone())
+                }
             }           
         }
     };
@@ -311,7 +369,10 @@ macro_rules! impl_node_neg {
         impl Neg for $x {
             type Output = NodeRc;
             fn neg(self) -> NodeRc {
-                (-1.)*self
+                match self {
+                    NodeRc::ConstantScalarRc(x) => ConstantScalar::new(-1.*x.value()),
+                    _ => (-1.)*self,
+                }
             }        
         }
     };
@@ -360,7 +421,18 @@ macro_rules! impl_node_div_node {
         impl Div<$y> for $x {
             type Output = NodeRc;
             fn div(self, rhs: $y) -> NodeRc {
-                FunctionDiv::new(self.clone(), rhs.clone())
+                if rhs.is_constant_with_value(0.) {
+                    panic!("dividion by zero constant")
+                }
+                else if rhs.is_constant_with_value(1.) {
+                    self.clone()
+                }
+                else if self.is_constant_with_value(0.) {
+                    ConstantScalar::new(0.)
+                }
+                else {
+                    FunctionDiv::new(self.clone(), rhs.clone())
+                }
             }        
         }
     };
@@ -371,15 +443,37 @@ macro_rules! impl_node_div_scalar {
         impl Div<$y> for $x {
             type Output = NodeRc;
             fn div(self, rhs: $y) -> NodeRc {
-                FunctionDiv::new(self.clone(), 
-                                 ConstantScalar::new(rhs.to_f64().unwrap()))
+                if rhs == <$y>::zero() {
+                    panic!("dividion by zero constant")
+                }
+                else if rhs == <$y>::one() {
+                    self.clone()
+                }
+                else if self.is_constant_with_value(0.) {
+                    ConstantScalar::new(0.)
+                }
+                else {
+                    FunctionDiv::new(self.clone(), 
+                                     ConstantScalar::new(rhs.to_f64().unwrap()))
+                }
             }           
         }
         impl Div<$x> for $y {
             type Output = NodeRc;
             fn div(self, rhs: $x) -> NodeRc {
-                FunctionDiv::new(ConstantScalar::new(self.to_f64().unwrap()), 
-                                 rhs.clone())
+                if rhs.is_constant_with_value(0.) {
+                    panic!("dividion by zero constant")
+                }
+                else if rhs.is_constant_with_value(1.) {
+                    ConstantScalar::new(self.to_f64().unwrap())
+                }
+                else if self == <$y>::zero() {
+                    ConstantScalar::new(0.)
+                }
+                else {
+                    FunctionDiv::new(ConstantScalar::new(self.to_f64().unwrap()), 
+                                     rhs.clone())
+                }
             }           
         }
     };
@@ -399,12 +493,14 @@ mod tests {
 
     use crate::model::node::Node;
     use crate::model::variable::VariableScalar;
+    use crate::model::constant::ConstantScalar;
 
     #[test]
     fn node_add_node() {
 
         let x = VariableScalar::new_continuous("x", 3.);
         let y = VariableScalar::new_continuous("y", 4.);
+        let c = ConstantScalar::new(0.);
 
         let z1 = &x + &y;
         assert_eq!(format!("{}", z1), "x + y");
@@ -429,6 +525,12 @@ mod tests {
         let z6 = (&x + &y) + (&y + &x);
         assert_eq!(format!("{}", z6), "x + y + y + x");
         assert_eq!(z6.value(), 14.);
+
+        let z7 = &x + &c;
+        assert_eq!(z7, x);
+
+        let z8 = &c + &x;
+        assert_eq!(z8, x);
     }
 
     #[test]
@@ -447,6 +549,12 @@ mod tests {
         let z3 = 2. + &z2 + 6.;
         assert_eq!(format!("{}", z3), "2 + 13 + x + 6");
         assert_eq!(z3.value(), 24.);
+
+        let z4 = &x + 0.;
+        assert_eq!(z4, x);
+
+        let z5 = 0. + &x;
+        assert_eq!(z5, x);
     }
 
     #[test]
@@ -454,6 +562,8 @@ mod tests {
 
         let x = VariableScalar::new_continuous("x", 3.);
         let y = VariableScalar::new_continuous("y", 4.);
+        let c0 = ConstantScalar::new(0.);
+        let c1 = ConstantScalar::new(1.);
 
         let z1 = &x*&y;
         assert_eq!(format!("{}", z1), "x*y");
@@ -474,6 +584,24 @@ mod tests {
         let z5 = &z4*(&x*&z3);
         assert_eq!(format!("{}", z5), "y*x*x*x*y*x*x");
         assert_eq!(z5.value(), (4.).pow(2.)*((3.).pow(5.)));
+
+        let z6 = &x*&c0;
+        assert!(z6.is_constant_with_value(0.));
+
+        let z7 = &c0*&x;
+        assert!(z7.is_constant_with_value(0.));
+
+        let z8 = &c1*&x;
+        assert_eq!(z8, x);
+
+        let z9 = &x*&c1;
+        assert_eq!(z9, x);
+
+        let z10 = &c1*&c0;
+        assert!(z10.is_constant_with_value(0.));
+
+        let z11 = &c0*&c1;
+        assert!(z11.is_constant_with_value(0.));
     }
 
     #[test]
@@ -491,6 +619,7 @@ mod tests {
     fn node_mul_scalar() {
 
         let x = VariableScalar::new_continuous("x", 3.);
+        let c1 = ConstantScalar::new(1.);
 
         let z1 = &x*15.;
         assert_eq!(format!("{}", z1), "x*15");
@@ -503,12 +632,31 @@ mod tests {
         let z3 = 2.*&z2*6.;
         assert_eq!(format!("{}", z3), "2*13*x*6");
         assert_eq!(z3.value(), 2.*13.*3.*6.);
+
+        let z4 = &x*0.;
+        assert!(z4.is_constant_with_value(0.));
+
+        let z5 = 0.*&x;
+        assert!(z5.is_constant_with_value(0.));
+
+        let z6 = &x*1.;
+        assert_eq!(z6, x);
+
+        let z7 = 1.*&x;
+        assert_eq!(z7, x);
+
+        let z8 = &c1*0.;
+        assert!(z8.is_constant_with_value(0.));
+
+        let z9 = 0.*&c1;
+        assert!(z9.is_constant_with_value(0.));
     }
 
     #[test]
     fn node_neg() {
 
         let x = VariableScalar::new_continuous("x", 3.);
+        let c = ConstantScalar::new(5.);
 
         let z1 = -&x;
         assert_eq!(format!("{}", z1), "-1*x");
@@ -517,6 +665,9 @@ mod tests {
         let z2 = -(&x + 3.);
         assert_eq!(format!("{}", z2), "-1*(x + 3)");
         assert_eq!(z2.value(), -6.);
+
+        let z3 = -&c;
+        assert!(z3.is_constant_with_value(-5.));
     }
 
     #[test]
@@ -570,6 +721,8 @@ mod tests {
 
         let x = VariableScalar::new_continuous("x", 3.);
         let y = VariableScalar::new_continuous("y", 4.);
+        let c0 = ConstantScalar::new(0.);
+        let c1 = ConstantScalar::new(1.);
 
         let z1 = &x/&y;
         assert_eq!(format!("{}", z1), "x/y");
@@ -590,12 +743,19 @@ mod tests {
         let z5 = (2.+&x)/&y;
         assert_eq!(format!("{}", z5), "(2 + x)/y");
         assert_eq!(z5.value(), 5./4.);
+
+        let z6 = &x/&c1;
+        assert_eq!(z6, x);
+
+        let z7 = &c0/&x;
+        assert!(z7.is_constant_with_value(0.));
     }
 
     #[test]
     fn node_div_scalar() {
 
         let x = VariableScalar::new_continuous("x", 4.);
+        let c1 = ConstantScalar::new(1.);
 
         let z1 = 3./&x;
         assert_eq!(format!("{}", z1), "3/x");
@@ -612,6 +772,15 @@ mod tests {
         let z4 = (&x + 1.)/3.;
         assert_eq!(format!("{}", z4), "(x + 1)/3");
         assert_eq!(z4.value(), 5./3.);
+
+        let z5 = &x/1.;
+        assert_eq!(z5, x);
+
+        let z6 = 0./&x;
+        assert!(z6.is_constant_with_value(0.));
+
+        let z7 = 0./&c1;
+        assert!(z7.is_constant_with_value(0.));
     }
 
     #[test]

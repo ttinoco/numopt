@@ -79,4 +79,19 @@ mod tests {
         let z2 = x.partial(&y);
         assert!(z2.is_constant_with_value(0.));
     }
+
+    #[test]
+    fn derivative() {
+
+        let x = VariableScalar::new_continuous("x", 2.);
+        let y = VariableScalar::new_continuous("y", 3.);
+
+        let z1 = x.derivative(&y);
+        assert!(z1.is_constant_with_value(0.));
+
+        let z2 = x.derivative(&x);
+        println!("{}", z2);
+        assert!(z2.is_constant_with_value(1.));
+
+    }
 }

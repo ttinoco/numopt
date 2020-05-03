@@ -22,7 +22,7 @@ impl ConstantScalar {
 
 impl Node for ConstantScalar {
 
-    fn partial(&self, arg: &NodeRc) -> NodeRc { ConstantScalar::new(0.) }
+    fn partial(&self, _arg: &NodeRc) -> NodeRc { ConstantScalar::new(0.) }
     fn value(&self) -> f64 { self.value }
 }
 
