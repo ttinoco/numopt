@@ -86,13 +86,13 @@ mod tests {
         let f = &y + &zz;
 
         let z4 = f.partial(&x);
-        assert!(z4.is_constant_with_value(0.));
+        assert!(z4.is_constant_with_value(1.));
 
         let z5 = f.partial(&y);
         assert!(z5.is_constant_with_value(1.));
 
         let z6 = f.partial(&zz);
-        assert!(z6.is_constant_with_value(1.));
+        assert!(z6.is_constant_with_value(0.));
     }
 }
 

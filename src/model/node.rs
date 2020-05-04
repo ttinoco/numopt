@@ -243,7 +243,14 @@ macro_rules! impl_node_add_node {
                     self.clone()
                 }
                 else {
-                    FunctionAdd::new(vec![self.clone(), rhs.clone()])
+                    let mut args: Vec<NodeRc> = Vec::new();
+                    for a in &[self.clone(), rhs.clone()] {
+                        match a {
+                            NodeRc::FunctionAddRc(x) => args.extend(x.arguments()),
+                            _ => args.push(a.clone()),
+                        };
+                    }
+                    FunctionAdd::new(args)
                 }
             }        
         }
@@ -262,9 +269,14 @@ macro_rules! impl_node_add_scalar {
                     self.clone()
                 }
                 else {
-                    FunctionAdd::new(
-                        vec![self.clone(), 
-                        ConstantScalar::new(rhs.to_f64().unwrap())])
+                    let mut args: Vec<NodeRc> = Vec::new();
+                    for a in &[self.clone(), ConstantScalar::new(rhs.to_f64().unwrap())] {
+                        match a {
+                            NodeRc::FunctionAddRc(x) => args.extend(x.arguments()),
+                            _ => args.push(a.clone()),
+                        };
+                    }
+                    FunctionAdd::new(args)
                 }
             }           
         }
@@ -278,9 +290,14 @@ macro_rules! impl_node_add_scalar {
                     ConstantScalar::new(self.to_f64().unwrap())
                 }
                 else {
-                    FunctionAdd::new(
-                        vec![ConstantScalar::new(self.to_f64().unwrap()), 
-                        rhs.clone()])
+                    let mut args: Vec<NodeRc> = Vec::new();
+                    for a in &[ConstantScalar::new(self.to_f64().unwrap()), rhs.clone()] {
+                        match a {
+                            NodeRc::FunctionAddRc(x) => args.extend(x.arguments()),
+                            _ => args.push(a.clone()),
+                        };
+                    }
+                    FunctionAdd::new(args)
                 }
             }           
         }
@@ -531,6 +548,18 @@ mod tests {
 
         let z8 = &c + &x;
         assert_eq!(z8, x);
+
+        let z9 = (&x + 1.) + &y;
+        assert_eq!(format!("{:?}", z9.arguments()), "[x, 1, y]");
+        assert_eq!(z9.value(), 8.);
+
+        let z10 = &x + (&y + 5.);
+        assert_eq!(format!("{:?}", z10.arguments()), "[x, y, 5]");
+        assert_eq!(z10.value(), 12.);
+
+        let z11 = (&x + 2.) + (&y + 7.);
+        assert_eq!(format!("{:?}", z11.arguments()), "[x, 2, y, 7]");
+        assert_eq!(z11.value(), 16.);
     }
 
     #[test]
@@ -555,6 +584,14 @@ mod tests {
 
         let z5 = 0. + &x;
         assert_eq!(z5, x);
+
+        let z6 = (&x + 1.) + 2.;
+        assert_eq!(format!("{:?}", z6.arguments()), "[x, 1, 2]");
+        assert_eq!(z6.value(), 6.);
+
+        let z7 = 3. + (&x + 4.);
+        assert_eq!(format!("{:?}", z7.arguments()), "[3, x, 4]");
+        assert_eq!(z7.value(), 10.);
     }
 
     #[test]
@@ -818,7 +855,7 @@ mod tests {
         println!("p4 = {:?}", p4);
         assert_eq!(p4.get(&x).unwrap().len(), 2);
         assert_eq!(p4.get(&x).unwrap()[0].len() +
-                   p4.get(&x).unwrap()[1].len(), 7);
+                   p4.get(&x).unwrap()[1].len(), 6);
         assert_eq!(p4.get(&y).unwrap().len(), 0);
         assert_eq!(p4.get(&z).unwrap().len(), 1);
         assert_eq!(p4.get(&z).unwrap()[0].len(), 4);
