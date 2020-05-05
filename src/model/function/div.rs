@@ -84,6 +84,45 @@ mod tests {
         let z3 = z.partial(&w);
         assert!(z3.is_constant_with_value(0.));
     }
+
+    #[test]
+    fn derivative() {
+
+        let x = VariableScalar::new_continuous("x", 2.);
+        let y = VariableScalar::new_continuous("y", 3.);
+
+        let z1 = &x/3.;
+        let z1x = z1.derivative(&x);
+        let z1y = z1.derivative(&y);
+        assert!(z1x.is_constant_with_value(1./3.));
+        assert!(z1y.is_constant_with_value(0.));
+
+        let z2 = 4./&x;
+        let z2x = z2.derivative(&x);
+        let z2y = z2.derivative(&y);
+        assert_eq!(format!("{}", z2x), "-4/(x*x)");
+        assert!(z2y.is_constant_with_value(0.));
+
+        let z3 = 5./-&y;
+        let z3x = z3.derivative(&x);
+        let z3y = z3.derivative(&y);
+        assert!(z3x.is_constant_with_value(0.));
+        assert_eq!(format!("{}", z3y), "(-5/(-1*y*-1*y))*-1");
+
+        let z4 = 3.*&x/(&y - &x);
+        let z4x = z4.derivative(&x);
+        let z4y = z4.derivative(&y);
+        assert_eq!(format!("{}", z4x), 
+                  "(-1*3*x/((y + -1*x)*(y + -1*x)))*-1 + (1/(y + -1*x))*3"); 
+        assert_eq!(format!("{}", z4y), 
+                  "-1*3*x/((y + -1*x)*(y + -1*x))");
+
+        let f1 = &x - 2.;
+        let z5 = &f1/(&f1 + 3.);
+        let z5x = z5.derivative(&x);
+        assert_eq!(format!("{}", z5x),
+                   "(-1*x + 2)/((x + -2 + 3)*(x + -2 + 3)) + 1/(x + -2 + 3)");
+    }
 }
 
 

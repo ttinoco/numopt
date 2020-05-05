@@ -94,5 +94,44 @@ mod tests {
         let z6 = f.partial(&zz);
         assert!(z6.is_constant_with_value(0.));
     }
+
+    #[test]
+    fn derivative() {
+
+        let x = VariableScalar::new_continuous("x", 3.);
+        let y = VariableScalar::new_continuous("y", 4.);
+
+        let z1 = &x + 1.;
+        let z1x = z1.derivative(&x);
+        let z1y = z1.derivative(&y);
+        assert!(z1x.is_constant_with_value(1.));
+        assert!(z1y.is_constant_with_value(0.));
+
+        let z2 = &x + &y;
+        let z2x = z2.derivative(&x);
+        let z2y = z2.derivative(&y);
+        assert!(z2x.is_constant_with_value(1.));
+        assert!(z2y.is_constant_with_value(1.));
+
+        let z3 = (&x + 1.) + (&x + 3.) + (&y + (&x + 5.));
+        let z3x = z3.derivative(&x);
+        let z3y = z3.derivative(&y);
+        assert!(z3x.is_constant_with_value(3.));
+        assert!(z3y.is_constant_with_value(1.));
+
+        let z4 = &x + &x;
+        let z4x = z4.derivative(&x);
+        let z4y = z4.derivative(&y);
+        assert!(z4x.is_constant_with_value(2.));
+        assert!(z4y.is_constant_with_value(0.));
+
+        let f1 = &x + 1. + &y;
+        let z5 = &f1 + &f1;
+        let z5x = z5.derivative(&x);
+        let z5y = z5.derivative(&y);
+        assert_eq!(z5.value(), 2.*(3.+1.+4.));
+        assert!(z5x.is_constant_with_value(2.));
+        assert!(z5y.is_constant_with_value(2.));
+    }
 }
 

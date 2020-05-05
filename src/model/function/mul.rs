@@ -82,5 +82,38 @@ mod tests {
         let z3 = z.partial(&w);
         assert!(z3.is_constant_with_value(0.));
     }
+
+    #[test]
+    fn derivative() {
+
+        let x = VariableScalar::new_continuous("x", 2.);
+        let y = VariableScalar::new_continuous("y", 3.);
+
+        let z1 = 3.*&x;
+        let z1x = z1.derivative(&x);
+        let z1y = z1.derivative(&y);
+        assert!(z1x.is_constant_with_value(3.));
+        assert!(z1y.is_constant_with_value(0.));
+
+        let z2 = &x*&y;
+        let z2x = z2.derivative(&x);
+        let z2y = z2.derivative(&y);
+        assert_eq!(z2x, y);
+        assert_eq!(z2y, x);
+        
+        let z3 = &y*(&x - 3. - &y*&y);
+        let z3x = z3.derivative(&x);
+        let z3y = z3.derivative(&y);
+        assert_eq!(z3x, y);
+        assert_eq!(format!("{}", z3y), "y*-1*y + y*-1*y + x + -3 + -1*y*y");
+
+        let f1 = 3.*&x;
+        let z4 = &f1*(&f1*&y);
+        let z4x = z4.derivative(&x);
+        let z4y = z4.derivative(&y);
+        assert_eq!(format!("{}", z4x), "3*x*y*3 + 3*x*y*3");
+        assert_eq!(format!("{}", z4y), "3*x*3*x");
+    }
+
 }
 
