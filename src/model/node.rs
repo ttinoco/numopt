@@ -14,13 +14,18 @@ use crate::model::variable::VariableScalar;
 use crate::model::function::add::FunctionAdd;
 use crate::model::function::mul::FunctionMul;
 use crate::model::function::div::FunctionDiv;
+use crate::model::function::cos::FunctionCos;
+use crate::model::function::sin::FunctionSin;
 
 pub enum NodeRc {
     ConstantScalarRc(Rc<ConstantScalar>),
     VariableScalarRc(Rc<VariableScalar>),
     FunctionAddRc(Rc<FunctionAdd>),
-    FunctionMulRc(Rc<FunctionMul>),
+    FunctionCosRc(Rc<FunctionCos>),
     FunctionDivRc(Rc<FunctionDiv>),
+    FunctionMulRc(Rc<FunctionMul>),
+    FunctionSinRc(Rc<FunctionSin>),
+    
 }
 
 pub trait Node {
@@ -91,6 +96,13 @@ impl NodeRc {
         paths
     }
 
+    pub fn cos(&self) -> NodeRc {
+        match self {
+            NodeRc::ConstantScalarRc(x) => ConstantScalar::new(x.value().cos()),
+            _ =>  FunctionCos::new(self.clone())  
+        }
+    }
+
     pub fn derivative(&self, var: &NodeRc) -> NodeRc {
         let derivs = self.derivatives(&vec![var]);
         derivs.get(var).unwrap().clone()
@@ -139,6 +151,13 @@ impl NodeRc {
             _ => false
         }
     }
+
+    pub fn sin(&self) -> NodeRc {
+        match self {
+            NodeRc::ConstantScalarRc(x) => ConstantScalar::new(x.value().sin()),
+            _ =>  FunctionSin::new(self.clone())  
+        }
+    }
 }
 
 impl Node for NodeRc {
@@ -148,8 +167,10 @@ impl Node for NodeRc {
             NodeRc::ConstantScalarRc(x) => x.arguments(),
             NodeRc::VariableScalarRc(x) => x.arguments(),
             NodeRc::FunctionAddRc(x) => x.arguments(),
-            NodeRc::FunctionMulRc(x) => x.arguments(),
+            NodeRc::FunctionCosRc(x) => x.arguments(),
             NodeRc::FunctionDivRc(x) => x.arguments(),
+            NodeRc::FunctionMulRc(x) => x.arguments(),
+            NodeRc::FunctionSinRc(x) => x.arguments(),
         }
     }
     
@@ -158,8 +179,10 @@ impl Node for NodeRc {
             NodeRc::ConstantScalarRc(x) => x.partial(arg),
             NodeRc::VariableScalarRc(x) => x.partial(arg),
             NodeRc::FunctionAddRc(x) => x.partial(arg),
-            NodeRc::FunctionMulRc(x) => x.partial(arg),
+            NodeRc::FunctionCosRc(x) => x.partial(arg),
             NodeRc::FunctionDivRc(x) => x.partial(arg),
+            NodeRc::FunctionMulRc(x) => x.partial(arg),
+            NodeRc::FunctionSinRc(x) => x.partial(arg),
         }
     }
 
@@ -168,8 +191,10 @@ impl Node for NodeRc {
             NodeRc::ConstantScalarRc(x) => x.value(),
             NodeRc::VariableScalarRc(x) => x.value(),
             NodeRc::FunctionAddRc(x) => x.value(),
-            NodeRc::FunctionMulRc(x) => x.value(),
+            NodeRc::FunctionCosRc(x) => x.value(),
             NodeRc::FunctionDivRc(x) => x.value(),
+            NodeRc::FunctionMulRc(x) => x.value(),
+            NodeRc::FunctionSinRc(x) => x.value(),            
         }
     }
 }
@@ -180,8 +205,10 @@ impl Hash for NodeRc {
             NodeRc::ConstantScalarRc(x) => ptr::hash(&**x, state),
             NodeRc::VariableScalarRc(x) => ptr::hash(&**x, state),
             NodeRc::FunctionAddRc(x) => ptr::hash(&**x, state),
-            NodeRc::FunctionMulRc(x) => ptr::hash(&**x, state),
+            NodeRc::FunctionCosRc(x) => ptr::hash(&**x, state),
             NodeRc::FunctionDivRc(x) => ptr::hash(&**x, state),
+            NodeRc::FunctionMulRc(x) => ptr::hash(&**x, state),
+            NodeRc::FunctionSinRc(x) => ptr::hash(&**x, state),
         };
     }
 }
@@ -193,8 +220,10 @@ impl PartialEq for NodeRc {
             (NodeRc::ConstantScalarRc(x), NodeRc::ConstantScalarRc(y)) => Rc::ptr_eq(x, y),
             (NodeRc::VariableScalarRc(x), NodeRc::VariableScalarRc(y)) => Rc::ptr_eq(x, y),
             (NodeRc::FunctionAddRc(x), NodeRc::FunctionAddRc(y)) => Rc::ptr_eq(x, y),
-            (NodeRc::FunctionMulRc(x), NodeRc::FunctionMulRc(y)) => Rc::ptr_eq(x, y),
+            (NodeRc::FunctionCosRc(x), NodeRc::FunctionCosRc(y)) => Rc::ptr_eq(x, y),
             (NodeRc::FunctionDivRc(x), NodeRc::FunctionDivRc(y)) => Rc::ptr_eq(x, y),
+            (NodeRc::FunctionMulRc(x), NodeRc::FunctionMulRc(y)) => Rc::ptr_eq(x, y),
+            (NodeRc::FunctionSinRc(x), NodeRc::FunctionSinRc(y)) => Rc::ptr_eq(x, y),
             _ => false,
         }
     }
@@ -208,8 +237,11 @@ impl Clone for NodeRc {
             NodeRc::ConstantScalarRc(x) => NodeRc::ConstantScalarRc(Rc::clone(&x)),
             NodeRc::VariableScalarRc(x) => NodeRc::VariableScalarRc(Rc::clone(&x)),
             NodeRc::FunctionAddRc(x) => NodeRc::FunctionAddRc(Rc::clone(&x)),
-            NodeRc::FunctionMulRc(x) => NodeRc::FunctionMulRc(Rc::clone(&x)),
+            NodeRc::FunctionCosRc(x) => NodeRc::FunctionCosRc(Rc::clone(&x)),
             NodeRc::FunctionDivRc(x) => NodeRc::FunctionDivRc(Rc::clone(&x)),
+            NodeRc::FunctionMulRc(x) => NodeRc::FunctionMulRc(Rc::clone(&x)),
+            NodeRc::FunctionSinRc(x) => NodeRc::FunctionSinRc(Rc::clone(&x)),
+            
         }
     }
 }
@@ -220,8 +252,11 @@ impl fmt::Display for NodeRc {
             NodeRc::ConstantScalarRc(x) => write!(f, "{}", x),
             NodeRc::VariableScalarRc(x) => write!(f, "{}", x),
             NodeRc::FunctionAddRc(x) => write!(f, "{}", x),
-            NodeRc::FunctionMulRc(x) => write!(f, "{}", x),
+            NodeRc::FunctionCosRc(x) => write!(f, "{}", x),
             NodeRc::FunctionDivRc(x) => write!(f, "{}", x),
+            NodeRc::FunctionMulRc(x) => write!(f, "{}", x),
+            NodeRc::FunctionSinRc(x) => write!(f, "{}", x),
+            
         }
     }
 }
@@ -232,8 +267,10 @@ impl fmt::Debug for NodeRc {
             NodeRc::ConstantScalarRc(x) => write!(f, "{}", x),
             NodeRc::VariableScalarRc(x) => write!(f, "{}", x),
             NodeRc::FunctionAddRc(x) => write!(f, "{}", x),
-            NodeRc::FunctionMulRc(x) => write!(f, "{}", x),
+            NodeRc::FunctionCosRc(x) => write!(f, "{}", x),
             NodeRc::FunctionDivRc(x) => write!(f, "{}", x),
+            NodeRc::FunctionMulRc(x) => write!(f, "{}", x),
+            NodeRc::FunctionSinRc(x) => write!(f, "{}", x),
         }
     }
 }
@@ -1038,5 +1075,41 @@ mod tests {
         assert_eq!(p4.get(&y).unwrap().len(), 0);
         assert_eq!(p4.get(&z).unwrap().len(), 1);
         assert_eq!(p4.get(&z).unwrap()[0].len(), 4);
+    }
+
+    #[test]
+    fn node_cos() {
+
+        let x = VariableScalar::new_continuous("x", 3.);
+        let c = ConstantScalar::new(5.);
+
+        let z1 = x.cos();
+        assert_eq!(format!("{}", z1), "cos(x)");
+        assert_eq!(z1.value(), 3_f64.cos());
+
+        let z2 = (3.*&x + 5.).cos();
+        assert_eq!(format!("{}", z2), "cos(3*x + 5)");
+        assert_eq!(z2.value(), (3.*3. + 5_f64).cos());
+
+        let z3 = c.cos();
+        assert!(z3.is_constant_with_value(5_f64.cos()));
+    }
+
+    #[test]
+    fn node_sin() {
+
+        let x = VariableScalar::new_continuous("x", 3.);
+        let c = ConstantScalar::new(5.);
+
+        let z1 = x.sin();
+        assert_eq!(format!("{}", z1), "sin(x)");
+        assert_eq!(z1.value(), 3_f64.sin());
+
+        let z2 = (3.*&x + 5.).sin();
+        assert_eq!(format!("{}", z2), "sin(3*x + 5)");
+        assert_eq!(z2.value(), (3.*3. + 5_f64).sin());
+
+        let z3 = c.sin();
+        assert!(z3.is_constant_with_value(5_f64.sin()));
     }
 }
