@@ -37,7 +37,7 @@ impl VariableScalar {
     }
 }
 
-impl<'a> Node for VariableScalar {
+impl Node for VariableScalar {
 
     fn partial(&self, arg: &NodeRc) -> NodeRc { 
         match arg {
