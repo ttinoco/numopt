@@ -6,6 +6,7 @@ use crate::model::node::{Node,
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionSin {
+    value: f64,
     arg: NodeRc
 }
 
@@ -14,6 +15,7 @@ impl FunctionSin {
     pub fn new(arg: NodeRc) -> NodeRc {
         NodeRc::FunctionSinRc(Rc::new(
             Self {
+                value: 0.,
                 arg: arg,
             }
         ))
@@ -35,7 +37,7 @@ impl Node for FunctionSin {
         }
     }
 
-    fn value(&self) -> f64 { 
+    fn value(&self) -> f64 {
         self.arg.value().sin()
     }
 }

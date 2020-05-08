@@ -5,33 +5,44 @@ use crate::model::constant::ConstantScalar;
 use crate::model::constraint::{Constraint,
                                ConstraintKind};
 
+const DEFAULT_LABEL: &str = "";
+
 pub trait NodeCmp<T> {
 
-    fn equal(&self, other: T) -> Constraint;
-    fn geq(&self, other: T) -> Constraint;
-    fn leq(&self, other: T) -> Constraint;
+    fn equal_and_tag(&self, other: T, tag: &str) -> Constraint;
+    fn equal(&self, other: T) -> Constraint { self.equal_and_tag(other, DEFAULT_LABEL) }
+    fn geq_and_tag(&self, other: T, tag: &str) -> Constraint;
+    fn geq(&self, other: T) -> Constraint { self.geq_and_tag(other, DEFAULT_LABEL) }
+    fn leq_and_tag(&self, other: T, tag: &str) -> Constraint;
+    fn leq(&self, other: T) -> Constraint { self.leq_and_tag(other, DEFAULT_LABEL) }
 }
 
 macro_rules! impl_node_cmp_scalar {
     ($x: ty, $y: ty) => {
         impl NodeCmp<$y> for $x {
     
-            fn equal(&self, other: $y) -> Constraint {
+            fn equal_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(self.clone(),
                                 ConstraintKind::Equal,
-                                ConstantScalar::new(other.to_f64().unwrap()))
+                                ConstantScalar::new(other.to_f64().unwrap()),
+                                tag,
+                                0.)
             }
 
-            fn geq(&self, other: $y) -> Constraint {
+            fn geq_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(self.clone(),
                                 ConstraintKind::GreaterEqual,
-                                ConstantScalar::new(other.to_f64().unwrap()))
+                                ConstantScalar::new(other.to_f64().unwrap()),
+                                tag,
+                                0.)
             }
 
-            fn leq(&self, other: $y) -> Constraint {
+            fn leq_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(self.clone(),
                                 ConstraintKind::LessEqual,
-                                ConstantScalar::new(other.to_f64().unwrap()))
+                                ConstantScalar::new(other.to_f64().unwrap()),
+                                tag,
+                                0.)
             }
         }
     };
@@ -43,22 +54,28 @@ macro_rules! impl_node_cmp_node {
     ($x: ty, $y: ty) => {
         impl NodeCmp<$y> for $x {
     
-            fn equal(&self, other: $y) -> Constraint {
+            fn equal_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(self.clone(),
                                 ConstraintKind::Equal,
-                                other.clone())
+                                other.clone(),
+                                tag,
+                                0.)
             }
 
-            fn geq(&self, other: $y) -> Constraint {
+            fn geq_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(self.clone(),
                                 ConstraintKind::GreaterEqual,
-                                other.clone())
+                                other.clone(),
+                                tag,
+                                0.)
             }
 
-            fn leq(&self, other: $y) -> Constraint {
+            fn leq_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(self.clone(),
                                 ConstraintKind::LessEqual,
-                                other.clone())
+                                other.clone(),
+                                tag,
+                                0.)
             }
         }
     };
@@ -71,22 +88,28 @@ macro_rules! impl_scalar_cmp_node {
     ($x: ty, $y: ty) => {
         impl NodeCmp<$y> for $x {
     
-            fn equal(&self, other: $y) -> Constraint {
+            fn equal_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(ConstantScalar::new(self.to_f64().unwrap()),
                                 ConstraintKind::Equal,
-                                other.clone())
+                                other.clone(),
+                                tag,
+                                0.)
             }
 
-            fn geq(&self, other: $y) -> Constraint {
+            fn geq_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(ConstantScalar::new(self.to_f64().unwrap()),
                                 ConstraintKind::GreaterEqual,
-                                other.clone())
+                                other.clone(),
+                                tag,
+                                0.)
             }
 
-            fn leq(&self, other: $y) -> Constraint {
+            fn leq_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(ConstantScalar::new(self.to_f64().unwrap()),
                                 ConstraintKind::LessEqual,
-                                other.clone())
+                                other.clone(),
+                                tag,
+                                0.)
             }
         }
     };
@@ -98,7 +121,6 @@ impl_scalar_cmp_node!(f64, &NodeRc);
 #[cfg(test)]
 mod tests {
 
-    use crate::model::node::Node;
     use crate::model::node_cmp::NodeCmp;
     use crate::model::variable::VariableScalar;
     use crate::model::constant::ConstantScalar;

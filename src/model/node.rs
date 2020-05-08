@@ -25,7 +25,6 @@ pub enum NodeRc {
     FunctionDivRc(Rc<FunctionDiv>),
     FunctionMulRc(Rc<FunctionMul>),
     FunctionSinRc(Rc<FunctionSin>),
-    
 }
 
 pub trait Node {
@@ -33,7 +32,6 @@ pub trait Node {
     fn arguments(&self) -> Vec<NodeRc> { Vec::new() }
     fn partial(&self, arg: &NodeRc) -> NodeRc;
     fn value(&self) -> f64;
-
 }
 
 impl NodeRc {
@@ -140,7 +138,7 @@ impl NodeRc {
 
     pub fn is_constant(&self) -> bool {
         match self {
-            NodeRc::ConstantScalarRc(x) => true,
+            NodeRc::ConstantScalarRc(_x) => true,
             _ => false
         }
     }

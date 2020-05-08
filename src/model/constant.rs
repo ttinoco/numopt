@@ -1,9 +1,10 @@
 
 use std::fmt;
 use std::rc::Rc;
+//use std::collections::{HashMap, HashSet};
 
-use super::node::{Node,
-                  NodeRc};
+use super::node::{Node, NodeRc};
+//use super::node_std::{NodeProp, NodePropData};
 
 pub struct ConstantScalar {
     value: f64,
@@ -25,6 +26,18 @@ impl Node for ConstantScalar {
     fn partial(&self, _arg: &NodeRc) -> NodeRc { ConstantScalar::new(0.) }
     fn value(&self) -> f64 { self.value }
 }
+
+// impl NodeProp for ConstantScalar {
+
+//     fn reduce_props(&self, _props: Vec<NodePropData>) -> NodePropData {
+//         NodePropData {
+//             vars: HashSet::new(),
+//             affine: true,
+//             a: HashMap::new(),
+//             b: self.value(),
+//         }
+//     }
+// }
 
 impl fmt::Display for ConstantScalar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -19,14 +19,15 @@ pub struct Constraint {
 impl Constraint {
 
     pub fn dual(&self) -> f64 { self.dual }
+    pub fn label(&self) -> &str { self.label.as_ref() }
 
-    pub fn new(lhs: NodeRc, kind: ConstraintKind, rhs: NodeRc) -> Constraint {
+    pub fn new(lhs: NodeRc, kind: ConstraintKind, rhs: NodeRc, label: &str, dual: f64) -> Constraint {
         Constraint {
             lhs: lhs,
             kind: kind,
             rhs: rhs,
-            dual: 0.,
-            label: String::from("some constraint"),
+            label: String::from(label),
+            dual: dual,
         }
     }
 
@@ -57,13 +58,23 @@ mod tests {
     use crate::model::constant::ConstantScalar;
 
     #[test]
+    fn label() {
+
+        let x = VariableScalar::new_continuous("x", 3.);
+        let c = ConstantScalar::new(4.);
+
+        let z = Constraint::new(x, ConstraintKind::Equal, c, "foo", 3.);
+        assert_eq!(z.label(), "foo");
+    }
+
+    #[test]
     fn dual() {
 
         let x = VariableScalar::new_continuous("x", 3.);
         let c = ConstantScalar::new(4.);
 
-        let z = Constraint::new(x, ConstraintKind::Equal, c);
-        assert_eq!(z.dual(), 0.);
+        let z = Constraint::new(x, ConstraintKind::Equal, c, "foo", 3.);
+        assert_eq!(z.dual(), 3.);
     }
 
     #[test]
@@ -72,19 +83,19 @@ mod tests {
         let x = VariableScalar::new_continuous("x", 3.);
         let c4 = ConstantScalar::new(4.);
 
-        let z1 = Constraint::new(x.clone(), ConstraintKind::Equal, c4.clone());
+        let z1 = Constraint::new(x.clone(), ConstraintKind::Equal, c4.clone(), "foo", 0.);
         assert_eq!(z1.violation(), 1.);
 
-        let z2 = Constraint::new(x.clone(), ConstraintKind::LessEqual, c4.clone());
+        let z2 = Constraint::new(x.clone(), ConstraintKind::LessEqual, c4.clone(), "foo", 0.);
         assert_eq!(z2.violation(), 0.);
 
-        let z3 = Constraint::new(x.clone(), ConstraintKind::LessEqual, -c4.clone());
+        let z3 = Constraint::new(x.clone(), ConstraintKind::LessEqual, -c4.clone(), "foo", 0.);
         assert_eq!(z3.violation(), 7.);
 
-        let z4 = Constraint::new(x.clone(), ConstraintKind::GreaterEqual, c4.clone());
+        let z4 = Constraint::new(x.clone(), ConstraintKind::GreaterEqual, c4.clone(), "foo", 0.);
         assert_eq!(z4.violation(), 1.);
 
-        let z5 = Constraint::new(x.clone(), ConstraintKind::GreaterEqual, -c4.clone());
+        let z5 = Constraint::new(x.clone(), ConstraintKind::GreaterEqual, -c4.clone(), "foo", 0.);
         assert_eq!(z5.violation(), 0.);
     }
 }

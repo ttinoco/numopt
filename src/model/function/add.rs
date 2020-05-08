@@ -7,6 +7,7 @@ use crate::model::node::{Node,
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionAdd {
+    value: f64,
     args: Vec<NodeRc>,
 }
 
@@ -17,6 +18,7 @@ impl FunctionAdd {
         assert!(args.len() >= 2);
         NodeRc::FunctionAddRc(Rc::new(
             Self {
+                value: 0.,
                 args: args,
             }
         ))

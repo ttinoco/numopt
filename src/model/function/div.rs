@@ -6,6 +6,7 @@ use crate::model::node::{Node,
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionDiv {
+    value: f64,
     args: (NodeRc, NodeRc),
 }
 
@@ -14,6 +15,7 @@ impl FunctionDiv {
     pub fn new(arg1: NodeRc, arg2: NodeRc) -> NodeRc {
         NodeRc::FunctionDivRc(Rc::new(
             Self {
+                value: 0.,
                 args: (arg1, arg2),
             }
         ))

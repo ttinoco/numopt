@@ -6,6 +6,7 @@ use crate::model::node::{Node,
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionCos {
+    value: f64,
     arg: NodeRc
 }
 
@@ -14,6 +15,7 @@ impl FunctionCos {
     pub fn new(arg: NodeRc) -> NodeRc {
         NodeRc::FunctionCosRc(Rc::new(
             Self {
+                value: 0.,
                 arg: arg,
             }
         ))
