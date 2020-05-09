@@ -1,37 +1,37 @@
 
 use std::fmt;
 use std::rc::Rc;
+use std::cell::RefCell;
 
-use crate::model::node::{Node,
-                         NodeRc};
+use crate::model::node::{Node, NodeRef};
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionAdd {
     value: f64,
-    args: Vec<NodeRc>,
+    args: Vec<NodeRef>,
 }
 
 impl FunctionAdd {
 
-    pub fn new(args: Vec<NodeRc>) -> NodeRc {
+    pub fn new(args: Vec<NodeRef>) -> NodeRef {
 
         assert!(args.len() >= 2);
-        NodeRc::FunctionAddRc(Rc::new(
+        NodeRef::FunctionAdd(Rc::new(RefCell::new(
             Self {
                 value: 0.,
                 args: args,
             }
-        ))
+        )))
     }
 }
 
 impl Node for FunctionAdd {
 
-    fn arguments(&self) -> Vec<NodeRc> {
+    fn arguments(&self) -> Vec<NodeRef> {
         self.args.iter().map(|x| x.clone()).collect()
     }
 
-    fn partial(&self, arg: &NodeRc) -> NodeRc { 
+    fn partial(&self, arg: &NodeRef) -> NodeRef { 
         for a in &self.args {
             if *a == *arg {
                 return ConstantScalar::new(1.);

@@ -1,8 +1,10 @@
 use std::fmt;
 use std::rc::Rc;
+use std::cell::RefCell;
+use simple_error::SimpleError;
 
 use super::node::{Node,
-                  NodeRc};
+                  NodeRef};
 use super::constant::ConstantScalar;
 
 pub enum VariableKind {
@@ -18,31 +20,31 @@ pub struct VariableScalar {
 
 impl VariableScalar {
 
-    pub fn new(name: &str, value: f64, kind: VariableKind) -> NodeRc {
-        NodeRc::VariableScalarRc(Rc::new(
+    pub fn new(name: &str, value: f64, kind: VariableKind) -> NodeRef {
+        NodeRef::VariableScalar(Rc::new(RefCell::new(
             Self {
                 name: name.to_string(),
                 value: value,
                 kind: kind,
             }
-        ))
+        )))
     }
 
-    pub fn new_continuous(name: &str, value: f64) -> NodeRc {
+    pub fn new_continuous(name: &str, value: f64) -> NodeRef {
         VariableScalar::new(name, value, VariableKind::VarContinuous)
     }
 
-    pub fn new_integer(name: &str, value: f64) -> NodeRc {
+    pub fn new_integer(name: &str, value: f64) -> NodeRef {
         VariableScalar::new(name, value, VariableKind::VarInteger)
     }
 }
 
 impl Node for VariableScalar {
 
-    fn partial(&self, arg: &NodeRc) -> NodeRc { 
+    fn partial(&self, arg: &NodeRef) -> NodeRef { 
         match arg {
-            NodeRc::VariableScalarRc(x) => {
-                if self as *const VariableScalar == x.as_ref() {
+            NodeRef::VariableScalar(x) => {
+                if self as *const VariableScalar == x.as_ref().as_ptr() {
                     ConstantScalar::new(1.)       
                 }
                 else {
@@ -52,6 +54,12 @@ impl Node for VariableScalar {
             _ => ConstantScalar::new(0.)  
         }
     }
+
+    fn update_value(&mut self, value: f64) -> Result<(), SimpleError> {
+        self.value = value;
+        Ok(())
+    }
+
     fn value(&self) -> f64 { self.value }
 }
 

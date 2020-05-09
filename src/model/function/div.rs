@@ -1,34 +1,34 @@
 use std::fmt;
 use std::rc::Rc;
+use std::cell::RefCell;
 
-use crate::model::node::{Node,
-                         NodeRc};
+use crate::model::node::{Node, NodeRef};
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionDiv {
     value: f64,
-    args: (NodeRc, NodeRc),
+    args: (NodeRef, NodeRef),
 }
 
 impl FunctionDiv {
 
-    pub fn new(arg1: NodeRc, arg2: NodeRc) -> NodeRc {
-        NodeRc::FunctionDivRc(Rc::new(
+    pub fn new(arg1: NodeRef, arg2: NodeRef) -> NodeRef {
+        NodeRef::FunctionDiv(Rc::new(RefCell::new(
             Self {
                 value: 0.,
                 args: (arg1, arg2),
             }
-        ))
+        )))
     }
 }
 
 impl Node for FunctionDiv {
 
-    fn arguments(&self) -> Vec<NodeRc> {
+    fn arguments(&self) -> Vec<NodeRef> {
         vec![self.args.0.clone(), self.args.1.clone()]
     }
 
-    fn partial(&self, arg: &NodeRc) -> NodeRc { 
+    fn partial(&self, arg: &NodeRef) -> NodeRef { 
         if self.args.0 == *arg {
             return 1./&self.args.1;
         }
@@ -48,14 +48,14 @@ impl Node for FunctionDiv {
 impl<'a> fmt::Display for FunctionDiv {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s0 = match &self.args.0 {
-            NodeRc::FunctionAddRc(x) => format!("({})", x),
-            NodeRc::FunctionDivRc(x) => format!("({})", x),
+            NodeRef::FunctionAdd(x) => format!("({})", (**x).borrow()),
+            NodeRef::FunctionDiv(x) => format!("({})", (**x).borrow()),
             _ => format!("{}", self.args.0)
         };
         let s1 = match &self.args.1 {
-            NodeRc::FunctionAddRc(x) => format!("({})", x),
-            NodeRc::FunctionMulRc(x) => format!("({})", x),
-            NodeRc::FunctionDivRc(x) => format!("({})", x),
+            NodeRef::FunctionAdd(x) => format!("({})", (**x).borrow()),
+            NodeRef::FunctionMul(x) => format!("({})", (**x).borrow()),
+            NodeRef::FunctionDiv(x) => format!("({})", (**x).borrow()),
             _ => format!("{}", self.args.1)
         };
         write!(f, "{}/{}", s0, s1)

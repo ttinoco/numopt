@@ -1,17 +1,17 @@
 use std::collections::HashMap;
 
-use crate::model::node::NodeRc;
+use crate::model::node::NodeRef;
 
 pub struct NodePropData {
     pub affine: bool,
-    pub a: HashMap<NodeRc, f64>,
+    pub a: HashMap<NodeRef, f64>,
     pub b: f64,
 }
 
 pub struct NodeCompData {
-    pub phi: NodeRc,
-    pub gphi: Vec<(NodeRc, NodeRc)>,
-    pub Hphi: Vec<(NodeRc, NodeRc, NodeRc)>,
+    pub phi: NodeRef,
+    pub gphi: Vec<(NodeRef, NodeRef)>,
+    pub Hphi: Vec<(NodeRef, NodeRef, NodeRef)>,
     pub prop: NodePropData,
 }
 

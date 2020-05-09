@@ -1,7 +1,9 @@
 use std::fmt;
 use std::ptr;
 use std::rc::Rc;
+use std::cell::RefCell;
 use std::iter::FromIterator;
+use simple_error::SimpleError;
 use std::hash::{Hash, Hasher};
 use std::cmp::{PartialEq, Eq};
 use num_traits::cast::ToPrimitive;
@@ -17,44 +19,47 @@ use crate::model::function::div::FunctionDiv;
 use crate::model::function::cos::FunctionCos;
 use crate::model::function::sin::FunctionSin;
 
-pub enum NodeRc {
-    ConstantScalarRc(Rc<ConstantScalar>),
-    VariableScalarRc(Rc<VariableScalar>),
-    FunctionAddRc(Rc<FunctionAdd>),
-    FunctionCosRc(Rc<FunctionCos>),
-    FunctionDivRc(Rc<FunctionDiv>),
-    FunctionMulRc(Rc<FunctionMul>),
-    FunctionSinRc(Rc<FunctionSin>),
+pub enum NodeRef {
+    ConstantScalar(Rc<RefCell<ConstantScalar>>),
+    VariableScalar(Rc<RefCell<VariableScalar>>),
+    FunctionAdd(Rc<RefCell<FunctionAdd>>),
+    FunctionCos(Rc<RefCell<FunctionCos>>),
+    FunctionDiv(Rc<RefCell<FunctionDiv>>),
+    FunctionMul(Rc<RefCell<FunctionMul>>),
+    FunctionSin(Rc<RefCell<FunctionSin>>),
 }
 
 pub trait Node {
 
-    fn arguments(&self) -> Vec<NodeRc> { Vec::new() }
-    fn partial(&self, arg: &NodeRc) -> NodeRc;
+    fn arguments(&self) -> Vec<NodeRef> { Vec::new() }
+    fn partial(&self, arg: &NodeRef) -> NodeRef;
+    fn update_value(&mut self, _value: f64) -> Result<(), SimpleError> { 
+        panic!("can only update value of variables")
+    }
     fn value(&self) -> f64;
 }
 
-impl NodeRc {
+impl NodeRef {
 
-    fn all_simple_paths(&self, vars: &[&NodeRc]) -> HashMap<NodeRc, Vec<Vec<NodeRc>>> {
+    fn all_simple_paths(&self, vars: &[&NodeRef]) -> HashMap<NodeRef, Vec<Vec<NodeRef>>> {
 
         // Check inputs
         for v in vars {
             match v {
-                NodeRc::VariableScalarRc(_x) => (),
+                NodeRef::VariableScalar(_x) => (),
                 _ => panic!("variable expected")
             }
         }
 
         // Vars set
-        let varset: HashSet<&NodeRc> = HashSet::from_iter(vars.iter().map(|x| x.clone()));
+        let varset: HashSet<&NodeRef> = HashSet::from_iter(vars.iter().map(|x| x.clone()));
 
         // Workqueue
-        let mut wq: VecDeque<Vec<NodeRc>> = VecDeque::new();
+        let mut wq: VecDeque<Vec<NodeRef>> = VecDeque::new();
         wq.push_front(vec![self.clone()]);
 
         // Paths
-        let mut paths: HashMap<NodeRc, Vec<Vec<NodeRc>>> = HashMap::new();
+        let mut paths: HashMap<NodeRef, Vec<Vec<NodeRef>>> = HashMap::new();
         for v in &varset {
             paths.insert((*v).clone(), Vec::new());
         }
@@ -71,7 +76,7 @@ impl NodeRc {
 
             // Add paths
             match node {
-                NodeRc::VariableScalarRc(_x) => {
+                NodeRef::VariableScalar(_x) => {
                     for v in &varset {
                         if node == *v {
                             let new_path = path.iter().map(|x| x.clone()).collect();
@@ -84,7 +89,7 @@ impl NodeRc {
 
             // Process arguments
             for n in node.arguments() {
-                let mut new_path: Vec<NodeRc> = path.iter().map(|x| x.clone()).collect();
+                let mut new_path: Vec<NodeRef> = path.iter().map(|x| x.clone()).collect();
                 new_path.push(n.clone());
                 wq.push_front(new_path);
             }
@@ -94,34 +99,36 @@ impl NodeRc {
         paths
     }
 
-    pub fn cos(&self) -> NodeRc {
+    pub fn cos(&self) -> NodeRef {
         match self {
-            NodeRc::ConstantScalarRc(x) => ConstantScalar::new(x.value().cos()),
+            NodeRef::ConstantScalar(x) => {
+                ConstantScalar::new((**x).borrow().value().cos())
+            },
             _ =>  FunctionCos::new(self.clone())  
         }
     }
 
-    pub fn derivative(&self, var: &NodeRc) -> NodeRc {
+    pub fn derivative(&self, var: &NodeRef) -> NodeRef {
         let derivs = self.derivatives(&vec![var]);
         derivs.get(var).unwrap().clone()
     }
 
-    pub fn derivatives(&self, vars: &[&NodeRc]) -> HashMap<NodeRc, NodeRc> {
+    pub fn derivatives(&self, vars: &[&NodeRef]) -> HashMap<NodeRef, NodeRef> {
 
         // Check inputs
         for v in vars {
             match v {
-                NodeRc::VariableScalarRc(_x) => (),
+                NodeRef::VariableScalar(_x) => (),
                 _ => panic!("variable expected")
             }
         }
 
         // Vars set
-        let varset: HashSet<&NodeRc> = HashSet::from_iter(vars.iter().map(|x| x.clone()));
+        let varset: HashSet<&NodeRef> = HashSet::from_iter(vars.iter().map(|x| x.clone()));
 
         // Derivatives
         let paths = self.all_simple_paths(vars);
-        let mut derivs: HashMap<NodeRc, NodeRc> = HashMap::new();
+        let mut derivs: HashMap<NodeRef, NodeRef> = HashMap::new();
         for v in varset.iter() {
             let mut d = ConstantScalar::new(0.);
             for path in paths.get(v).unwrap() {
@@ -138,137 +145,147 @@ impl NodeRc {
 
     pub fn is_constant(&self) -> bool {
         match self {
-            NodeRc::ConstantScalarRc(_x) => true,
+            NodeRef::ConstantScalar(_) => true,
             _ => false
         }
     }
 
     pub fn is_constant_with_value(&self, val: f64) -> bool {
         match self {
-            NodeRc::ConstantScalarRc(x) => x.value() == val,
+            NodeRef::ConstantScalar(x) => {
+                (**x).borrow().value() == val
+            },
             _ => false
         }
     }
 
-    pub fn sin(&self) -> NodeRc {
+    pub fn sin(&self) -> NodeRef {
         match self {
-            NodeRc::ConstantScalarRc(x) => ConstantScalar::new(x.value().sin()),
+            NodeRef::ConstantScalar(x) => {
+                ConstantScalar::new((**x).borrow().value().sin())
+            },
             _ =>  FunctionSin::new(self.clone())  
         }
     }
 }
 
-impl Node for NodeRc {
+impl Node for NodeRef {
     
-    fn arguments(&self) -> Vec<NodeRc> {
+    fn arguments(&self) -> Vec<NodeRef> {
         match self {
-            NodeRc::ConstantScalarRc(x) => x.arguments(),
-            NodeRc::VariableScalarRc(x) => x.arguments(),
-            NodeRc::FunctionAddRc(x) => x.arguments(),
-            NodeRc::FunctionCosRc(x) => x.arguments(),
-            NodeRc::FunctionDivRc(x) => x.arguments(),
-            NodeRc::FunctionMulRc(x) => x.arguments(),
-            NodeRc::FunctionSinRc(x) => x.arguments(),
+            NodeRef::ConstantScalar(x) => (**x).borrow().arguments(),
+            NodeRef::VariableScalar(x) => (**x).borrow().arguments(),
+            NodeRef::FunctionAdd(x) => (**x).borrow().arguments(),
+            NodeRef::FunctionCos(x) => (**x).borrow().arguments(),
+            NodeRef::FunctionDiv(x) => (**x).borrow().arguments(),
+            NodeRef::FunctionMul(x) => (**x).borrow().arguments(),
+            NodeRef::FunctionSin(x) => (**x).borrow().arguments(),
         }
     }
     
-    fn partial(&self, arg: &NodeRc) -> NodeRc { 
+    fn partial(&self, arg: &NodeRef) -> NodeRef { 
         match self {
-            NodeRc::ConstantScalarRc(x) => x.partial(arg),
-            NodeRc::VariableScalarRc(x) => x.partial(arg),
-            NodeRc::FunctionAddRc(x) => x.partial(arg),
-            NodeRc::FunctionCosRc(x) => x.partial(arg),
-            NodeRc::FunctionDivRc(x) => x.partial(arg),
-            NodeRc::FunctionMulRc(x) => x.partial(arg),
-            NodeRc::FunctionSinRc(x) => x.partial(arg),
+            NodeRef::ConstantScalar(x) => (**x).borrow().partial(arg),
+            NodeRef::VariableScalar(x) => (**x).borrow().partial(arg),
+            NodeRef::FunctionAdd(x) => (**x).borrow().partial(arg),
+            NodeRef::FunctionCos(x) => (**x).borrow().partial(arg),
+            NodeRef::FunctionDiv(x) => (**x).borrow().partial(arg),
+            NodeRef::FunctionMul(x) => (**x).borrow().partial(arg),
+            NodeRef::FunctionSin(x) => (**x).borrow().partial(arg),
+        }
+    }
+
+    fn update_value(&mut self, value: f64) -> Result<(), SimpleError> {
+        match self {
+            NodeRef::VariableScalar(x) => (**x).borrow_mut().update_value(value),
+            _ => panic!("can only update value of variables")
         }
     }
 
     fn value(&self) -> f64 {
         match self {
-            NodeRc::ConstantScalarRc(x) => x.value(),
-            NodeRc::VariableScalarRc(x) => x.value(),
-            NodeRc::FunctionAddRc(x) => x.value(),
-            NodeRc::FunctionCosRc(x) => x.value(),
-            NodeRc::FunctionDivRc(x) => x.value(),
-            NodeRc::FunctionMulRc(x) => x.value(),
-            NodeRc::FunctionSinRc(x) => x.value(),            
+            NodeRef::ConstantScalar(x) => (**x).borrow().value(),
+            NodeRef::VariableScalar(x) => (**x).borrow().value(),
+            NodeRef::FunctionAdd(x) => (**x).borrow().value(),
+            NodeRef::FunctionCos(x) => (**x).borrow().value(),
+            NodeRef::FunctionDiv(x) => (**x).borrow().value(),
+            NodeRef::FunctionMul(x) => (**x).borrow().value(),
+            NodeRef::FunctionSin(x) => (**x).borrow().value(),            
         }
     }
 }
 
-impl Hash for NodeRc {
+impl Hash for NodeRef {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
-            NodeRc::ConstantScalarRc(x) => ptr::hash(&**x, state),
-            NodeRc::VariableScalarRc(x) => ptr::hash(&**x, state),
-            NodeRc::FunctionAddRc(x) => ptr::hash(&**x, state),
-            NodeRc::FunctionCosRc(x) => ptr::hash(&**x, state),
-            NodeRc::FunctionDivRc(x) => ptr::hash(&**x, state),
-            NodeRc::FunctionMulRc(x) => ptr::hash(&**x, state),
-            NodeRc::FunctionSinRc(x) => ptr::hash(&**x, state),
+            NodeRef::ConstantScalar(x) => ptr::hash(&**x, state),
+            NodeRef::VariableScalar(x) => ptr::hash(&**x, state),
+            NodeRef::FunctionAdd(x) => ptr::hash(&**x, state),
+            NodeRef::FunctionCos(x) => ptr::hash(&**x, state),
+            NodeRef::FunctionDiv(x) => ptr::hash(&**x, state),
+            NodeRef::FunctionMul(x) => ptr::hash(&**x, state),
+            NodeRef::FunctionSin(x) => ptr::hash(&**x, state),
         };
     }
 }
 
-impl PartialEq for NodeRc {
+impl PartialEq for NodeRef {
 
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (NodeRc::ConstantScalarRc(x), NodeRc::ConstantScalarRc(y)) => Rc::ptr_eq(x, y),
-            (NodeRc::VariableScalarRc(x), NodeRc::VariableScalarRc(y)) => Rc::ptr_eq(x, y),
-            (NodeRc::FunctionAddRc(x), NodeRc::FunctionAddRc(y)) => Rc::ptr_eq(x, y),
-            (NodeRc::FunctionCosRc(x), NodeRc::FunctionCosRc(y)) => Rc::ptr_eq(x, y),
-            (NodeRc::FunctionDivRc(x), NodeRc::FunctionDivRc(y)) => Rc::ptr_eq(x, y),
-            (NodeRc::FunctionMulRc(x), NodeRc::FunctionMulRc(y)) => Rc::ptr_eq(x, y),
-            (NodeRc::FunctionSinRc(x), NodeRc::FunctionSinRc(y)) => Rc::ptr_eq(x, y),
+            (NodeRef::ConstantScalar(x), NodeRef::ConstantScalar(y)) => Rc::ptr_eq(x, y),
+            (NodeRef::VariableScalar(x), NodeRef::VariableScalar(y)) => Rc::ptr_eq(x, y),
+            (NodeRef::FunctionAdd(x), NodeRef::FunctionAdd(y)) => Rc::ptr_eq(x, y),
+            (NodeRef::FunctionCos(x), NodeRef::FunctionCos(y)) => Rc::ptr_eq(x, y),
+            (NodeRef::FunctionDiv(x), NodeRef::FunctionDiv(y)) => Rc::ptr_eq(x, y),
+            (NodeRef::FunctionMul(x), NodeRef::FunctionMul(y)) => Rc::ptr_eq(x, y),
+            (NodeRef::FunctionSin(x), NodeRef::FunctionSin(y)) => Rc::ptr_eq(x, y),
             _ => false,
         }
     }
 }
 
-impl Eq for NodeRc {}
+impl Eq for NodeRef {}
 
-impl Clone for NodeRc {
+impl Clone for NodeRef {
     fn clone(&self) -> Self {
         match self {
-            NodeRc::ConstantScalarRc(x) => NodeRc::ConstantScalarRc(Rc::clone(&x)),
-            NodeRc::VariableScalarRc(x) => NodeRc::VariableScalarRc(Rc::clone(&x)),
-            NodeRc::FunctionAddRc(x) => NodeRc::FunctionAddRc(Rc::clone(&x)),
-            NodeRc::FunctionCosRc(x) => NodeRc::FunctionCosRc(Rc::clone(&x)),
-            NodeRc::FunctionDivRc(x) => NodeRc::FunctionDivRc(Rc::clone(&x)),
-            NodeRc::FunctionMulRc(x) => NodeRc::FunctionMulRc(Rc::clone(&x)),
-            NodeRc::FunctionSinRc(x) => NodeRc::FunctionSinRc(Rc::clone(&x)),
+            NodeRef::ConstantScalar(x) => NodeRef::ConstantScalar(Rc::clone(&x)),
+            NodeRef::VariableScalar(x) => NodeRef::VariableScalar(Rc::clone(&x)),
+            NodeRef::FunctionAdd(x) => NodeRef::FunctionAdd(Rc::clone(&x)),
+            NodeRef::FunctionCos(x) => NodeRef::FunctionCos(Rc::clone(&x)),
+            NodeRef::FunctionDiv(x) => NodeRef::FunctionDiv(Rc::clone(&x)),
+            NodeRef::FunctionMul(x) => NodeRef::FunctionMul(Rc::clone(&x)),
+            NodeRef::FunctionSin(x) => NodeRef::FunctionSin(Rc::clone(&x)), 
+        }
+    }
+}
+
+impl fmt::Display for NodeRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            NodeRef::ConstantScalar(x) => write!(f, "{}", (**x).borrow()),
+            NodeRef::VariableScalar(x) => write!(f, "{}", (**x).borrow()),
+            NodeRef::FunctionAdd(x) => write!(f, "{}", (**x).borrow()),
+            NodeRef::FunctionCos(x) => write!(f, "{}", (**x).borrow()),
+            NodeRef::FunctionDiv(x) => write!(f, "{}", (**x).borrow()),
+            NodeRef::FunctionMul(x) => write!(f, "{}", (**x).borrow()),
+            NodeRef::FunctionSin(x) => write!(f, "{}", (**x).borrow()),
             
         }
     }
 }
 
-impl fmt::Display for NodeRc {
+impl fmt::Debug for NodeRef {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            NodeRc::ConstantScalarRc(x) => write!(f, "{}", x),
-            NodeRc::VariableScalarRc(x) => write!(f, "{}", x),
-            NodeRc::FunctionAddRc(x) => write!(f, "{}", x),
-            NodeRc::FunctionCosRc(x) => write!(f, "{}", x),
-            NodeRc::FunctionDivRc(x) => write!(f, "{}", x),
-            NodeRc::FunctionMulRc(x) => write!(f, "{}", x),
-            NodeRc::FunctionSinRc(x) => write!(f, "{}", x),
-            
-        }
-    }
-}
-
-impl fmt::Debug for NodeRc {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            NodeRc::ConstantScalarRc(x) => write!(f, "{}", x),
-            NodeRc::VariableScalarRc(x) => write!(f, "{}", x),
-            NodeRc::FunctionAddRc(x) => write!(f, "{}", x),
-            NodeRc::FunctionCosRc(x) => write!(f, "{}", x),
-            NodeRc::FunctionDivRc(x) => write!(f, "{}", x),
-            NodeRc::FunctionMulRc(x) => write!(f, "{}", x),
-            NodeRc::FunctionSinRc(x) => write!(f, "{}", x),
+            NodeRef::ConstantScalar(x) => write!(f, "{}", (**x).borrow()),
+            NodeRef::VariableScalar(x) => write!(f, "{}", (**x).borrow()),
+            NodeRef::FunctionAdd(x) => write!(f, "{}", (**x).borrow()),
+            NodeRef::FunctionCos(x) => write!(f, "{}", (**x).borrow()),
+            NodeRef::FunctionDiv(x) => write!(f, "{}", (**x).borrow()),
+            NodeRef::FunctionMul(x) => write!(f, "{}", (**x).borrow()),
+            NodeRef::FunctionSin(x) => write!(f, "{}", (**x).borrow()),
         }
     }
 }
@@ -276,8 +293,8 @@ impl fmt::Debug for NodeRc {
 macro_rules! impl_node_add_node {
     ($x: ty, $y: ty) => {
         impl Add<$y> for $x {
-            type Output = NodeRc;
-            fn add(self, rhs: $y) -> NodeRc {
+            type Output = NodeRef;
+            fn add(self, rhs: $y) -> NodeRef {
 
                 // Self zero
                 if self.is_constant_with_value(0.) {
@@ -296,10 +313,12 @@ macro_rules! impl_node_add_node {
 
                 // Other
                 else {
-                    let mut args: Vec<NodeRc> = Vec::new();
+                    let mut args: Vec<NodeRef> = Vec::new();
                     for a in &[self.clone(), rhs.clone()] {
                         match a {
-                            NodeRc::FunctionAddRc(x) => args.extend(x.arguments()), // flatten add
+                            NodeRef::FunctionAdd(x) => {
+                                args.extend((**x).borrow().arguments()) // flatten add
+                            },
                             _ => args.push(a.clone()),
                         };
                     }
@@ -313,8 +332,8 @@ macro_rules! impl_node_add_node {
 macro_rules! impl_node_add_scalar {
     ($x: ty, $y: ty) => {
         impl Add<$y> for $x {
-            type Output = NodeRc;
-            fn add(self, rhs: $y) -> NodeRc {
+            type Output = NodeRef;
+            fn add(self, rhs: $y) -> NodeRef {
 
                 // Self constant
                 if self.is_constant() {
@@ -328,10 +347,12 @@ macro_rules! impl_node_add_scalar {
 
                 // Other
                 else {
-                    let mut args: Vec<NodeRc> = Vec::new();
+                    let mut args: Vec<NodeRef> = Vec::new();
                     for a in &[self.clone(), ConstantScalar::new(rhs.to_f64().unwrap())] {
                         match a {
-                            NodeRc::FunctionAddRc(x) => args.extend(x.arguments()),
+                            NodeRef::FunctionAdd(x) => {
+                                args.extend((**x).borrow().arguments())
+                            },
                             _ => args.push(a.clone()),
                         };
                     }
@@ -340,8 +361,8 @@ macro_rules! impl_node_add_scalar {
             }           
         }
         impl Add<$x> for $y {
-            type Output = NodeRc;
-            fn add(self, rhs: $x) -> NodeRc {
+            type Output = NodeRef;
+            fn add(self, rhs: $x) -> NodeRef {
 
                 // Self zero
                 if self == <$y>::zero() {
@@ -355,10 +376,12 @@ macro_rules! impl_node_add_scalar {
 
                 // Other
                 else {
-                    let mut args: Vec<NodeRc> = Vec::new();
+                    let mut args: Vec<NodeRef> = Vec::new();
                     for a in &[ConstantScalar::new(self.to_f64().unwrap()), rhs.clone()] {
                         match a {
-                            NodeRc::FunctionAddRc(x) => args.extend(x.arguments()),
+                            NodeRef::FunctionAdd(x) => {
+                                args.extend((**x).borrow().arguments())
+                            },
                             _ => args.push(a.clone()),
                         };
                     }
@@ -369,18 +392,18 @@ macro_rules! impl_node_add_scalar {
     };
 }
 
-impl_node_add_node!(&NodeRc, &NodeRc);
-impl_node_add_node!(&NodeRc, NodeRc);
-impl_node_add_node!(NodeRc, &NodeRc);
-impl_node_add_node!(NodeRc, NodeRc);
-impl_node_add_scalar!(&NodeRc, f64);
-impl_node_add_scalar!(NodeRc, f64);
+impl_node_add_node!(&NodeRef, &NodeRef);
+impl_node_add_node!(&NodeRef, NodeRef);
+impl_node_add_node!(NodeRef, &NodeRef);
+impl_node_add_node!(NodeRef, NodeRef);
+impl_node_add_scalar!(&NodeRef, f64);
+impl_node_add_scalar!(NodeRef, f64);
 
 macro_rules! impl_node_mul_node {
     ($x: ty, $y: ty) => {
         impl Mul<$y> for $x {
-            type Output = NodeRc;
-            fn mul(self, rhs: $y) -> NodeRc {
+            type Output = NodeRef;
+            fn mul(self, rhs: $y) -> NodeRef {
 
                 // Self or rhs zero
                 if self.is_constant_with_value(0.) || rhs.is_constant_with_value(0.) {
@@ -409,12 +432,12 @@ macro_rules! impl_node_mul_node {
                     match (&s, &r) {
 
                         // Constant times add
-                        (NodeRc::ConstantScalarRc(_x), NodeRc::FunctionAddRc(_y)) => {
+                        (NodeRef::ConstantScalar(_x), NodeRef::FunctionAdd(_y)) => {
                             FunctionAdd::new(r.arguments().iter().map(|x| &s*x).collect())
                         },
 
                         // Add time constant
-                        (NodeRc::FunctionAddRc(_x), NodeRc::ConstantScalarRc(_y)) => {
+                        (NodeRef::FunctionAdd(_x), NodeRef::ConstantScalar(_y)) => {
                             FunctionAdd::new(s.arguments().iter().map(|x| x*&r).collect())
                         },
 
@@ -430,8 +453,8 @@ macro_rules! impl_node_mul_node {
 macro_rules! impl_node_mul_scalar {
     ($x: ty, $y: ty) => {
         impl Mul<$y> for $x {
-            type Output = NodeRc;
-            fn mul(self, rhs: $y) -> NodeRc {
+            type Output = NodeRef;
+            fn mul(self, rhs: $y) -> NodeRef {
 
                 // Self constant or rhs zero 
                 if self.is_constant() || rhs == <$y>::zero() {
@@ -455,7 +478,7 @@ macro_rules! impl_node_mul_scalar {
                     match &s {
 
                         // Add times constant
-                        NodeRc::FunctionAddRc(_x) => {
+                        NodeRef::FunctionAdd(_x) => {
                             FunctionAdd::new(s.arguments().iter().map(|x| x*r).collect())
                         },
 
@@ -466,8 +489,8 @@ macro_rules! impl_node_mul_scalar {
             }           
         }
         impl Mul<$x> for $y {
-            type Output = NodeRc;
-            fn mul(self, rhs: $x) -> NodeRc {
+            type Output = NodeRef;
+            fn mul(self, rhs: $x) -> NodeRef {
 
                 // Self zero or rhs constant 
                 if self == <$y>::zero() || rhs.is_constant() {
@@ -491,7 +514,7 @@ macro_rules! impl_node_mul_scalar {
                     match &r {
 
                         // Constant times add
-                        NodeRc::FunctionAddRc(_x) => {
+                        NodeRef::FunctionAdd(_x) => {
                             FunctionAdd::new(r.arguments().iter().map(|x| s*x).collect())
                         },
 
@@ -504,20 +527,22 @@ macro_rules! impl_node_mul_scalar {
     };
 }
 
-impl_node_mul_node!(&NodeRc, &NodeRc);
-impl_node_mul_node!(&NodeRc, NodeRc);
-impl_node_mul_node!(NodeRc, &NodeRc);
-impl_node_mul_node!(NodeRc, NodeRc);
-impl_node_mul_scalar!(&NodeRc, f64);
-impl_node_mul_scalar!(NodeRc, f64);
+impl_node_mul_node!(&NodeRef, &NodeRef);
+impl_node_mul_node!(&NodeRef, NodeRef);
+impl_node_mul_node!(NodeRef, &NodeRef);
+impl_node_mul_node!(NodeRef, NodeRef);
+impl_node_mul_scalar!(&NodeRef, f64);
+impl_node_mul_scalar!(NodeRef, f64);
 
 macro_rules! impl_node_neg {
     ($x: ty) => {
         impl Neg for $x {
-            type Output = NodeRc;
-            fn neg(self) -> NodeRc {
+            type Output = NodeRef;
+            fn neg(self) -> NodeRef {
                 match self {
-                    NodeRc::ConstantScalarRc(x) => ConstantScalar::new(-1.*x.value()),
+                    NodeRef::ConstantScalar(x) => {
+                        ConstantScalar::new(-1.*((*x).borrow().value()))
+                    },
                     _ => (-1.)*self,
                 }
             }        
@@ -525,14 +550,14 @@ macro_rules! impl_node_neg {
     };
 }
 
-impl_node_neg!(&NodeRc);
-impl_node_neg!(NodeRc);
+impl_node_neg!(&NodeRef);
+impl_node_neg!(NodeRef);
 
 macro_rules! impl_node_sub_node {
     ($x: ty, $y: ty) => {
         impl Sub<$y> for $x {
-            type Output = NodeRc;
-            fn sub(self, rhs: $y) -> NodeRc {
+            type Output = NodeRef;
+            fn sub(self, rhs: $y) -> NodeRef {
                 self + -1.*rhs
             }        
         }
@@ -542,32 +567,32 @@ macro_rules! impl_node_sub_node {
 macro_rules! impl_node_sub_scalar {
     ($x: ty, $y: ty) => {
         impl Sub<$y> for $x {
-            type Output = NodeRc;
-            fn sub(self, rhs: $y) -> NodeRc {
+            type Output = NodeRef;
+            fn sub(self, rhs: $y) -> NodeRef {
                 self + -1.*ConstantScalar::new(rhs.to_f64().unwrap())
             }           
         }
         impl Sub<$x> for $y {
-            type Output = NodeRc;
-            fn sub(self, rhs: $x) -> NodeRc {
+            type Output = NodeRef;
+            fn sub(self, rhs: $x) -> NodeRef {
                 ConstantScalar::new(self.to_f64().unwrap()) + -1.*rhs
             }           
         }
     };
 }
 
-impl_node_sub_node!(&NodeRc, &NodeRc);
-impl_node_sub_node!(&NodeRc, NodeRc);
-impl_node_sub_node!(NodeRc, &NodeRc);
-impl_node_sub_node!(NodeRc, NodeRc);
-impl_node_sub_scalar!(&NodeRc, f64);
-impl_node_sub_scalar!(NodeRc, f64);
+impl_node_sub_node!(&NodeRef, &NodeRef);
+impl_node_sub_node!(&NodeRef, NodeRef);
+impl_node_sub_node!(NodeRef, &NodeRef);
+impl_node_sub_node!(NodeRef, NodeRef);
+impl_node_sub_scalar!(&NodeRef, f64);
+impl_node_sub_scalar!(NodeRef, f64);
 
 macro_rules! impl_node_div_node {
     ($x: ty, $y: ty) => {
         impl Div<$y> for $x {
-            type Output = NodeRc;
-            fn div(self, rhs: $y) -> NodeRc {
+            type Output = NodeRef;
+            fn div(self, rhs: $y) -> NodeRef {
 
                 // Rhs is zero
                 if rhs.is_constant_with_value(0.) {
@@ -601,8 +626,8 @@ macro_rules! impl_node_div_node {
 macro_rules! impl_node_div_scalar {
     ($x: ty, $y: ty) => {
         impl Div<$y> for $x {
-            type Output = NodeRc;
-            fn div(self, rhs: $y) -> NodeRc {
+            type Output = NodeRef;
+            fn div(self, rhs: $y) -> NodeRef {
 
                 // Rhs is zero
                 if rhs == <$y>::zero() {
@@ -632,8 +657,8 @@ macro_rules! impl_node_div_scalar {
             }           
         }
         impl Div<$x> for $y {
-            type Output = NodeRc;
-            fn div(self, rhs: $x) -> NodeRc {
+            type Output = NodeRef;
+            fn div(self, rhs: $x) -> NodeRef {
 
                 // Rhs is zero
                 if rhs.is_constant_with_value(0.) {
@@ -665,12 +690,12 @@ macro_rules! impl_node_div_scalar {
     };
 }
 
-impl_node_div_node!(&NodeRc, &NodeRc);
-impl_node_div_node!(&NodeRc, NodeRc);
-impl_node_div_node!(NodeRc, &NodeRc);
-impl_node_div_node!(NodeRc, NodeRc);
-impl_node_div_scalar!(&NodeRc, f64);
-impl_node_div_scalar!(NodeRc, f64);
+impl_node_div_node!(&NodeRef, &NodeRef);
+impl_node_div_node!(&NodeRef, NodeRef);
+impl_node_div_node!(NodeRef, &NodeRef);
+impl_node_div_node!(NodeRef, NodeRef);
+impl_node_div_scalar!(&NodeRef, f64);
+impl_node_div_scalar!(NodeRef, f64);
 
 #[cfg(test)]
 mod tests {
@@ -680,6 +705,16 @@ mod tests {
     use crate::model::node::Node;
     use crate::model::variable::VariableScalar;
     use crate::model::constant::ConstantScalar;
+
+    #[test]
+    fn node_update_value() {
+
+        let mut x = VariableScalar::new_continuous("x", 10.);
+        assert_eq!(x.value(), 10.);
+
+        x.update_value(11.).unwrap();
+        assert_eq!(x.value(), 11.);
+    }
 
     #[test]
     fn node_add_node() {

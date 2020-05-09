@@ -1,6 +1,6 @@
 use num_traits::cast::ToPrimitive;
 
-use crate::model::node::NodeRc;
+use crate::model::node::NodeRef;
 use crate::model::constant::ConstantScalar;
 use crate::model::constraint::{Constraint,
                                ConstraintKind};
@@ -48,7 +48,7 @@ macro_rules! impl_node_cmp_scalar {
     };
 }
 
-impl_node_cmp_scalar!(NodeRc, f64);
+impl_node_cmp_scalar!(NodeRef, f64);
 
 macro_rules! impl_node_cmp_node {
     ($x: ty, $y: ty) => {
@@ -81,8 +81,8 @@ macro_rules! impl_node_cmp_node {
     };
 }
 
-impl_node_cmp_node!(NodeRc, NodeRc);
-impl_node_cmp_node!(NodeRc, &NodeRc);
+impl_node_cmp_node!(NodeRef, NodeRef);
+impl_node_cmp_node!(NodeRef, &NodeRef);
 
 macro_rules! impl_scalar_cmp_node {
     ($x: ty, $y: ty) => {
@@ -115,8 +115,8 @@ macro_rules! impl_scalar_cmp_node {
     };
 }
 
-impl_scalar_cmp_node!(f64, NodeRc);
-impl_scalar_cmp_node!(f64, &NodeRc);
+impl_scalar_cmp_node!(f64, NodeRef);
+impl_scalar_cmp_node!(f64, &NodeRef);
 
 #[cfg(test)]
 mod tests {

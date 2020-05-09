@@ -1,12 +1,12 @@
 
 use std::fmt;
 
-use crate::model::node::NodeRc;
+use crate::model::node::NodeRef;
 use crate::model::constraint::Constraint;
 
 pub enum Objective {
-    Minimize(NodeRc),
-    Maximize(NodeRc),
+    Minimize(NodeRef),
+    Maximize(NodeRef),
     Empty,
 }
 
@@ -19,11 +19,11 @@ pub struct Problem {
 
 impl Objective {
 
-    pub fn minimize(f: &NodeRc) -> Objective {
+    pub fn minimize(f: &NodeRef) -> Objective {
         Objective::Minimize(f.clone())
     }
 
-    pub fn maximize(f: &NodeRc) -> Objective {
+    pub fn maximize(f: &NodeRef) -> Objective {
         Objective::Maximize(f.clone())
     }
 

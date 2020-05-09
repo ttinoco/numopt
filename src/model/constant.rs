@@ -1,9 +1,10 @@
 
 use std::fmt;
 use std::rc::Rc;
+use std::cell::RefCell;
 //use std::collections::{HashMap, HashSet};
 
-use super::node::{Node, NodeRc};
+use super::node::{Node, NodeRef};
 //use super::node_std::{NodeProp, NodePropData};
 
 pub struct ConstantScalar {
@@ -12,18 +13,18 @@ pub struct ConstantScalar {
 
 impl ConstantScalar {
 
-    pub fn new(value: f64) -> NodeRc {
-        NodeRc::ConstantScalarRc(Rc::new(
+    pub fn new(value: f64) -> NodeRef {
+        NodeRef::ConstantScalar(Rc::new(RefCell::new(
             Self {
                 value: value,
             }
-        ))
+        )))
     }
 }
 
 impl Node for ConstantScalar {
 
-    fn partial(&self, _arg: &NodeRc) -> NodeRc { ConstantScalar::new(0.) }
+    fn partial(&self, _arg: &NodeRef) -> NodeRef { ConstantScalar::new(0.) }
     fn value(&self) -> f64 { self.value }
 }
 

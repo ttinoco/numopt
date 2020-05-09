@@ -1,34 +1,34 @@
 use std::fmt;
 use std::rc::Rc;
+use std::cell::RefCell;
 
-use crate::model::node::{Node,
-                         NodeRc};
+use crate::model::node::{Node, NodeRef};
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionCos {
     value: f64,
-    arg: NodeRc
+    arg: NodeRef
 }
 
 impl FunctionCos {
 
-    pub fn new(arg: NodeRc) -> NodeRc {
-        NodeRc::FunctionCosRc(Rc::new(
+    pub fn new(arg: NodeRef) -> NodeRef {
+        NodeRef::FunctionCos(Rc::new(RefCell::new(
             Self {
                 value: 0.,
                 arg: arg,
             }
-        ))
+        )))
     }
 }
 
 impl Node for FunctionCos {
 
-    fn arguments(&self) -> Vec<NodeRc> {
+    fn arguments(&self) -> Vec<NodeRef> {
         vec![self.arg.clone()]
     }
 
-    fn partial(&self, arg: &NodeRc) -> NodeRc { 
+    fn partial(&self, arg: &NodeRef) -> NodeRef { 
         if self.arg == *arg {
             return -&self.arg.sin();
         }
