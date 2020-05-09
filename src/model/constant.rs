@@ -2,10 +2,8 @@
 use std::fmt;
 use std::rc::Rc;
 use std::cell::RefCell;
-//use std::collections::{HashMap, HashSet};
 
-use super::node::{Node, NodeRef};
-//use super::node_std::{NodeProp, NodePropData};
+use super::node::{NodeBase, NodeRef};
 
 pub struct ConstantScalar {
     value: f64,
@@ -22,7 +20,7 @@ impl ConstantScalar {
     }
 }
 
-impl Node for ConstantScalar {
+impl NodeBase for ConstantScalar {
 
     fn partial(&self, _arg: &NodeRef) -> NodeRef { ConstantScalar::new(0.) }
     fn value(&self) -> f64 { self.value }
@@ -49,7 +47,8 @@ impl fmt::Display for ConstantScalar {
 #[cfg(test)]
 mod tests {
 
-    use crate::model::node::Node;
+    use crate::model::node::NodeBase;
+    use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
     use crate::model::constant::ConstantScalar;
 

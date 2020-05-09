@@ -69,6 +69,7 @@ mod tests {
 
     use super::*;
     use crate::model::node_cmp::NodeCmp;
+    use crate::model::node_func::NodeFunc;
     use crate::model::variable::VariableScalar;
 
     #[test]

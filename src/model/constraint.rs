@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::node::{Node, NodeRef};
+use super::node::{NodeBase, NodeRef};
 
 pub enum ConstraintKind {
     Equal,

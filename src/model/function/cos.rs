@@ -2,7 +2,8 @@ use std::fmt;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use crate::model::node::{Node, NodeRef};
+use crate::model::node::{NodeBase, NodeRef};
+use crate::model::node_func::NodeFunc;
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionCos {
@@ -22,7 +23,7 @@ impl FunctionCos {
     }
 }
 
-impl Node for FunctionCos {
+impl NodeBase for FunctionCos {
 
     fn arguments(&self) -> Vec<NodeRef> {
         vec![self.arg.clone()]
@@ -51,7 +52,9 @@ impl<'a> fmt::Display for FunctionCos {
 #[cfg(test)]
 mod tests {
 
-    use crate::model::node::Node;
+    use super::*;
+    use crate::model::node::NodeBase;
+    use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
 
     #[test]

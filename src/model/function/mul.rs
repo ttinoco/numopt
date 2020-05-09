@@ -2,7 +2,7 @@ use std::fmt;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use crate::model::node::{Node, NodeRef};
+use crate::model::node::{NodeBase, NodeRef};
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionMul {
@@ -22,7 +22,7 @@ impl FunctionMul {
     }
 }
 
-impl Node for FunctionMul {
+impl NodeBase for FunctionMul {
 
     fn arguments(&self) -> Vec<NodeRef> {
         vec![self.args.0.clone(), self.args.1.clone()]
@@ -63,7 +63,8 @@ impl<'a> fmt::Display for FunctionMul {
 #[cfg(test)]
 mod tests {
 
-    use crate::model::node::Node;
+    use crate::model::node::NodeBase;
+    use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
 
     #[test]

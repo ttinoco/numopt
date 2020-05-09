@@ -3,7 +3,7 @@ use std::fmt;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use crate::model::node::{Node, NodeRef};
+use crate::model::node::{NodeBase, NodeRef};
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionAdd {
@@ -25,7 +25,7 @@ impl FunctionAdd {
     }
 }
 
-impl Node for FunctionAdd {
+impl NodeBase for FunctionAdd {
 
     fn arguments(&self) -> Vec<NodeRef> {
         self.args.iter().map(|x| x.clone()).collect()
@@ -63,7 +63,8 @@ impl<'a> fmt::Display for FunctionAdd {
 #[cfg(test)]
 mod tests {
 
-    use crate::model::node::Node;
+    use crate::model::node::NodeBase;
+    use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
 
     #[test]

@@ -3,8 +3,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use simple_error::SimpleError;
 
-use super::node::{Node,
-                  NodeRef};
+use super::node::{NodeBase, NodeRef};
 use super::constant::ConstantScalar;
 
 pub enum VariableKind {
@@ -39,7 +38,7 @@ impl VariableScalar {
     }
 }
 
-impl Node for VariableScalar {
+impl NodeBase for VariableScalar {
 
     fn partial(&self, arg: &NodeRef) -> NodeRef { 
         match arg {
@@ -72,7 +71,8 @@ impl<'a> fmt::Display for VariableScalar {
 #[cfg(test)]
 mod tests {
 
-    use crate::model::node::Node;
+    use crate::model::node::NodeBase;
+    use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
 
     #[test]

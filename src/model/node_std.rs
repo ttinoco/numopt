@@ -1,30 +1,20 @@
 use std::collections::HashMap;
 
-use crate::model::node::NodeRef;
+use crate::model::node::{NodeRef, NodeProp};
 
-pub struct NodePropData {
-    pub affine: bool,
-    pub a: HashMap<NodeRef, f64>,
-    pub b: f64,
-}
-
-pub struct NodeCompData {
+pub struct NodeStdComp {
     pub phi: NodeRef,
     pub gphi: Vec<(NodeRef, NodeRef)>,
     pub Hphi: Vec<(NodeRef, NodeRef, NodeRef)>,
-    pub prop: NodePropData,
+    pub prop: NodeProp,
 }
 
-// pub trait NodeProp {
-//     fn reduce_props(&self, props: Vec<NodePropData>) -> NodePropData;
-// }
+pub trait NodeStd {
+    fn components(&self) -> NodeStdComp;
+}
 
-// pub trait NodeStd {
-//     fn properties(&self) -> NodePropData;
-//     //fn components(&self) -> NodeCompData;
-// }
 
-// impl NodeProp for NodeRc {
+// impl NodeStd for NodeRef {
 
 //     fn reduce_props(&self, props: Vec<NodePropData>) -> NodePropData {
 //         match self {
@@ -38,12 +28,3 @@ pub struct NodeCompData {
 //         }
 //     }
 // }
-
-// impl NodeStd for NodeRc {
-    
-//     fn properties(&self) -> NodePropData {
-
-
-//     }
-// }
-
