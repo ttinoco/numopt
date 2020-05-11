@@ -3,11 +3,11 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use crate::model::node::{NodeBase, NodeRef};
+use crate::model::node_std::{NodeStd, NodeStdProp};
 use crate::model::node_func::NodeFunc;
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionSin {
-    value: f64,
     arg: NodeRef
 }
 
@@ -16,7 +16,6 @@ impl FunctionSin {
     pub fn new(arg: NodeRef) -> NodeRef {
         NodeRef::FunctionSin(Rc::new(RefCell::new(
             Self {
-                value: 0.,
                 arg: arg,
             }
         )))
@@ -40,6 +39,15 @@ impl NodeBase for FunctionSin {
 
     fn value(&self) -> f64 {
         self.arg.value().sin()
+    }
+}
+
+impl NodeStd for FunctionSin {
+
+    fn properties(&self) -> NodeStdProp {
+        let mut p = self.arg.properties();
+        p.affine = false;
+        p
     }
 }
 

@@ -1,12 +1,13 @@
 use std::fmt;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 use crate::model::node::{NodeBase, NodeRef};
+use crate::model::node_std::{NodeStd, NodeStdProp};
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionMul {
-    value: f64,
     args: (NodeRef, NodeRef),
 }
 
@@ -15,7 +16,6 @@ impl FunctionMul {
     pub fn new(arg1: NodeRef, arg2: NodeRef) -> NodeRef {
         NodeRef::FunctionMul(Rc::new(RefCell::new(
             Self {
-                value: 0.,
                 args: (arg1, arg2),
             }
         )))
@@ -42,6 +42,30 @@ impl NodeBase for FunctionMul {
 
     fn value(&self) -> f64 { 
         self.args.0.value()*self.args.1.value()
+    }
+}
+
+impl NodeStd for FunctionMul {
+
+    fn properties(&self) -> NodeStdProp {
+        
+        let p0 = self.args.0.properties();
+        let p1 = self.args.1.properties();
+        let mut affine = (p0.affine && p1.a.is_empty()) || 
+                         (p1.affine && p0.a.is_empty());
+        let mut b = p0.b*p1.b;
+        let mut a: HashMap<NodeRef, f64> = HashMap::new();
+        for (key, val) in p0.a.iter() {
+            a.insert(key.clone(), (*val)*p1.b);
+        }
+        for (key, val) in p1.a.iter() {
+            a.insert(key.clone(), (*val)*p0.b);
+        }
+        NodeStdProp {
+            affine: affine,
+            a: a,
+            b: b,
+        }
     }
 }
 

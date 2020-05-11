@@ -5,7 +5,6 @@ use std::cell::RefCell;
 use simple_error::SimpleError;
 use std::hash::{Hash, Hasher};
 use std::cmp::{PartialEq, Eq};
-use std::collections::HashMap;
 use num_traits::cast::ToPrimitive;
 use num_traits::identities::{Zero, One};
 use std::ops::{Add, Mul, Neg, Sub, Div};
@@ -28,17 +27,10 @@ pub enum NodeRef {
     FunctionSin(Rc<RefCell<FunctionSin>>),
 }
 
-pub struct NodeProp {
-    pub affine: bool,
-    pub a: HashMap<NodeRef, f64>,
-    pub b: f64,
-}
-
 pub trait NodeBase {
 
     fn arguments(&self) -> Vec<NodeRef> { Vec::new() }
     fn partial(&self, arg: &NodeRef) -> NodeRef;
-    //fn properties(&self) -> NodeProp;
     fn update_value(&mut self, _value: f64) -> Result<(), SimpleError> { 
         panic!("can only update value of variables")
     }

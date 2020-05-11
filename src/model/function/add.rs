@@ -2,12 +2,13 @@
 use std::fmt;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 use crate::model::node::{NodeBase, NodeRef};
+use crate::model::node_std::{NodeStd, NodeStdProp};
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionAdd {
-    value: f64,
     args: Vec<NodeRef>,
 }
 
@@ -18,7 +19,6 @@ impl FunctionAdd {
         assert!(args.len() >= 2);
         NodeRef::FunctionAdd(Rc::new(RefCell::new(
             Self {
-                value: 0.,
                 args: args,
             }
         )))
@@ -42,6 +42,34 @@ impl NodeBase for FunctionAdd {
 
     fn value(&self) -> f64 { 
         self.args.iter().map(|x| x.value()).sum()
+    }
+}
+
+impl NodeStd for FunctionAdd {
+
+    fn properties(&self) -> NodeStdProp {
+        
+        let mut affine = true;
+        let mut a: HashMap<NodeRef, f64> = HashMap::new();
+        let mut b = 0_f64;
+        for arg in self.arguments().iter() {
+            let p = arg.properties();
+            affine &= p.affine;
+            b += p.b;
+            for (key, val) in p.a.iter() {
+                if let Some(x) = a.get_mut(key) {
+                    *x += *val;
+                }
+                else {
+                    a.insert(key.clone(), *val);
+                }
+            }
+        }
+        NodeStdProp {
+            affine: affine,
+            a: a,
+            b: b,
+        }
     }
 }
 

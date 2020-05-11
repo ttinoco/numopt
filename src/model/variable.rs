@@ -72,6 +72,7 @@ impl<'a> fmt::Display for VariableScalar {
 mod tests {
 
     use crate::model::node::NodeBase;
+    use crate::model::node_std::NodeStd;
     use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
 
@@ -100,6 +101,16 @@ mod tests {
         let z2 = x.derivative(&x);
         println!("{}", z2);
         assert!(z2.is_constant_with_value(1.));
+    }
 
+    #[test]
+    fn properties() {
+
+        let x = VariableScalar::new_integer("x", 4.);
+        let p = x.properties();
+        assert!(p.affine);
+        assert_eq!(p.b, 0.);
+        assert_eq!(p.a.len(), 1);
+        assert_eq!(*p.a.get(&x).unwrap(), 4.);
     }
 }

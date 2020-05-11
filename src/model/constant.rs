@@ -26,18 +26,6 @@ impl NodeBase for ConstantScalar {
     fn value(&self) -> f64 { self.value }
 }
 
-// impl NodeProp for ConstantScalar {
-
-//     fn reduce_props(&self, _props: Vec<NodePropData>) -> NodePropData {
-//         NodePropData {
-//             vars: HashSet::new(),
-//             affine: true,
-//             a: HashMap::new(),
-//             b: self.value(),
-//         }
-//     }
-// }
-
 impl fmt::Display for ConstantScalar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.value)
@@ -48,6 +36,7 @@ impl fmt::Display for ConstantScalar {
 mod tests {
 
     use crate::model::node::NodeBase;
+    use crate::model::node_std::NodeStd;
     use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
     use crate::model::constant::ConstantScalar;
@@ -75,4 +64,13 @@ mod tests {
         assert!(z1.is_constant_with_value(0.));
     }
 
+    #[test]
+    fn properties() {
+
+        let c = ConstantScalar::new(5.);
+        let p = c.properties();
+        assert!(p.affine);
+        assert_eq!(p.b, 5.);
+        assert!(p.a.is_empty());
+    }
 }
