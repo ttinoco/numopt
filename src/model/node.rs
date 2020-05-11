@@ -103,6 +103,7 @@ impl NodeBase for NodeRef {
 }
 
 impl Hash for NodeRef {
+    
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
             NodeRef::ConstantScalar(x) => ptr::hash(&**x, state),

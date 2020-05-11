@@ -111,6 +111,6 @@ mod tests {
         assert!(p.affine);
         assert_eq!(p.b, 0.);
         assert_eq!(p.a.len(), 1);
-        assert_eq!(*p.a.get(&x).unwrap(), 4.);
+        assert_eq!(*p.a.get(&x).unwrap(), 1.);
     }
 }

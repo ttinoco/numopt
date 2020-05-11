@@ -51,9 +51,9 @@ impl NodeStd for FunctionMul {
         
         let p0 = self.args.0.properties();
         let p1 = self.args.1.properties();
-        let mut affine = (p0.affine && p1.a.is_empty()) || 
-                         (p1.affine && p0.a.is_empty());
-        let mut b = p0.b*p1.b;
+        let affine = (p0.affine && p1.a.is_empty()) || 
+                     (p1.affine && p0.a.is_empty());
+        let b = p0.b*p1.b;
         let mut a: HashMap<NodeRef, f64> = HashMap::new();
         for (key, val) in p0.a.iter() {
             a.insert(key.clone(), (*val)*p1.b);
@@ -88,6 +88,7 @@ impl<'a> fmt::Display for FunctionMul {
 mod tests {
 
     use crate::model::node::NodeBase;
+    use crate::model::node_std::NodeStd;
     use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
 
@@ -142,5 +143,46 @@ mod tests {
         assert_eq!(format!("{}", z4y), "3*x*3*x");
     }
 
+    #[test]
+    fn properties() {
+
+        let x = VariableScalar::new_continuous("x", 2.);
+        let y = VariableScalar::new_continuous("y", 4.);
+
+        let z1 = 3.*&x;
+        let p1 = z1.properties();
+        assert!(p1.affine);
+        assert_eq!(p1.b, 0.);
+        assert_eq!(p1.a.len(), 1);
+        assert_eq!(*p1.a.get(&x).unwrap(), 3.);
+        
+        let z2 = &x*4.;
+        let p2 = z2.properties();
+        assert!(p2.affine);
+        assert_eq!(p2.b, 0.);
+        assert_eq!(p2.a.len(), 1);
+        assert_eq!(*p2.a.get(&x).unwrap(), 4.);
+
+        let z3 = 3.*(&x + 3.);
+        let p3 = z3.properties();
+        assert!(p3.affine);
+        assert_eq!(p3.b, 9.);
+        assert_eq!(p3.a.len(), 1);
+        assert_eq!(*p3.a.get(&x).unwrap(), 3.);
+
+        let z4 = (4.*&x + 5.)*10.;
+        let p4 = z4.properties();
+        assert!(p4.affine);
+        assert_eq!(p4.b, 50.);
+        assert_eq!(p4.a.len(), 1);
+        assert_eq!(*p4.a.get(&x).unwrap(), 40.);
+
+        let z5 = (4.*&y)*(5. + &x);
+        let p5 = z5.properties();
+        assert!(!p5.affine);
+        assert_eq!(p5.a.len(), 2);
+        assert!(p5.a.contains_key(&x));
+        assert!(p5.a.contains_key(&y));
+    }
 }
 

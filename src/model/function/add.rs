@@ -92,6 +92,8 @@ impl<'a> fmt::Display for FunctionAdd {
 mod tests {
 
     use crate::model::node::NodeBase;
+    use crate::model::node_std::NodeStd;
+    use crate::model::node_func::NodeFunc;
     use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
 
@@ -163,6 +165,38 @@ mod tests {
         assert_eq!(z5.value(), 2.*(3.+1.+4.));
         assert!(z5x.is_constant_with_value(2.));
         assert!(z5y.is_constant_with_value(2.));
+    }
+
+    #[test]
+    fn properties() {
+
+        let x = VariableScalar::new_continuous("x", 3.);
+        let y = VariableScalar::new_continuous("y", 4.);
+        let z = VariableScalar::new_continuous("z", 5.);
+
+        let z1 = &x + &x;
+        let p1 = z1.properties();
+        assert!(p1.affine);
+        assert_eq!(p1.b, 0.);
+        assert_eq!(p1.a.len(), 1);
+        assert_eq!(*p1.a.get(&x).unwrap(), 2.);
+
+        let z2 = &x + 8. + &y + 40. + &x;
+        let p2 = z2.properties();
+        assert!(p2.affine);
+        assert_eq!(p2.b, 48.);
+        assert_eq!(p2.a.len(), 2);
+        assert_eq!(*p2.a.get(&x).unwrap(), 2.);
+        assert_eq!(*p2.a.get(&y).unwrap(), 1.);
+        assert!(!p2.a.contains_key(&z));
+
+        let z3 = &x + &y + 40. + &z.cos();
+        let p3 = z3.properties();
+        assert!(!p3.affine);
+        assert_eq!(p3.a.len(), 3);
+        assert!(p3.a.contains_key(&x));
+        assert!(p3.a.contains_key(&y));
+        assert!(p3.a.contains_key(&z));
     }
 }
 

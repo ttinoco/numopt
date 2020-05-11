@@ -51,13 +51,13 @@ impl NodeStd for FunctionDiv {
         
         let p0 = self.args.0.properties();
         let p1 = self.args.1.properties();
-        let mut affine = p0.affine && p1.a.is_empty();
-        let mut b = p0.b/p1.b;
+        let affine = p0.affine && p1.a.is_empty();
+        let b = p0.b/p1.b;
         let mut a: HashMap<NodeRef, f64> = HashMap::new();
         for (key, val) in p0.a.iter() {
             a.insert(key.clone(), (*val)/p1.b);
         }
-        for (key, val) in p1.a.iter() {
+        for (key, _val) in p1.a.iter() {
             a.insert(key.clone(), 0.);
         }
         NodeStdProp {
@@ -89,6 +89,7 @@ impl<'a> fmt::Display for FunctionDiv {
 mod tests {
 
     use crate::model::node::NodeBase;
+    use crate::model::node_std::NodeStd;
     use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
 
@@ -148,6 +149,48 @@ mod tests {
         let z5x = z5.derivative(&x);
         assert_eq!(format!("{}", z5x),
                    "(-1*x + 2)/((x + -2 + 3)*(x + -2 + 3)) + 1/(x + -2 + 3)");
+    }
+
+    #[test]
+    fn properties() {
+
+        let x = VariableScalar::new_continuous("x", 2.);
+        let y = VariableScalar::new_continuous("y", 4.);
+
+        let z1 = 3./&x;
+        let p1 = z1.properties();
+        assert!(!p1.affine);
+        assert_eq!(p1.a.len(), 1);
+        assert!(p1.a.contains_key(&x));
+        
+        let z2 = (&x + 10.)/4.;
+        let p2 = z2.properties();
+        assert!(p2.affine);
+        assert_eq!(p2.b, 10./4.);
+        assert_eq!(p2.a.len(), 1);
+        assert_eq!(*p2.a.get(&x).unwrap(), 1./4.);
+
+        let z3 = 3./(&x + &y);
+        let p3 = z3.properties();
+        assert!(!p3.affine);
+        assert_eq!(p3.a.len(), 2);
+        assert!(p3.a.contains_key(&x));
+        assert!(p3.a.contains_key(&y));
+
+        let z4 = (4.*&x + 5. + &y)/10.;
+        let p4 = z4.properties();
+        assert!(p4.affine);
+        assert_eq!(p4.b, 0.5);
+        assert_eq!(p4.a.len(), 2);
+        assert_eq!(*p4.a.get(&x).unwrap(), 4./10.);
+        assert_eq!(*p4.a.get(&y).unwrap(), 1./10.);
+
+        let z5 = (4.*&y)/(5. + &x);
+        let p5 = z5.properties();
+        assert!(!p5.affine);
+        assert_eq!(p5.a.len(), 2);
+        assert!(p5.a.contains_key(&x));
+        assert!(p5.a.contains_key(&y));
     }
 }
 

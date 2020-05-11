@@ -39,7 +39,7 @@ impl NodeStd for NodeRef {
             },
             NodeRef::VariableScalar(_x) => {
                 let mut a: HashMap<NodeRef, f64> = HashMap::new();
-                a.insert(self.clone(), self.value());
+                a.insert(self.clone(), 1.);
                 NodeStdProp {
                     affine: true,
                     a: a,

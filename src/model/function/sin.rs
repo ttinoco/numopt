@@ -98,4 +98,24 @@ mod tests {
         assert_eq!(format!("{}", z2x), "cos(5*x + 3*y)*5");
         assert_eq!(format!("{}", z2y), "cos(5*x + 3*y)*3");
     }
+
+    #[test]
+    fn properties() {
+
+        let x = VariableScalar::new_continuous("x", 3.);
+        let y = VariableScalar::new_continuous("y", 5.);
+
+        let z1 = &x.sin();
+        let p1 = z1.properties();
+        assert!(!p1.affine);
+        assert_eq!(p1.a.len(), 1);
+        assert!(p1.a.contains_key(&x));
+
+        let z2 = 3.*(&x + &y).sin();
+        let p2 = z2.properties();
+        assert!(!p2.affine);
+        assert_eq!(p2.a.len(), 2);
+        assert!(p2.a.contains_key(&x));
+        assert!(p2.a.contains_key(&y));
+    }
 }
