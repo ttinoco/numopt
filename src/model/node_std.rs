@@ -1,17 +1,19 @@
 use std::collections::HashMap;
 
-use crate::model::node::{NodeBase, NodeRef};
+use crate::model::node::Node;
+use crate::model::node_base::NodeBase;
+use crate::model::constant::ConstantScalar;
 
 pub struct NodeStdProp {
     pub affine: bool,
-    pub a: HashMap<NodeRef, f64>,
+    pub a: HashMap<Node, f64>,
     pub b: f64,
 }
 
 pub struct NodeStdComp {
-    pub phi: NodeRef,
-    pub gphi: Vec<(NodeRef, NodeRef)>,
-    pub Hphi: Vec<(NodeRef, NodeRef, NodeRef)>,
+    pub phi: Node,
+    pub gphi: Vec<(Node, Node)>,
+    pub Hphi: Vec<(Node, Node, Node)>,
     pub prop: NodeStdProp,
 }
 
@@ -23,22 +25,29 @@ pub trait NodeStd {
             b: 0.,
         }
     }
-    //fn components(&self) -> NodeStdProp;
+    fn components(&self) -> NodeStdComp {
+        NodeStdComp {
+            phi: ConstantScalar::new(0.),
+            gphi: Vec::new(),
+            Hphi: Vec::new(),
+            prop: self.properties(),
+        }
+    }
 }
 
-impl NodeStd for NodeRef {
+impl NodeStd for Node {
 
     fn properties(&self) -> NodeStdProp {
         match self {
-            NodeRef::ConstantScalar(_x) => {
+            Node::ConstantScalar(_x) => {
                 NodeStdProp {
                     affine: true,
                     a: HashMap::new(),
                     b: self.value(),
                 }
             },
-            NodeRef::VariableScalar(_x) => {
-                let mut a: HashMap<NodeRef, f64> = HashMap::new();
+            Node::VariableScalar(_x) => {
+                let mut a: HashMap<Node, f64> = HashMap::new();
                 a.insert(self.clone(), 1.);
                 NodeStdProp {
                     affine: true,
@@ -46,11 +55,11 @@ impl NodeStd for NodeRef {
                     b: 0.,
                 }
             },
-            NodeRef::FunctionAdd(x) => (**x).borrow().properties(),
-            NodeRef::FunctionCos(x) => (**x).borrow().properties(),
-            NodeRef::FunctionDiv(x) => (**x).borrow().properties(),
-            NodeRef::FunctionMul(x) => (**x).borrow().properties(),
-            NodeRef::FunctionSin(x) => (**x).borrow().properties(),
+            Node::FunctionAdd(x) => (**x).borrow().properties(),
+            Node::FunctionCos(x) => (**x).borrow().properties(),
+            Node::FunctionDiv(x) => (**x).borrow().properties(),
+            Node::FunctionMul(x) => (**x).borrow().properties(),
+            Node::FunctionSin(x) => (**x).borrow().properties(),
         }
     }
 }

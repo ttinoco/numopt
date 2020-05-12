@@ -1,6 +1,7 @@
 use std::fmt;
 
-use super::node::{NodeBase, NodeRef};
+use super::node::Node;
+use super::node_base::NodeBase;
 
 pub enum ConstraintKind {
     Equal,
@@ -9,9 +10,9 @@ pub enum ConstraintKind {
 }
 
 pub struct Constraint {
-    lhs: NodeRef,
+    lhs: Node,
     kind: ConstraintKind,
-    rhs: NodeRef,
+    rhs: Node,
     dual: f64,
     label: String,
 }
@@ -21,7 +22,7 @@ impl Constraint {
     pub fn dual(&self) -> f64 { self.dual }
     pub fn label(&self) -> &str { self.label.as_ref() }
 
-    pub fn new(lhs: NodeRef, kind: ConstraintKind, rhs: NodeRef, label: &str, dual: f64) -> Constraint {
+    pub fn new(lhs: Node, kind: ConstraintKind, rhs: Node, label: &str, dual: f64) -> Constraint {
         Constraint {
             lhs: lhs,
             kind: kind,

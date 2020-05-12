@@ -3,7 +3,8 @@ use std::fmt;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use super::node::{NodeBase, NodeRef};
+use super::node::Node;
+use super::node_base::NodeBase;
 
 pub struct ConstantScalar {
     value: f64,
@@ -11,8 +12,8 @@ pub struct ConstantScalar {
 
 impl ConstantScalar {
 
-    pub fn new(value: f64) -> NodeRef {
-        NodeRef::ConstantScalar(Rc::new(RefCell::new(
+    pub fn new(value: f64) -> Node {
+        Node::ConstantScalar(Rc::new(RefCell::new(
             Self {
                 value: value,
             }
@@ -22,7 +23,7 @@ impl ConstantScalar {
 
 impl NodeBase for ConstantScalar {
 
-    fn partial(&self, _arg: &NodeRef) -> NodeRef { ConstantScalar::new(0.) }
+    fn partial(&self, _arg: &Node) -> Node { ConstantScalar::new(0.) }
     fn value(&self) -> f64 { self.value }
 }
 
@@ -35,7 +36,7 @@ impl fmt::Display for ConstantScalar {
 #[cfg(test)]
 mod tests {
 
-    use crate::model::node::NodeBase;
+    use crate::model::node_base::NodeBase;
     use crate::model::node_std::NodeStd;
     use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;

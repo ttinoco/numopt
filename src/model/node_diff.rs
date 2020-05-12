@@ -1,37 +1,38 @@
 use std::iter::FromIterator;
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use crate::model::node::{NodeBase, NodeRef};
+use crate::model::node::Node;
+use crate::model::node_base::NodeBase;
 use crate::model::constant::ConstantScalar;
 
 pub trait NodeDiff {
 
-    fn all_simple_paths(&self, vars: &[&NodeRef]) -> HashMap<NodeRef, Vec<Vec<NodeRef>>>;
-    fn derivative(&self, var: &NodeRef) -> NodeRef;
-    fn derivatives(&self, vars: &[&NodeRef]) -> HashMap<NodeRef, NodeRef>;
+    fn all_simple_paths(&self, vars: &[&Node]) -> HashMap<Node, Vec<Vec<Node>>>;
+    fn derivative(&self, var: &Node) -> Node;
+    fn derivatives(&self, vars: &[&Node]) -> HashMap<Node, Node>;
 }
 
-impl NodeDiff for NodeRef {
+impl NodeDiff for Node {
 
-    fn all_simple_paths(&self, vars: &[&NodeRef]) -> HashMap<NodeRef, Vec<Vec<NodeRef>>> {
+    fn all_simple_paths(&self, vars: &[&Node]) -> HashMap<Node, Vec<Vec<Node>>> {
 
         // Check inputs
         for v in vars {
             match v {
-                NodeRef::VariableScalar(_x) => (),
+                Node::VariableScalar(_x) => (),
                 _ => panic!("variable expected")
             }
         }
 
         // Vars set
-        let varset: HashSet<&NodeRef> = HashSet::from_iter(vars.iter().map(|x| x.clone()));
+        let varset: HashSet<&Node> = HashSet::from_iter(vars.iter().map(|x| x.clone()));
 
         // Workqueue
-        let mut wq: VecDeque<Vec<NodeRef>> = VecDeque::new();
+        let mut wq: VecDeque<Vec<Node>> = VecDeque::new();
         wq.push_front(vec![self.clone()]);
 
         // Paths
-        let mut paths: HashMap<NodeRef, Vec<Vec<NodeRef>>> = HashMap::new();
+        let mut paths: HashMap<Node, Vec<Vec<Node>>> = HashMap::new();
         for v in &varset {
             paths.insert((*v).clone(), Vec::new());
         }
@@ -48,7 +49,7 @@ impl NodeDiff for NodeRef {
 
             // Add paths
             match node {
-                NodeRef::VariableScalar(_x) => {
+                Node::VariableScalar(_x) => {
                     for v in &varset {
                         if node == *v {
                             let new_path = path.iter().map(|x| x.clone()).collect();
@@ -61,7 +62,7 @@ impl NodeDiff for NodeRef {
 
             // Process arguments
             for n in node.arguments() {
-                let mut new_path: Vec<NodeRef> = path.iter().map(|x| x.clone()).collect();
+                let mut new_path: Vec<Node> = path.iter().map(|x| x.clone()).collect();
                 new_path.push(n.clone());
                 wq.push_front(new_path);
             }
@@ -71,27 +72,27 @@ impl NodeDiff for NodeRef {
         paths
     }
 
-    fn derivative(&self, var: &NodeRef) -> NodeRef {
+    fn derivative(&self, var: &Node) -> Node {
         let derivs = self.derivatives(&vec![var]);
         derivs.get(var).unwrap().clone()
     }
 
-    fn derivatives(&self, vars: &[&NodeRef]) -> HashMap<NodeRef, NodeRef> {
+    fn derivatives(&self, vars: &[&Node]) -> HashMap<Node, Node> {
 
         // Check inputs
         for v in vars {
             match v {
-                NodeRef::VariableScalar(_x) => (),
+                Node::VariableScalar(_x) => (),
                 _ => panic!("variable expected")
             }
         }
 
         // Vars set
-        let varset: HashSet<&NodeRef> = HashSet::from_iter(vars.iter().map(|x| x.clone()));
+        let varset: HashSet<&Node> = HashSet::from_iter(vars.iter().map(|x| x.clone()));
 
         // Derivatives
         let paths = self.all_simple_paths(vars);
-        let mut derivs: HashMap<NodeRef, NodeRef> = HashMap::new();
+        let mut derivs: HashMap<Node, Node> = HashMap::new();
         for v in varset.iter() {
             let mut d = ConstantScalar::new(0.);
             for path in paths.get(v).unwrap() {

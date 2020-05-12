@@ -2,19 +2,20 @@ use std::fmt;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use crate::model::node::{NodeBase, NodeRef};
+use crate::model::node::Node;
+use crate::model::node_base::NodeBase;
 use crate::model::node_std::{NodeStd, NodeStdProp};
 use crate::model::node_func::NodeFunc;
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionSin {
-    arg: NodeRef
+    arg: Node
 }
 
 impl FunctionSin {
 
-    pub fn new(arg: NodeRef) -> NodeRef {
-        NodeRef::FunctionSin(Rc::new(RefCell::new(
+    pub fn new(arg: Node) -> Node {
+        Node::FunctionSin(Rc::new(RefCell::new(
             Self {
                 arg: arg,
             }
@@ -24,11 +25,11 @@ impl FunctionSin {
 
 impl NodeBase for FunctionSin {
 
-    fn arguments(&self) -> Vec<NodeRef> {
+    fn arguments(&self) -> Vec<Node> {
         vec![self.arg.clone()]
     }
 
-    fn partial(&self, arg: &NodeRef) -> NodeRef { 
+    fn partial(&self, arg: &Node) -> Node { 
         if self.arg == *arg {
             return self.arg.cos();
         }
@@ -61,7 +62,7 @@ impl<'a> fmt::Display for FunctionSin {
 mod tests {
 
     use super::*;
-    use crate::model::node::NodeBase;
+    use crate::model::node_base::NodeBase;
     use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
 

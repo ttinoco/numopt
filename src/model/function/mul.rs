@@ -3,18 +3,19 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use crate::model::node::{NodeBase, NodeRef};
+use crate::model::node::Node;
+use crate::model::node_base::NodeBase;
 use crate::model::node_std::{NodeStd, NodeStdProp};
 use crate::model::constant::ConstantScalar;
 
 pub struct FunctionMul {
-    args: (NodeRef, NodeRef),
+    args: (Node, Node),
 }
 
 impl FunctionMul {
 
-    pub fn new(arg1: NodeRef, arg2: NodeRef) -> NodeRef {
-        NodeRef::FunctionMul(Rc::new(RefCell::new(
+    pub fn new(arg1: Node, arg2: Node) -> Node {
+        Node::FunctionMul(Rc::new(RefCell::new(
             Self {
                 args: (arg1, arg2),
             }
@@ -24,11 +25,11 @@ impl FunctionMul {
 
 impl NodeBase for FunctionMul {
 
-    fn arguments(&self) -> Vec<NodeRef> {
+    fn arguments(&self) -> Vec<Node> {
         vec![self.args.0.clone(), self.args.1.clone()]
     }
 
-    fn partial(&self, arg: &NodeRef) -> NodeRef { 
+    fn partial(&self, arg: &Node) -> Node { 
         if self.args.0 == *arg {
             return self.args.1.clone();
         }
@@ -54,7 +55,7 @@ impl NodeStd for FunctionMul {
         let affine = (p0.affine && p1.a.is_empty()) || 
                      (p1.affine && p0.a.is_empty());
         let b = p0.b*p1.b;
-        let mut a: HashMap<NodeRef, f64> = HashMap::new();
+        let mut a: HashMap<Node, f64> = HashMap::new();
         for (key, val) in p0.a.iter() {
             a.insert(key.clone(), (*val)*p1.b);
         }
@@ -72,12 +73,12 @@ impl NodeStd for FunctionMul {
 impl<'a> fmt::Display for FunctionMul {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s0 = match &self.args.0 {
-            NodeRef::FunctionAdd(x) => format!("({})", (**x).borrow()),
-            NodeRef::FunctionDiv(x) => format!("({})", (**x).borrow()),
+            Node::FunctionAdd(x) => format!("({})", (**x).borrow()),
+            Node::FunctionDiv(x) => format!("({})", (**x).borrow()),
             _ => format!("{}", self.args.0)
         };
         let s1 = match &self.args.1 {
-            NodeRef::FunctionAdd(x) => format!("({})", (**x).borrow()),
+            Node::FunctionAdd(x) => format!("({})", (**x).borrow()),
             _ => format!("{}", self.args.1)
         };
         write!(f, "{}*{}", s0, s1)
@@ -87,7 +88,7 @@ impl<'a> fmt::Display for FunctionMul {
 #[cfg(test)]
 mod tests {
 
-    use crate::model::node::NodeBase;
+    use crate::model::node_base::NodeBase;
     use crate::model::node_std::NodeStd;
     use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;

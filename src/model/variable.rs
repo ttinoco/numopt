@@ -3,7 +3,8 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use simple_error::SimpleError;
 
-use super::node::{NodeBase, NodeRef};
+use super::node::Node;
+use super::node_base::NodeBase;
 use super::constant::ConstantScalar;
 
 pub enum VariableKind {
@@ -19,8 +20,8 @@ pub struct VariableScalar {
 
 impl VariableScalar {
 
-    pub fn new(name: &str, value: f64, kind: VariableKind) -> NodeRef {
-        NodeRef::VariableScalar(Rc::new(RefCell::new(
+    pub fn new(name: &str, value: f64, kind: VariableKind) -> Node {
+        Node::VariableScalar(Rc::new(RefCell::new(
             Self {
                 name: name.to_string(),
                 value: value,
@@ -29,20 +30,20 @@ impl VariableScalar {
         )))
     }
 
-    pub fn new_continuous(name: &str, value: f64) -> NodeRef {
+    pub fn new_continuous(name: &str, value: f64) -> Node {
         VariableScalar::new(name, value, VariableKind::VarContinuous)
     }
 
-    pub fn new_integer(name: &str, value: f64) -> NodeRef {
+    pub fn new_integer(name: &str, value: f64) -> Node {
         VariableScalar::new(name, value, VariableKind::VarInteger)
     }
 }
 
 impl NodeBase for VariableScalar {
 
-    fn partial(&self, arg: &NodeRef) -> NodeRef { 
+    fn partial(&self, arg: &Node) -> Node { 
         match arg {
-            NodeRef::VariableScalar(x) => {
+            Node::VariableScalar(x) => {
                 if self as *const VariableScalar == x.as_ref().as_ptr() {
                     ConstantScalar::new(1.)       
                 }
@@ -71,7 +72,7 @@ impl<'a> fmt::Display for VariableScalar {
 #[cfg(test)]
 mod tests {
 
-    use crate::model::node::NodeBase;
+    use crate::model::node_base::NodeBase;
     use crate::model::node_std::NodeStd;
     use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;

@@ -1,29 +1,30 @@
 
-use crate::model::node::{NodeBase, NodeRef};
+use crate::model::node::Node;
+use crate::model::node_base::NodeBase;
 use crate::model::constant::ConstantScalar;
 use crate::model::function::cos::FunctionCos;
 use crate::model::function::sin::FunctionSin;
 
 pub trait NodeFunc {
 
-    fn cos(&self) -> NodeRef;
-    fn sin(&self) -> NodeRef;
+    fn cos(&self) -> Node;
+    fn sin(&self) -> Node;
 }
 
-impl NodeFunc for NodeRef {
+impl NodeFunc for Node {
 
-    fn cos(&self) -> NodeRef {
+    fn cos(&self) -> Node {
         match self {
-            NodeRef::ConstantScalar(x) => {
+            Node::ConstantScalar(x) => {
                 ConstantScalar::new((**x).borrow().value().cos())
             },
             _ =>  FunctionCos::new(self.clone())  
         }
     }
 
-    fn sin(&self) -> NodeRef {
+    fn sin(&self) -> Node {
         match self {
-            NodeRef::ConstantScalar(x) => {
+            Node::ConstantScalar(x) => {
                 ConstantScalar::new((**x).borrow().value().sin())
             },
             _ =>  FunctionSin::new(self.clone())  
