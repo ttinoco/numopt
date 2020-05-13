@@ -109,3 +109,79 @@ impl NodeStd for Node {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use crate::model::node_func::NodeFunc;
+    use crate::model::variable::VariableScalar;
+
+    #[test]
+    fn components_affine() {
+
+        let x = VariableScalar::new_continuous("x", 3.);
+        let y = VariableScalar::new_continuous("y", 4.);
+
+        // Affine
+        let z1 = 7.*&x + 10.*&y + 5.;
+        let c1 = z1.components();
+
+        assert!(c1.prop.affine);
+        assert_eq!(c1.phi, z1);
+        assert_eq!(c1.gphi.len(), 2);
+        for (v, e) in c1.gphi.iter() {
+            if v == &x {
+                assert!(e.is_constant_with_value(7.));
+            }
+            else if v == &y {   
+                assert!(e.is_constant_with_value(10.));
+            }
+            else {
+                panic!("invalid variable");
+            }
+        }
+        assert_eq!(c1.hphi.len(), 0);
+    }
+
+    #[test]
+    fn components_not_affine() {
+
+        let x = VariableScalar::new_continuous("x", 3.);
+        let y = VariableScalar::new_continuous("y", 4.);
+
+        // Not affine
+        let z2 = 7.*&x.cos() + 10.*&y*&x + 5.;
+        let c2 = z2.components();
+        
+        assert!(!c2.prop.affine);
+        assert_eq!(c2.phi, z2);
+        assert_eq!(c2.gphi.len(), 2);
+        for (v, e) in c2.gphi.iter() {
+            if v == &x {
+                assert_eq!(format!("{}", e), "10*y + 7*-1*sin(x)");
+            }
+            else if v == &y {
+                assert_eq!(format!("{}", e), "x*10");
+            }
+            else {
+                panic!("invalid variable");
+            }
+        }
+        assert_eq!(c2.hphi.len(), 2);
+        for (v1, v2, e) in c2.hphi.iter() {
+            if v1 == &x && v2 == &x {
+                assert_eq!(format!("{}", e), "-7*cos(x)");
+            }
+            else if v1 == &x && v2 == &y {
+                assert!(e.is_constant_with_value(10.));
+            }
+            else if v1 == &y && v2 == &x {
+                assert!(e.is_constant_with_value(10.));
+            }
+            else {
+                panic!("invalid variable");
+            }
+        }
+    }
+}
