@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::model::node::Node;
 use crate::model::node_base::NodeBase;
+use crate::model::node_diff::NodeDiff;
 use crate::model::constant::ConstantScalar;
 
 pub struct NodeStdProp {
@@ -13,7 +14,7 @@ pub struct NodeStdProp {
 pub struct NodeStdComp {
     pub phi: Node,
     pub gphi: Vec<(Node, Node)>,
-    pub Hphi: Vec<(Node, Node, Node)>,
+    pub hphi: Vec<(Node, Node, Node)>,
     pub prop: NodeStdProp,
 }
 
@@ -29,7 +30,7 @@ pub trait NodeStd {
         NodeStdComp {
             phi: ConstantScalar::new(0.),
             gphi: Vec::new(),
-            Hphi: Vec::new(),
+            hphi: Vec::new(),
             prop: self.properties(),
         }
     }
@@ -60,6 +61,51 @@ impl NodeStd for Node {
             Node::FunctionDiv(x) => (**x).borrow().properties(),
             Node::FunctionMul(x) => (**x).borrow().properties(),
             Node::FunctionSin(x) => (**x).borrow().properties(),
+        }
+    }
+
+    fn components(&self) -> NodeStdComp {
+
+        let phi = self.clone();
+        let mut gphi: Vec<(Node, Node)> = Vec::new();
+        let mut hphi: Vec<(Node, Node, Node)> = Vec::new();
+        let prop = self.properties();
+
+        // Affine
+        if prop.affine {
+            for (key, val) in prop.a.iter() {
+                gphi.push((key.clone(), ConstantScalar::new(*val)));
+            }
+        }
+
+        // Not affine
+        else {
+            let vars: Vec<&Node> = prop.a.keys().collect();
+            let derivs = self.derivatives(&vars);
+            for (i, var1) in vars.iter().enumerate() {
+                let d = derivs.get(var1).unwrap();
+                gphi.push(((*var1).clone(), d.clone()));
+                let dvars: Vec<&Node> = vars.iter()
+                                            .enumerate()
+                                            .filter(|&(k,_)| k >= i)
+                                            .map(|(_,v)| *v)
+                                            .collect();
+                let dderivs = d.derivatives(&dvars);
+                for var2 in dvars.iter() {
+                    let dd = dderivs.get(&var2).unwrap();
+                    if !dd.is_constant_with_value(0.) {
+                        hphi.push(((*var1).clone(), (*var2).clone(), dd.clone()));
+                    }
+                }                     
+            }
+        }
+
+        // Return
+        NodeStdComp {
+            phi: phi,
+            gphi: gphi,
+            hphi: hphi,
+            prop: prop
         }
     }
 }
