@@ -8,4 +8,5 @@ pub mod constant;
 pub mod variable;
 pub mod function;
 pub mod constraint;
+pub mod constraint_std;
 pub mod problem;
