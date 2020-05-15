@@ -1,7 +1,5 @@
-
 use std::fmt;
 use std::rc::Rc;
-use std::cell::RefCell;
 use std::collections::HashMap;
 
 use crate::model::node::Node;
@@ -18,11 +16,11 @@ impl FunctionAdd {
     pub fn new(args: Vec<Node>) -> Node {
 
         assert!(args.len() >= 2);
-        Node::FunctionAdd(Rc::new(RefCell::new(
+        Node::FunctionAdd(Rc::new(
             Self {
                 args: args,
             }
-        )))
+        ))
     }
 }
 
@@ -41,8 +39,8 @@ impl NodeBase for FunctionAdd {
         ConstantScalar::new(0.)
     }
 
-    fn value(&self) -> f64 { 
-        self.args.iter().map(|x| x.value()).sum()
+    fn eval(&self, var_values: &HashMap<&Node, f64>) -> f64 { 
+        self.args.iter().map(|x| x.eval(var_values)).sum()
     }
 }
 
@@ -92,6 +90,8 @@ impl<'a> fmt::Display for FunctionAdd {
 #[cfg(test)]
 mod tests {
 
+    use maplit::hashmap;
+
     use crate::model::node_base::NodeBase;
     use crate::model::node_std::NodeStd;
     use crate::model::node_func::NodeFunc;
@@ -101,9 +101,9 @@ mod tests {
     #[test]
     fn partial() {
 
-        let x = VariableScalar::new_continuous("x", 2.);
-        let y = VariableScalar::new_continuous("y", 3.);
-        let w = VariableScalar::new_continuous("w", 4.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
+        let w = VariableScalar::new_continuous("w");
 
         let z = &x + &y; 
 
@@ -132,8 +132,8 @@ mod tests {
     #[test]
     fn derivative() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
-        let y = VariableScalar::new_continuous("y", 4.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
         let z1 = &x + 1.;
         let z1x = z1.derivative(&x);
@@ -163,7 +163,7 @@ mod tests {
         let z5 = &f1 + &f1;
         let z5x = z5.derivative(&x);
         let z5y = z5.derivative(&y);
-        assert_eq!(z5.value(), 2.*(3.+1.+4.));
+        assert_eq!(z5.eval(&hashmap!{ &x => 3., &y => 4. }), 2.*(3.+1.+4.));
         assert!(z5x.is_constant_with_value(2.));
         assert!(z5y.is_constant_with_value(2.));
     }
@@ -171,9 +171,9 @@ mod tests {
     #[test]
     fn properties() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
-        let y = VariableScalar::new_continuous("y", 4.);
-        let z = VariableScalar::new_continuous("z", 5.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
+        let z = VariableScalar::new_continuous("z");
 
         let z1 = &x + &x;
         let p1 = z1.properties();

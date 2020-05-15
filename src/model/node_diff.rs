@@ -118,9 +118,9 @@ mod tests {
     #[test]
     fn all_simple_paths() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
-        let y = VariableScalar::new_continuous("y", 4.);
-        let z = VariableScalar::new_continuous("z", 5.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
+        let z = VariableScalar::new_continuous("z");
 
         let p1 = x.all_simple_paths(&vec![&x, &y, &z]);
         println!("p1 = {:?}", p1);

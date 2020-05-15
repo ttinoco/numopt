@@ -19,6 +19,7 @@ approx = "0.3.2"
 libc = "0.2.68"
 ndarray = "0.13.0"
 serial_test = "0.4.0"
+maplit = "1.0.2"
 
 [package.metadata.docs.rs]
 all-features = true

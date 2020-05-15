@@ -16,7 +16,7 @@ impl NodeFunc for Node {
     fn cos(&self) -> Node {
         match self {
             Node::ConstantScalar(x) => {
-                ConstantScalar::new((**x).borrow().value().cos())
+                ConstantScalar::new(x.value().cos())
             },
             _ =>  FunctionCos::new(self.clone())  
         }
@@ -25,7 +25,7 @@ impl NodeFunc for Node {
     fn sin(&self) -> Node {
         match self {
             Node::ConstantScalar(x) => {
-                ConstantScalar::new((**x).borrow().value().sin())
+                ConstantScalar::new(x.value().sin())
             },
             _ =>  FunctionSin::new(self.clone())  
         }
@@ -35,6 +35,8 @@ impl NodeFunc for Node {
 #[cfg(test)]
 mod tests {
 
+    use maplit::hashmap;
+
     use super::*;
     use crate::model::variable::VariableScalar;
     use crate::model::constant::ConstantScalar;
@@ -42,16 +44,18 @@ mod tests {
     #[test]
     fn node_cos() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
+        let x = VariableScalar::new_continuous("x");
         let c = ConstantScalar::new(5.);
+
+        let var_values = hashmap!{ &x => 3. }; 
 
         let z1 = x.cos();
         assert_eq!(format!("{}", z1), "cos(x)");
-        assert_eq!(z1.value(), 3_f64.cos());
+        assert_eq!(z1.eval(&var_values), 3_f64.cos());
 
         let z2 = (3.*&x + 5.).cos();
         assert_eq!(format!("{}", z2), "cos(3*x + 5)");
-        assert_eq!(z2.value(), (3.*3. + 5_f64).cos());
+        assert_eq!(z2.eval(&var_values), (3.*3. + 5_f64).cos());
 
         let z3 = c.cos();
         assert!(z3.is_constant_with_value(5_f64.cos()));
@@ -60,16 +64,18 @@ mod tests {
     #[test]
     fn node_sin() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
+        let x = VariableScalar::new_continuous("x");
         let c = ConstantScalar::new(5.);
+
+        let var_values = hashmap!{ &x => 3. }; 
 
         let z1 = x.sin();
         assert_eq!(format!("{}", z1), "sin(x)");
-        assert_eq!(z1.value(), 3_f64.sin());
+        assert_eq!(z1.eval(&var_values), 3_f64.sin());
 
         let z2 = (3.*&x + 5.).sin();
         assert_eq!(format!("{}", z2), "sin(3*x + 5)");
-        assert_eq!(z2.value(), (3.*3. + 5_f64).sin());
+        assert_eq!(z2.eval(&var_values), (3.*3. + 5_f64).sin());
 
         let z3 = c.sin();
         assert!(z3.is_constant_with_value(5_f64.sin()));

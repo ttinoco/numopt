@@ -1,6 +1,5 @@
 use std::fmt;
 use std::rc::Rc;
-use std::cell::RefCell;
 use std::collections::HashMap;
 
 use crate::model::node::Node;
@@ -15,11 +14,11 @@ pub struct FunctionMul {
 impl FunctionMul {
 
     pub fn new(arg1: Node, arg2: Node) -> Node {
-        Node::FunctionMul(Rc::new(RefCell::new(
+        Node::FunctionMul(Rc::new(
             Self {
                 args: (arg1, arg2),
             }
-        )))
+        ))
     }
 }
 
@@ -41,8 +40,8 @@ impl NodeBase for FunctionMul {
         }
     }
 
-    fn value(&self) -> f64 { 
-        self.args.0.value()*self.args.1.value()
+    fn eval(&self, var_values: &HashMap<&Node, f64>) -> f64 { 
+        self.args.0.eval(var_values)*self.args.1.eval(var_values)
     }
 }
 
@@ -73,12 +72,12 @@ impl NodeStd for FunctionMul {
 impl<'a> fmt::Display for FunctionMul {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s0 = match &self.args.0 {
-            Node::FunctionAdd(x) => format!("({})", (**x).borrow()),
-            Node::FunctionDiv(x) => format!("({})", (**x).borrow()),
+            Node::FunctionAdd(x) => format!("({})", x),
+            Node::FunctionDiv(x) => format!("({})", x),
             _ => format!("{}", self.args.0)
         };
         let s1 = match &self.args.1 {
-            Node::FunctionAdd(x) => format!("({})", (**x).borrow()),
+            Node::FunctionAdd(x) => format!("({})", x),
             _ => format!("{}", self.args.1)
         };
         write!(f, "{}*{}", s0, s1)
@@ -96,9 +95,9 @@ mod tests {
     #[test]
     fn partial() {
 
-        let x = VariableScalar::new_continuous("x", 2.);
-        let y = VariableScalar::new_continuous("y", 3.);
-        let w = VariableScalar::new_continuous("w", 4.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
+        let w = VariableScalar::new_continuous("w");
 
         let z = &x*&y;
 
@@ -115,8 +114,8 @@ mod tests {
     #[test]
     fn derivative() {
 
-        let x = VariableScalar::new_continuous("x", 2.);
-        let y = VariableScalar::new_continuous("y", 3.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
         let z1 = 3.*&x;
         let z1x = z1.derivative(&x);
@@ -147,8 +146,8 @@ mod tests {
     #[test]
     fn properties() {
 
-        let x = VariableScalar::new_continuous("x", 2.);
-        let y = VariableScalar::new_continuous("y", 4.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
         let z1 = 3.*&x;
         let p1 = z1.properties();

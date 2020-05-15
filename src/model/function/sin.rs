@@ -1,6 +1,6 @@
 use std::fmt;
 use std::rc::Rc;
-use std::cell::RefCell;
+use std::collections::HashMap;
 
 use crate::model::node::Node;
 use crate::model::node_base::NodeBase;
@@ -15,11 +15,11 @@ pub struct FunctionSin {
 impl FunctionSin {
 
     pub fn new(arg: Node) -> Node {
-        Node::FunctionSin(Rc::new(RefCell::new(
+        Node::FunctionSin(Rc::new(
             Self {
                 arg: arg,
             }
-        )))
+        ))
     }
 }
 
@@ -38,8 +38,8 @@ impl NodeBase for FunctionSin {
         }
     }
 
-    fn value(&self) -> f64 {
-        self.arg.value().sin()
+    fn eval(&self, var_values: &HashMap<&Node, f64>) -> f64 {
+        self.arg.eval(var_values).sin()
     }
 }
 
@@ -69,8 +69,8 @@ mod tests {
     #[test]
     fn partial() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
-        let y = VariableScalar::new_continuous("x", 4.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("x");
 
         let z = x.cos();
         
@@ -84,8 +84,8 @@ mod tests {
     #[test]
     fn derivative() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
-        let y = VariableScalar::new_continuous("y", 4.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
         let z1 = x.sin();
         let z1x = z1.derivative(&x);
@@ -103,8 +103,8 @@ mod tests {
     #[test]
     fn properties() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
-        let y = VariableScalar::new_continuous("y", 5.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
         let z1 = &x.sin();
         let p1 = z1.properties();

@@ -1,7 +1,5 @@
-
 use std::fmt;
 use std::rc::Rc;
-use std::cell::RefCell;
 
 use super::node::Node;
 use super::node_base::NodeBase;
@@ -13,18 +11,21 @@ pub struct ConstantScalar {
 impl ConstantScalar {
 
     pub fn new(value: f64) -> Node {
-        Node::ConstantScalar(Rc::new(RefCell::new(
+        Node::ConstantScalar(Rc::new(
             Self {
                 value: value,
             }
-        )))
+        ))
+    }
+
+    pub fn value(&self) -> f64 {
+        self.value
     }
 }
 
 impl NodeBase for ConstantScalar {
 
     fn partial(&self, _arg: &Node) -> Node { ConstantScalar::new(0.) }
-    fn value(&self) -> f64 { self.value }
 }
 
 impl fmt::Display for ConstantScalar {
@@ -45,7 +46,7 @@ mod tests {
     #[test]
     fn partial() {
 
-        let x = VariableScalar::new_continuous("x", 2.);
+        let x = VariableScalar::new_continuous("x");
         let c = ConstantScalar::new(3.);
 
         let z1 = c.partial(&x);
@@ -58,7 +59,7 @@ mod tests {
     #[test]
     fn derivative() {
 
-        let x = VariableScalar::new_continuous("x", 2.);
+        let x = VariableScalar::new_continuous("x");
         let c = ConstantScalar::new(3.);
 
         let z1 = c.derivative(&x);

@@ -1,7 +1,7 @@
 use std::fmt;
 use std::ptr;
 use std::rc::Rc;
-use std::cell::RefCell;
+use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::cmp::{PartialEq, Eq};
 use num_traits::cast::ToPrimitive;
@@ -18,16 +18,14 @@ use crate::model::function::cos::FunctionCos;
 use crate::model::function::sin::FunctionSin;
 
 pub enum Node {
-    ConstantScalar(Rc<RefCell<ConstantScalar>>),
-    VariableScalar(Rc<RefCell<VariableScalar>>),
-    FunctionAdd(Rc<RefCell<FunctionAdd>>),
-    FunctionCos(Rc<RefCell<FunctionCos>>),
-    FunctionDiv(Rc<RefCell<FunctionDiv>>),
-    FunctionMul(Rc<RefCell<FunctionMul>>),
-    FunctionSin(Rc<RefCell<FunctionSin>>),
+    ConstantScalar(Rc<ConstantScalar>),
+    VariableScalar(Rc<VariableScalar>),
+    FunctionAdd(Rc<FunctionAdd>),
+    FunctionCos(Rc<FunctionCos>),
+    FunctionDiv(Rc<FunctionDiv>),
+    FunctionMul(Rc<FunctionMul>),
+    FunctionSin(Rc<FunctionSin>),
 }
-
-
 
 impl Node {
 
@@ -40,9 +38,7 @@ impl Node {
 
     pub fn is_constant_with_value(&self, val: f64) -> bool {
         match self {
-            Node::ConstantScalar(x) => {
-                (**x).borrow().value() == val
-            },
+            Node::ConstantScalar(x) => x.value() == val,
             _ => false
         }
     }
@@ -98,13 +94,13 @@ impl Clone for Node {
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Node::ConstantScalar(x) => write!(f, "{}", (**x).borrow()),
-            Node::VariableScalar(x) => write!(f, "{}", (**x).borrow()),
-            Node::FunctionAdd(x) => write!(f, "{}", (**x).borrow()),
-            Node::FunctionCos(x) => write!(f, "{}", (**x).borrow()),
-            Node::FunctionDiv(x) => write!(f, "{}", (**x).borrow()),
-            Node::FunctionMul(x) => write!(f, "{}", (**x).borrow()),
-            Node::FunctionSin(x) => write!(f, "{}", (**x).borrow()),
+            Node::ConstantScalar(x) => write!(f, "{}", x),
+            Node::VariableScalar(x) => write!(f, "{}", x),
+            Node::FunctionAdd(x) => write!(f, "{}", x),
+            Node::FunctionCos(x) => write!(f, "{}", x),
+            Node::FunctionDiv(x) => write!(f, "{}", x),
+            Node::FunctionMul(x) => write!(f, "{}", x),
+            Node::FunctionSin(x) => write!(f, "{}", x),
             
         }
     }
@@ -113,13 +109,13 @@ impl fmt::Display for Node {
 impl fmt::Debug for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Node::ConstantScalar(x) => write!(f, "{}", (**x).borrow()),
-            Node::VariableScalar(x) => write!(f, "{}", (**x).borrow()),
-            Node::FunctionAdd(x) => write!(f, "{}", (**x).borrow()),
-            Node::FunctionCos(x) => write!(f, "{}", (**x).borrow()),
-            Node::FunctionDiv(x) => write!(f, "{}", (**x).borrow()),
-            Node::FunctionMul(x) => write!(f, "{}", (**x).borrow()),
-            Node::FunctionSin(x) => write!(f, "{}", (**x).borrow()),
+            Node::ConstantScalar(x) => write!(f, "{}", x),
+            Node::VariableScalar(x) => write!(f, "{}", x),
+            Node::FunctionAdd(x) => write!(f, "{}", x),
+            Node::FunctionCos(x) => write!(f, "{}", x),
+            Node::FunctionDiv(x) => write!(f, "{}", x),
+            Node::FunctionMul(x) => write!(f, "{}", x),
+            Node::FunctionSin(x) => write!(f, "{}", x),
         }
     }
 }
@@ -142,7 +138,8 @@ macro_rules! impl_node_add_node {
 
                 // Both constants
                 else if self.is_constant() && rhs.is_constant() {
-                    ConstantScalar::new(self.value() + rhs.value())
+                    let vals: HashMap<&Node, f64> = HashMap::new();
+                    ConstantScalar::new(self.eval(&vals) + rhs.eval(&vals))
                 }
 
                 // Other
@@ -151,7 +148,7 @@ macro_rules! impl_node_add_node {
                     for a in &[self.clone(), rhs.clone()] {
                         match a {
                             Node::FunctionAdd(x) => {
-                                args.extend((**x).borrow().arguments()) // flatten add
+                                args.extend(x.arguments()) // flatten add
                             },
                             _ => args.push(a.clone()),
                         };
@@ -171,7 +168,8 @@ macro_rules! impl_node_add_scalar {
 
                 // Self constant
                 if self.is_constant() {
-                    ConstantScalar::new(self.value() + rhs.to_f64().unwrap())
+                    let vals: HashMap<&Node, f64> = HashMap::new();
+                    ConstantScalar::new(self.eval(&vals) + rhs.to_f64().unwrap())
                 }
 
                 // Rhs zero
@@ -185,7 +183,7 @@ macro_rules! impl_node_add_scalar {
                     for a in &[self.clone(), ConstantScalar::new(rhs.to_f64().unwrap())] {
                         match a {
                             Node::FunctionAdd(x) => {
-                                args.extend((**x).borrow().arguments())
+                                args.extend(x.arguments())
                             },
                             _ => args.push(a.clone()),
                         };
@@ -205,7 +203,8 @@ macro_rules! impl_node_add_scalar {
 
                 // Rhs constant
                 else if rhs.is_constant() {
-                    ConstantScalar::new(self.to_f64().unwrap() + rhs.value())
+                    let vals: HashMap<&Node, f64> = HashMap::new();
+                    ConstantScalar::new(self.to_f64().unwrap() + rhs.eval(&vals))
                 }
 
                 // Other
@@ -214,7 +213,7 @@ macro_rules! impl_node_add_scalar {
                     for a in &[ConstantScalar::new(self.to_f64().unwrap()), rhs.clone()] {
                         match a {
                             Node::FunctionAdd(x) => {
-                                args.extend((**x).borrow().arguments())
+                                args.extend(x.arguments())
                             },
                             _ => args.push(a.clone()),
                         };
@@ -256,7 +255,8 @@ macro_rules! impl_node_mul_node {
 
                 // Both constants
                 else if self.is_constant() && rhs.is_constant() {
-                    ConstantScalar::new(self.value()*rhs.value())
+                    let vals: HashMap<&Node, f64> = HashMap::new();
+                    ConstantScalar::new(self.eval(&vals)*rhs.eval(&vals))
                 }
 
                 // Other
@@ -292,7 +292,13 @@ macro_rules! impl_node_mul_scalar {
 
                 // Self constant or rhs zero 
                 if self.is_constant() || rhs == <$y>::zero() {
-                    ConstantScalar::new(self.value()*rhs.to_f64().unwrap())
+                    match self {
+                        Node::ConstantScalar(x) => {
+                            ConstantScalar::new(x.value()*rhs.to_f64().unwrap())
+                        },
+                        _ => ConstantScalar::new(0.),
+                    }
+                    
                 }
 
                 // Self one
@@ -328,7 +334,12 @@ macro_rules! impl_node_mul_scalar {
 
                 // Self zero or rhs constant 
                 if self == <$y>::zero() || rhs.is_constant() {
-                    ConstantScalar::new(self.to_f64().unwrap()*rhs.value())
+                    match rhs {
+                        Node::ConstantScalar(x) => {
+                            ConstantScalar::new(self.to_f64().unwrap()*x.value())
+                        },
+                        _ => ConstantScalar::new(0.),
+                    }
                 }
 
                 // Self one
@@ -375,7 +386,7 @@ macro_rules! impl_node_neg {
             fn neg(self) -> Node {
                 match self {
                     Node::ConstantScalar(x) => {
-                        ConstantScalar::new(-1.*((*x).borrow().value()))
+                        ConstantScalar::new(-1.*x.value())
                     },
                     _ => (-1.)*self,
                 }
@@ -445,7 +456,8 @@ macro_rules! impl_node_div_node {
 
                 // Both are constants
                 else if self.is_constant() && rhs.is_constant() {
-                    ConstantScalar::new(self.value()/rhs.value())
+                    let vals: HashMap<&Node, f64> = HashMap::new();
+                    ConstantScalar::new(self.eval(&vals)/rhs.eval(&vals))
                 }
 
                 // Other
@@ -480,7 +492,8 @@ macro_rules! impl_node_div_scalar {
 
                 // Both are constants
                 else if self.is_constant() {
-                    ConstantScalar::new(self.value()/rhs.to_f64().unwrap())
+                    let vals: HashMap<&Node, f64> = HashMap::new();
+                    ConstantScalar::new(self.eval(&vals)/rhs.to_f64().unwrap())
                 }
 
                 // Other
@@ -511,7 +524,8 @@ macro_rules! impl_node_div_scalar {
 
                 // Both are constants
                 else if rhs.is_constant() {
-                    ConstantScalar::new(self.to_f64().unwrap()/rhs.value())
+                    let vals: HashMap<&Node, f64> = HashMap::new();
+                    ConstantScalar::new(self.to_f64().unwrap()/rhs.eval(&vals))
                 }
 
                 // Other
@@ -534,6 +548,7 @@ impl_node_div_scalar!(Node, f64);
 #[cfg(test)]
 mod tests {
 
+    use maplit::hashmap;
     use num_traits::pow::Pow;
 
     use crate::model::node_base::NodeBase;
@@ -541,47 +556,39 @@ mod tests {
     use crate::model::constant::ConstantScalar;
 
     #[test]
-    fn node_update_value() {
-
-        let mut x = VariableScalar::new_continuous("x", 10.);
-        assert_eq!(x.value(), 10.);
-
-        x.update_value(11.).unwrap();
-        assert_eq!(x.value(), 11.);
-    }
-
-    #[test]
     fn node_add_node() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
-        let y = VariableScalar::new_continuous("y", 4.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
         let c0 = ConstantScalar::new(0.);
         let c1 = ConstantScalar::new(1.);
         let c2 = ConstantScalar::new(2.);
 
+        let var_values = hashmap!{ &x => 3., &y => 4. };
+
         let z1 = &x + &y;
         assert_eq!(format!("{}", z1), "x + y");
-        assert_eq!(z1.value(), 7.);
+        assert_eq!(z1.eval(&var_values), 7.);
 
         let z2 = &y + &x;
         assert_eq!(format!("{}", z2), "y + x");
-        assert_eq!(z2.value(), 7.);
+        assert_eq!(z2.eval(&var_values), 7.);
 
         let z3 = &x + (&y + &x);
         assert_eq!(format!("{}", z3), "x + y + x");
-        assert_eq!(z3.value(), 10.);
+        assert_eq!(z3.eval(&var_values), 10.);
 
         let z4 = (&x + &y) + &x;
         assert_eq!(format!("{}", z4), "x + y + x");
-        assert_eq!(z4.value(), 10.);
+        assert_eq!(z4.eval(&var_values), 10.);
 
         let z5 = &z1 + &z2 + &z3 + &z4;
         assert_eq!(format!("{}", z5), "x + y + y + x + x + y + x + x + y + x");
-        assert_eq!(z5.value(), 34.);
+        assert_eq!(z5.eval(&var_values), 34.);
     
         let z6 = (&x + &y) + (&y + &x);
         assert_eq!(format!("{}", z6), "x + y + y + x");
-        assert_eq!(z6.value(), 14.);
+        assert_eq!(z6.eval(&var_values), 14.);
 
         let z7 = &x + &c0;
         assert_eq!(z7, x);
@@ -591,15 +598,15 @@ mod tests {
 
         let z9 = (&x + 1.) + &y;
         assert_eq!(format!("{:?}", z9.arguments()), "[x, 1, y]");
-        assert_eq!(z9.value(), 8.);
+        assert_eq!(z9.eval(&var_values), 8.);
 
         let z10 = &x + (&y + 5.);
         assert_eq!(format!("{:?}", z10.arguments()), "[x, y, 5]");
-        assert_eq!(z10.value(), 12.);
+        assert_eq!(z10.eval(&var_values), 12.);
 
         let z11 = (&x + 2.) + (&y + 7.);
         assert_eq!(format!("{:?}", z11.arguments()), "[x, 2, y, 7]");
-        assert_eq!(z11.value(), 16.);
+        assert_eq!(z11.eval(&var_values), 16.);
 
         let z12 = &c1 + &c2;
         assert!(z12.is_constant_with_value(3.));
@@ -608,20 +615,22 @@ mod tests {
     #[test]
     fn node_add_scalar() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
+        let x = VariableScalar::new_continuous("x");
         let c1 = ConstantScalar::new(1.);
+
+        let var_values = hashmap!{ &x => 3. };
 
         let z1 = &x + 15.;
         assert_eq!(format!("{}", z1), "x + 15");
-        assert_eq!(z1.value(), 18.);
+        assert_eq!(z1.eval(&var_values), 18.);
 
         let z2 = 13. + &x;
         assert_eq!(format!("{}", z2), "13 + x");
-        assert_eq!(z2.value(), 16.);
+        assert_eq!(z2.eval(&var_values), 16.);
 
         let z3 = 2. + &z2 + 6.;
         assert_eq!(format!("{}", z3), "2 + 13 + x + 6");
-        assert_eq!(z3.value(), 24.);
+        assert_eq!(z3.eval(&var_values), 24.);
 
         let z4 = &x + 0.;
         assert_eq!(z4, x);
@@ -631,11 +640,11 @@ mod tests {
 
         let z6 = (&x + 1.) + 2.;
         assert_eq!(format!("{:?}", z6.arguments()), "[x, 1, 2]");
-        assert_eq!(z6.value(), 6.);
+        assert_eq!(z6.eval(&var_values), 6.);
 
         let z7 = 3. + (&x + 4.);
         assert_eq!(format!("{:?}", z7.arguments()), "[3, x, 4]");
-        assert_eq!(z7.value(), 10.);
+        assert_eq!(z7.eval(&var_values), 10.);
 
         let z8 = 4. + &c1;
         assert!(z8.is_constant_with_value(5.));
@@ -647,32 +656,34 @@ mod tests {
     #[test]
     fn node_mul_node() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
-        let y = VariableScalar::new_continuous("y", 4.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
         let c0 = ConstantScalar::new(0.);
         let c1 = ConstantScalar::new(1.);
         let c2 = ConstantScalar::new(2.);
         let c3 = ConstantScalar::new(3.);
 
+        let var_values = hashmap!{ &x => 3., &y => 4. };
+
         let z1 = &x*&y;
         assert_eq!(format!("{}", z1), "x*y");
-        assert_eq!(z1.value(), 12.);
+        assert_eq!(z1.eval(&var_values), 12.);
 
         let z2 = &y*&x;
         assert_eq!(format!("{}", z2), "y*x");
-        assert_eq!(z2.value(), 12.);
+        assert_eq!(z2.eval(&var_values), 12.);
 
         let z3 = (&y*&x)*&x;
         assert_eq!(format!("{}", z3), "y*x*x");
-        assert_eq!(z3.value(), 36.);
+        assert_eq!(z3.eval(&var_values), 36.);
 
         let z4 = &y*(&x*&x);
         assert_eq!(format!("{}", z4), "y*x*x");
-        assert_eq!(z4.value(), 36.);
+        assert_eq!(z4.eval(&var_values), 36.);
 
         let z5 = &z4*(&x*&z3);
         assert_eq!(format!("{}", z5), "y*x*x*x*y*x*x");
-        assert_eq!(z5.value(), (4.).pow(2.)*((3.).pow(5.)));
+        assert_eq!(z5.eval(&var_values), (4.).pow(2.)*((3.).pow(5.)));
 
         let z6 = &x*&c0;
         assert!(z6.is_constant_with_value(0.));
@@ -694,40 +705,43 @@ mod tests {
 
         let z12 = (&x + &y*&x)*(&y*&x + &y);
         assert_eq!(format!("{}", z12), "(x + y*x)*(y*x + y)");
-        assert_eq!(z12.value(), 15.*16.);
+        assert_eq!(z12.eval(&var_values), 15.*16.);
 
         let z13 = &c3*&c2;
         assert!(z13.is_constant_with_value(6.));
 
         let z14 = &c3*(&x + 3.);
         assert_eq!(format!("{}", z14), "3*x + 9");
-        assert_eq!(z14.value(), 18.);
+        assert_eq!(z14.eval(&var_values), 18.);
 
         let z15 = (&x + &y)*&c2;
         assert_eq!(format!("{}", z15), "x*2 + y*2");
-        assert_eq!(z15.value(), 14.);
+        assert_eq!(z15.eval(&var_values), 14.);
     }
 
     #[test]
     fn node_mul_scalar() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
+        let x = VariableScalar::new_continuous("x");
         let c1 = ConstantScalar::new(1.);
         let c2 = ConstantScalar::new(2.);
 
+        let var_values = hashmap!{ &x => 3. };
+
         let z1 = &x*15.;
         assert_eq!(format!("{}", z1), "x*15");
-        assert_eq!(z1.value(), 45.);
+        assert_eq!(z1.eval(&var_values), 45.);
 
         let z2 = 13.*&x;
         assert_eq!(format!("{}", z2), "13*x");
-        assert_eq!(z2.value(), 39.);
+        assert_eq!(z2.eval(&var_values), 39.);
 
         let z3 = 2.*&z2*6.;
         assert_eq!(format!("{}", z3), "2*13*x*6");
-        assert_eq!(z3.value(), 2.*13.*3.*6.);
+        assert_eq!(z3.eval(&var_values), 2.*13.*3.*6.);
 
         let z4 = &x*0.;
+        println!("z4 {}", z4);
         assert!(z4.is_constant_with_value(0.));
 
         let z5 = 0.*&x;
@@ -753,26 +767,28 @@ mod tests {
 
         let z12 = 4.*(&x + 3.);
         assert_eq!(format!("{}", z12), "4*x + 12");
-        assert_eq!(z12.value(), 24.);
+        assert_eq!(z12.eval(&var_values), 24.);
 
         let z13 = (4. + &x)*10.;
         assert_eq!(format!("{}", z13), "40 + x*10");
-        assert_eq!(z13.value(), 70.);
+        assert_eq!(z13.eval(&var_values), 70.);
     }
 
     #[test]
     fn node_neg() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
+        let x = VariableScalar::new_continuous("x");
         let c = ConstantScalar::new(5.);
+
+        let var_values = hashmap!{ &x => 3. };
 
         let z1 = -&x;
         assert_eq!(format!("{}", z1), "-1*x");
-        assert_eq!(z1.value(), -3.);
+        assert_eq!(z1.eval(&var_values), -3.);
 
         let z2 = -(&x + 3.);
         assert_eq!(format!("{}", z2), "-1*x + -3");
-        assert_eq!(z2.value(), -6.);
+        assert_eq!(z2.eval(&var_values), -6.);
 
         let z3 = -&c;
         assert!(z3.is_constant_with_value(-5.));
@@ -781,78 +797,84 @@ mod tests {
     #[test]
     fn node_sub_node() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
-        let y = VariableScalar::new_continuous("y", 4.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
+
+        let var_values = hashmap!{ &x => 3., &y => 4. };
 
         let z1 = &x - &y;
-        assert_eq!(z1.value(), -1.);
+        assert_eq!(z1.eval(&var_values), -1.);
         assert_eq!(format!("{}", z1), "x + -1*y");
 
         let z2 = &y - &x;
-        assert_eq!(z2.value(), 1.);
+        assert_eq!(z2.eval(&var_values), 1.);
         assert_eq!(format!("{}", z2), "y + -1*x");
 
         let z3 = &x - (&x - &y);
-        assert_eq!(z3.value(), 4.);
+        assert_eq!(z3.eval(&var_values), 4.);
         assert_eq!(format!("{}", z3), "x + -1*x + -1*-1*y");
 
         let z4 = (&x - &y) - &y;
-        assert_eq!(z4.value(), -5.);
+        assert_eq!(z4.eval(&var_values), -5.);
 
         let z5 = &z4 - &z3 - &x;
-        assert_eq!(z5.value(), -12.);
+        assert_eq!(z5.eval(&var_values), -12.);
 
         let z6 = (&z1 - &z2) - (&z3 - &z4);
-        assert_eq!(z6.value(), -2.-9.);
+        assert_eq!(z6.eval(&var_values), -2.-9.);
     }
 
     #[test]
     fn node_sub_scalar() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
+        let x = VariableScalar::new_continuous("x");
+
+        let var_values = hashmap!{ &x => 3. };
 
         let z1 = &x - 15.;
         assert_eq!(format!("{}", z1), "x + -15");
-        assert_eq!(z1.value(), -12.);
+        assert_eq!(z1.eval(&var_values), -12.);
 
         let z2 = 13. - &x;
         assert_eq!(format!("{}", z2), "13 + -1*x");
-        assert_eq!(z2.value(), 10.);
+        assert_eq!(z2.eval(&var_values), 10.);
 
         let z3 = 2. - &z2 - 6.;
         assert_eq!(format!("{}", z3), "2 + -13 + -1*-1*x + -6");
-        assert_eq!(z3.value(), -14.);
+        assert_eq!(z3.eval(&var_values), -14.);
     }
 
     #[test]
     fn node_div_node() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
-        let y = VariableScalar::new_continuous("y", 4.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
         let c0 = ConstantScalar::new(0.);
         let c1 = ConstantScalar::new(1.);
         let c2 = ConstantScalar::new(2.);
         let c3 = ConstantScalar::new(3.);
 
+        let var_values = hashmap!{ &x => 3., &y => 4. };
+
         let z1 = &x/&y;
         assert_eq!(format!("{}", z1), "x/y");
-        assert_eq!(z1.value(), 3./4.);
+        assert_eq!(z1.eval(&var_values), 3./4.);
 
         let z2 = (3.*&x)/(4.*&y);
         assert_eq!(format!("{}", z2), "3*x/(4*y)");
-        assert_eq!(z2.value(), 9./16.);
+        assert_eq!(z2.eval(&var_values), 9./16.);
 
         let z3 = (3. + &x)/(&y + 4.);
         assert_eq!(format!("{}", z3), "(3 + x)/(y + 4)");
-        assert_eq!(z3.value(), 6./8.);
+        assert_eq!(z3.eval(&var_values), 6./8.);
 
         let z4 = &x/(3.+&y);
         assert_eq!(format!("{}", z4), "x/(3 + y)");
-        assert_eq!(z4.value(), 3./7.);
+        assert_eq!(z4.eval(&var_values), 3./7.);
 
         let z5 = (2.+&x)/&y;
         assert_eq!(format!("{}", z5), "(2 + x)/y");
-        assert_eq!(z5.value(), 5./4.);
+        assert_eq!(z5.eval(&var_values), 5./4.);
 
         let z6 = &x/&c1;
         assert_eq!(z6, x);
@@ -867,25 +889,27 @@ mod tests {
     #[test]
     fn node_div_scalar() {
 
-        let x = VariableScalar::new_continuous("x", 4.);
+        let x = VariableScalar::new_continuous("x");
         let c1 = ConstantScalar::new(1.);
         let c2 = ConstantScalar::new(2.);
 
+        let var_values = hashmap!{ &x => 4. };
+
         let z1 = 3./&x;
         assert_eq!(format!("{}", z1), "3/x");
-        assert_eq!(z1.value(), 3./4.);
+        assert_eq!(z1.eval(&var_values), 3./4.);
 
         let z2 = 3./(&x + 1.);
         assert_eq!(format!("{}", z2), "3/(x + 1)");
-        assert_eq!(z2.value(), 3./5.);
+        assert_eq!(z2.eval(&var_values), 3./5.);
 
         let z3 = &x/3.;
         assert_eq!(format!("{}", z3), "x/3");
-        assert_eq!(z3.value(), 4./3.);
+        assert_eq!(z3.eval(&var_values), 4./3.);
 
         let z4 = (&x + 1.)/3.;
         assert_eq!(format!("{}", z4), "(x + 1)/3");
-        assert_eq!(z4.value(), 5./3.);
+        assert_eq!(z4.eval(&var_values), 5./3.);
 
         let z5 = &x/1.;
         assert_eq!(z5, x);

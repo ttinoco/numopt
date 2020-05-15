@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use crate::model::node::Node;
-use crate::model::node_base::NodeBase;
 use crate::model::node_diff::NodeDiff;
 use crate::model::constant::ConstantScalar;
 
@@ -40,11 +39,11 @@ impl NodeStd for Node {
 
     fn properties(&self) -> NodeStdProp {
         match self {
-            Node::ConstantScalar(_x) => {
+            Node::ConstantScalar(x) => {
                 NodeStdProp {
                     affine: true,
                     a: HashMap::new(),
-                    b: self.value(),
+                    b: x.value(),
                 }
             },
             Node::VariableScalar(_x) => {
@@ -56,11 +55,11 @@ impl NodeStd for Node {
                     b: 0.,
                 }
             },
-            Node::FunctionAdd(x) => (**x).borrow().properties(),
-            Node::FunctionCos(x) => (**x).borrow().properties(),
-            Node::FunctionDiv(x) => (**x).borrow().properties(),
-            Node::FunctionMul(x) => (**x).borrow().properties(),
-            Node::FunctionSin(x) => (**x).borrow().properties(),
+            Node::FunctionAdd(x) => x.properties(),
+            Node::FunctionCos(x) => x.properties(),
+            Node::FunctionDiv(x) => x.properties(),
+            Node::FunctionMul(x) => x.properties(),
+            Node::FunctionSin(x) => x.properties(),
         }
     }
 
@@ -120,8 +119,8 @@ mod tests {
     #[test]
     fn components_affine() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
-        let y = VariableScalar::new_continuous("y", 4.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
         // Affine
         let z1 = 7.*&x + 10.*&y + 5.;
@@ -147,8 +146,8 @@ mod tests {
     #[test]
     fn components_not_affine() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
-        let y = VariableScalar::new_continuous("y", 4.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
         // Not affine
         let z2 = 7.*&x.cos() + 10.*&y*&x + 5.;

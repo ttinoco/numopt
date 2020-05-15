@@ -75,8 +75,8 @@ mod tests {
     #[test]
     fn display() {
 
-        let x = VariableScalar::new_continuous("x", 4.);
-        let y = VariableScalar::new_continuous("y", 5.);
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
         let f = 4.*x.cos() + &y;
         let c1 = (&x + &y).geq_and_tag(0., "comb limit");

@@ -2,8 +2,7 @@ use num_traits::cast::ToPrimitive;
 
 use crate::model::node::Node;
 use crate::model::constant::ConstantScalar;
-use crate::model::constraint::{Constraint,
-                               ConstraintKind};
+use crate::model::constraint::{Constraint, ConstraintKind};
 
 const DEFAULT_LABEL: &str = "";
 
@@ -25,24 +24,21 @@ macro_rules! impl_node_cmp_scalar {
                 Constraint::new(self.clone(),
                                 ConstraintKind::Equal,
                                 ConstantScalar::new(other.to_f64().unwrap()),
-                                tag,
-                                0.)
+                                tag)
             }
 
             fn geq_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(self.clone(),
                                 ConstraintKind::GreaterEqual,
                                 ConstantScalar::new(other.to_f64().unwrap()),
-                                tag,
-                                0.)
+                                tag)
             }
 
             fn leq_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(self.clone(),
                                 ConstraintKind::LessEqual,
                                 ConstantScalar::new(other.to_f64().unwrap()),
-                                tag,
-                                0.)
+                                tag)
             }
         }
     };
@@ -58,24 +54,21 @@ macro_rules! impl_node_cmp_node {
                 Constraint::new(self.clone(),
                                 ConstraintKind::Equal,
                                 other.clone(),
-                                tag,
-                                0.)
+                                tag)
             }
 
             fn geq_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(self.clone(),
                                 ConstraintKind::GreaterEqual,
                                 other.clone(),
-                                tag,
-                                0.)
+                                tag)
             }
 
             fn leq_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(self.clone(),
                                 ConstraintKind::LessEqual,
                                 other.clone(),
-                                tag,
-                                0.)
+                                tag)
             }
         }
     };
@@ -92,24 +85,21 @@ macro_rules! impl_scalar_cmp_node {
                 Constraint::new(ConstantScalar::new(self.to_f64().unwrap()),
                                 ConstraintKind::Equal,
                                 other.clone(),
-                                tag,
-                                0.)
+                                tag)
             }
 
             fn geq_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(ConstantScalar::new(self.to_f64().unwrap()),
                                 ConstraintKind::GreaterEqual,
                                 other.clone(),
-                                tag,
-                                0.)
+                                tag)
             }
 
             fn leq_and_tag(&self, other: $y, tag: &str) -> Constraint {
                 Constraint::new(ConstantScalar::new(self.to_f64().unwrap()),
                                 ConstraintKind::LessEqual,
                                 other.clone(),
-                                tag,
-                                0.)
+                                tag)
             }
         }
     };
@@ -128,7 +118,7 @@ mod tests {
     #[test]
     fn node_cmp_node() {
 
-        let x = VariableScalar::new_continuous("x", 1.);
+        let x = VariableScalar::new_continuous("x");
         let c = ConstantScalar::new(5.);
 
         let z1 = x.equal(&c);
@@ -147,7 +137,7 @@ mod tests {
     #[test]
     fn node_cmp_scalar() {
 
-        let x = VariableScalar::new_continuous("x", 5.);
+        let x = VariableScalar::new_continuous("x");
 
         let z1 = x.equal(6.);
         assert_eq!(format!("{}", z1), "x == 6");
@@ -162,7 +152,7 @@ mod tests {
     #[test]
     fn scalar_cmp_node() {
 
-        let x = VariableScalar::new_continuous("x", 3.);
+        let x = VariableScalar::new_continuous("x");
 
         let z1 = 4_f64.equal(&x);
         assert_eq!(format!("{}", z1), "4 == x");
