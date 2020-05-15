@@ -3,7 +3,6 @@ use std::ptr;
 use std::rc::Rc;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
-use std::cmp::{PartialEq, Eq};
 use num_traits::cast::ToPrimitive;
 use num_traits::identities::{Zero, One};
 use std::ops::{Add, Mul, Neg, Sub, Div};
