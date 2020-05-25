@@ -4,36 +4,47 @@ use std::collections::HashMap;
 
 use super::node::Node;
 use super::node_base::NodeBase;
+use super::variable::VariableScalar;
 
+#[derive(PartialEq)]
 pub enum ConstraintKind {
     Equal,
     LessEqual,
     GreaterEqual,
 }
 
-struct ConstraintData {
+struct ConstraintInner {
     lhs: Node,
     kind: ConstraintKind,
     rhs: Node,
     label: String,
+    slack: Node,
 }
 
-pub struct Constraint(Rc<ConstraintData>);
+pub struct Constraint(Rc<ConstraintInner>);
 
 impl Constraint {
 
+    pub fn kind(&self) -> &ConstraintKind { &self.0.kind }
+
     pub fn label(&self) -> &str { self.0.label.as_ref() }
+
+    pub fn lhs(&self) -> &Node { &self.0.lhs }
 
     pub fn new(lhs: Node, kind: ConstraintKind, rhs: Node, label: &str) -> Constraint {
         Constraint(Rc::new(
-            ConstraintData{
+            ConstraintInner{
                 lhs: lhs,
                 kind: kind,
                 rhs: rhs,
                 label: String::from(label),
+                slack: VariableScalar::new_continuous("s"),
             }
         ))
     }
+
+    pub fn rhs(&self) -> &Node { &self.0.rhs }
+    pub fn slack(&self) -> &Node { &self.0.slack }
 
     pub fn violation(&self, var_values: &HashMap<&Node, f64>) -> f64 {
         match self.0.kind {
@@ -63,6 +74,7 @@ impl PartialEq for Constraint {
     }
 }
 
+impl Eq for ConstraintKind {}
 impl Eq for Constraint {}
 
 impl<'a> fmt::Display for Constraint {
