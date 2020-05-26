@@ -174,6 +174,7 @@ mod tests {
         assert_eq!(comp1.a.len(), 0);
         assert_eq!(comp1.b.len(), 0);
         assert_eq!(comp1.f.len(), 0);
+        assert_eq!(comp1.j.len(), 0);
         assert_eq!(comp1.h.len(), 0);
         assert_eq!(comp1.u.len(), 1);
         let (cx, cval, c) = &comp1.u[0];
@@ -200,6 +201,7 @@ mod tests {
         assert_eq!(comp1.a.len(), 0);
         assert_eq!(comp1.b.len(), 0);
         assert_eq!(comp1.f.len(), 0);
+        assert_eq!(comp1.j.len(), 0);
         assert_eq!(comp1.h.len(), 0);
         assert_eq!(comp1.u.len(), 0);
         assert_eq!(comp1.l.len(), 1);
@@ -214,25 +216,166 @@ mod tests {
     #[test]
     fn components_affine_eq() {
 
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
+        let c1 = (3.*&x + 4.*&y + 6.).equal(5.);
+        let mut arow: usize = 1;
+        let mut jrow: usize = 2;
+        let comp1 = c1.components(&mut arow, &mut jrow);
+
+        assert_eq!(comp1.ca.len(), 1);
+        assert_eq!(comp1.ca[0], c1);
+        assert_eq!(comp1.cj.len(), 0);
+        assert_eq!(comp1.a.len(), 2);
+        assert_eq!(comp1.b.len(), 1);
+        let mut counter = 0_usize;
+        for (row, col, val) in comp1.a.iter() {
+            if *col == x {
+                assert_eq!(*row, 1);
+                assert_eq!(*val, 3.);
+                counter += 1;
+            }
+            else if *col == y {
+                assert_eq!(*row, 1);
+                assert_eq!(*val, 4.);
+                counter += 1;
+            }
+            else {
+                panic!("error");
+            }
+        }
+        assert_eq!(counter, 2);
+        assert_eq!(comp1.b[0], -1.);
+        assert_eq!(comp1.f.len(), 0);
+        assert_eq!(comp1.j.len(), 0);
+        assert_eq!(comp1.h.len(), 0);
+        assert_eq!(comp1.u.len(), 0);
+        assert_eq!(comp1.l.len(), 0);
+        assert_eq!(arow, 2);
+        assert_eq!(jrow, 2);
     }
 
     #[test]
     fn components_affine_leq() {
 
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
+        let c1 = (3.*&x + 4.*&y + 6.).leq(5.);
+        let mut arow: usize = 1;
+        let mut jrow: usize = 2;
+        let comp1 = c1.components(&mut arow, &mut jrow);
+
+        assert_eq!(comp1.ca.len(), 1);
+        assert_eq!(comp1.ca[0], c1);
+        assert_eq!(comp1.cj.len(), 0);
+        assert_eq!(comp1.a.len(), 3);
+        assert_eq!(comp1.b.len(), 1);
+        let mut counter = 0_usize;
+        for (row, col, val) in comp1.a.iter() {
+            if *col == x {
+                assert_eq!(*row, 1);
+                assert_eq!(*val, 3.);
+                counter += 1;
+            }
+            else if *col == y {
+                assert_eq!(*row, 1);
+                assert_eq!(*val, 4.);
+                counter += 1;
+            }
+            else if *col == *c1.slack() {
+                assert_eq!(*row, 1);
+                assert_eq!(*val, -1.);
+                counter += 1;
+            }
+        }
+        assert_eq!(counter, 3);
+        assert_eq!(comp1.b[0], -1.);
+        assert_eq!(comp1.f.len(), 0);
+        assert_eq!(comp1.j.len(), 0);
+        assert_eq!(comp1.h.len(), 0);
+        assert_eq!(comp1.u.len(), 1);
+        let (var, val, c) = &comp1.u[0];
+        assert_eq!(*var, *c1.slack());
+        assert_eq!(*val, 0.);
+        assert_eq!(*c, c1);
+        assert_eq!(comp1.l.len(), 0);
+        assert_eq!(arow, 2);
+        assert_eq!(jrow, 2);
     }
 
     #[test]
     fn components_affine_geq() {
 
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
+        let c1 = (3.*&x + 4.*&y + 6.).geq(5.);
+        let mut arow: usize = 1;
+        let mut jrow: usize = 2;
+        let comp1 = c1.components(&mut arow, &mut jrow);
+
+        assert_eq!(comp1.ca.len(), 1);
+        assert_eq!(comp1.ca[0], c1);
+        assert_eq!(comp1.cj.len(), 0);
+        assert_eq!(comp1.a.len(), 3);
+        assert_eq!(comp1.b.len(), 1);
+        let mut counter = 0_usize;
+        for (row, col, val) in comp1.a.iter() {
+            if *col == x {
+                assert_eq!(*row, 1);
+                assert_eq!(*val, 3.);
+                counter += 1;
+            }
+            else if *col == y {
+                assert_eq!(*row, 1);
+                assert_eq!(*val, 4.);
+                counter += 1;
+            }
+            else if *col == *c1.slack() {
+                assert_eq!(*row, 1);
+                assert_eq!(*val, -1.);
+                counter += 1;
+            }
+        }
+        assert_eq!(counter, 3);    
+        assert_eq!(comp1.b[0], -1.);
+        assert_eq!(comp1.f.len(), 0);
+        assert_eq!(comp1.j.len(), 0);
+        assert_eq!(comp1.h.len(), 0);
+        assert_eq!(comp1.u.len(), 0);
+        assert_eq!(comp1.l.len(), 1);
+        let (var, val, c) = &comp1.l[0];
+        assert_eq!(*var, *c1.slack());
+        assert_eq!(*val, 0.);
+        assert_eq!(*c, c1);
+        assert_eq!(arow, 2);
+        assert_eq!(jrow, 2);
     }
 
     #[test]
     fn components_nonlinear_eq() {
 
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
+        let c1 = (3.*&x*&x + 4.*&x*&y + 7.*&y*&y + 8.).equal(5.);
+        let mut arow: usize = 1;
+        let mut jrow: usize = 2;
+        let comp1 = c1.components(&mut arow, &mut jrow);
+
+        assert_eq!(comp1.ca.len(), 0);
+        assert_eq!(comp1.cj.len(), 1);
+        assert_eq!(comp1.a.len(), 0);
+        assert_eq!(comp1.b.len(), 0);
+        assert_eq!(comp1.f.len(), 1);
+        assert_eq!(comp1.j.len(), 2);
+        assert_eq!(comp1.h.len(), 3);
+        assert_eq!(comp1.u.len(), 0);
+        assert_eq!(comp1.l.len(), 0);
+        assert_eq!(arow, 1);
+        assert_eq!(jrow, 3);
     }
 
     #[test]
