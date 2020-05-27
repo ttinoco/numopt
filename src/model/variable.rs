@@ -94,10 +94,10 @@ mod tests {
     }
 
     #[test]
-    fn properties() {
+    fn std_properties() {
 
         let x = VariableScalar::new_integer("x");
-        let p = x.properties();
+        let p = x.std_properties();
         assert!(p.affine);
         assert_eq!(p.b, 0.);
         assert_eq!(p.a.len(), 1);

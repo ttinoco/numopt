@@ -1,4 +1,3 @@
-
 use std::fmt;
 
 use crate::model::node::Node;
@@ -14,7 +13,6 @@ pub struct Problem {
 
     objective: Objective,
     constraints: Vec<Constraint>,
-    // need label -> &constraint hashmap
 }
 
 impl Objective {
@@ -30,10 +28,15 @@ impl Objective {
     pub fn empty() -> Objective {
         Objective::Empty
     }
-
 }
 
 impl Problem {
+
+    pub fn add_constraint(&mut self, c: &Constraint) -> () {
+        self.constraints.push(c.clone())
+    }
+
+    pub fn constraints(&self) -> &Vec<Constraint> { &self.constraints }
 
     pub fn new(objective: Objective, constraints: Vec<Constraint>) -> Problem {
         Problem {
@@ -42,9 +45,7 @@ impl Problem {
         }
     }
 
-    pub fn add_constraint(&mut self, c: Constraint) -> () {
-        self.constraints.push(c)
-    }
+    pub fn objective(&self) -> &Objective { &self.objective }
 }
 
 impl<'a> fmt::Display for Problem {

@@ -47,10 +47,10 @@ impl NodeBase for FunctionDiv {
 
 impl NodeStd for FunctionDiv {
 
-    fn properties(&self) -> NodeStdProp {
+    fn std_properties(&self) -> NodeStdProp {
         
-        let p0 = self.args.0.properties();
-        let p1 = self.args.1.properties();
+        let p0 = self.args.0.std_properties();
+        let p1 = self.args.1.std_properties();
         let affine = p0.affine && p1.a.is_empty();
         let b = p0.b/p1.b;
         let mut a: HashMap<Node, f64> = HashMap::new();
@@ -152,33 +152,33 @@ mod tests {
     }
 
     #[test]
-    fn properties() {
+    fn std_properties() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
 
         let z1 = 3./&x;
-        let p1 = z1.properties();
+        let p1 = z1.std_properties();
         assert!(!p1.affine);
         assert_eq!(p1.a.len(), 1);
         assert!(p1.a.contains_key(&x));
         
         let z2 = (&x + 10.)/4.;
-        let p2 = z2.properties();
+        let p2 = z2.std_properties();
         assert!(p2.affine);
         assert_eq!(p2.b, 10./4.);
         assert_eq!(p2.a.len(), 1);
         assert_eq!(*p2.a.get(&x).unwrap(), 1./4.);
 
         let z3 = 3./(&x + &y);
-        let p3 = z3.properties();
+        let p3 = z3.std_properties();
         assert!(!p3.affine);
         assert_eq!(p3.a.len(), 2);
         assert!(p3.a.contains_key(&x));
         assert!(p3.a.contains_key(&y));
 
         let z4 = (4.*&x + 5. + &y)/10.;
-        let p4 = z4.properties();
+        let p4 = z4.std_properties();
         assert!(p4.affine);
         assert_eq!(p4.b, 0.5);
         assert_eq!(p4.a.len(), 2);
@@ -186,7 +186,7 @@ mod tests {
         assert_eq!(*p4.a.get(&y).unwrap(), 1./10.);
 
         let z5 = (4.*&y)/(5. + &x);
-        let p5 = z5.properties();
+        let p5 = z5.std_properties();
         assert!(!p5.affine);
         assert_eq!(p5.a.len(), 2);
         assert!(p5.a.contains_key(&x));

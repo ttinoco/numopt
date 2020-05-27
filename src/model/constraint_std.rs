@@ -1,3 +1,5 @@
+use std::ops::AddAssign;
+
 use crate::model::node::Node;
 use crate::model::node_std::NodeStd;
 use crate::model::node_std::NodeStdProp;
@@ -18,12 +20,45 @@ pub struct ConstraintStdComp {
 }
 
 pub trait ConstraintStd {
-    fn components(&self, arow: &mut usize, jrow: &mut usize) -> ConstraintStdComp;
+    fn std_components(&self, arow: &mut usize, jrow: &mut usize) -> ConstraintStdComp;
+}
+
+impl ConstraintStdComp {
+
+    pub fn new() -> ConstraintStdComp {
+        ConstraintStdComp {
+            ca: Vec::new(),
+            cj: Vec::new(),
+            a: Vec::new(),
+            b: Vec::new(),
+            f: Vec::new(),
+            j: Vec::new(),
+            h: Vec::new(),
+            u: Vec::new(),
+            l: Vec::new(),
+            prop: Vec::new(),
+        }
+    }
+}
+
+impl AddAssign for ConstraintStdComp {
+    fn add_assign(&mut self, other: Self) {
+        self.ca.extend(other.ca);
+        self.cj.extend(other.cj);
+        self.a.extend(other.a);
+        self.b.extend(other.b);
+        self.f.extend(other.f);
+        self.j.extend(other.j);
+        self.h.extend(other.h);
+        self.u.extend(other.u);
+        self.l.extend(other.l);
+        self.prop.extend(other.prop);
+    }
 }
 
 impl ConstraintStd for Constraint {
 
-    fn components(&self, arow: &mut usize, jrow: &mut usize) -> ConstraintStdComp {
+    fn std_components(&self, arow: &mut usize, jrow: &mut usize) -> ConstraintStdComp {
 
         let mut ca: Vec<Constraint> = Vec::new();
         let mut cj: Vec<Constraint> = Vec::new();
@@ -36,7 +71,7 @@ impl ConstraintStd for Constraint {
         let mut l: Vec<(Node, f64, Constraint)> = Vec::new();
     
         let exp = self.lhs()-self.rhs();
-        let comp = exp.components();
+        let comp = exp.std_components();
         let mut prop = comp.prop;
 
         // Bound constraint
@@ -161,14 +196,14 @@ mod tests {
     use crate::model::variable::VariableScalar;
 
     #[test]
-    fn components_u_bound() {
+    fn std_components_u_bound() {
 
         let x = VariableScalar::new_continuous("x");
 
         let c1 = (&x).leq(3.);
         let mut arow: usize = 1;
         let mut jrow: usize = 2;
-        let comp1 = c1.components(&mut arow, &mut jrow);
+        let comp1 = c1.std_components(&mut arow, &mut jrow);
 
         assert_eq!(comp1.ca.len(), 0);
         assert_eq!(comp1.cj.len(), 0);
@@ -188,14 +223,14 @@ mod tests {
     }
 
     #[test]
-    fn components_l_bound() {
+    fn std_components_l_bound() {
 
         let x = VariableScalar::new_continuous("x");
 
         let c1 = (&x).geq(-4.);
         let mut arow: usize = 1;
         let mut jrow: usize = 2;
-        let comp1 = c1.components(&mut arow, &mut jrow);
+        let comp1 = c1.std_components(&mut arow, &mut jrow);
 
         assert_eq!(comp1.ca.len(), 0);
         assert_eq!(comp1.cj.len(), 0);
@@ -215,7 +250,7 @@ mod tests {
     }
 
     #[test]
-    fn components_affine_eq() {
+    fn std_components_affine_eq() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -223,7 +258,7 @@ mod tests {
         let c1 = (3.*&x + 4.*&y + 6.).equal(5.);
         let mut arow: usize = 1;
         let mut jrow: usize = 2;
-        let comp1 = c1.components(&mut arow, &mut jrow);
+        let comp1 = c1.std_components(&mut arow, &mut jrow);
 
         assert_eq!(comp1.ca.len(), 1);
         assert_eq!(comp1.ca[0], c1);
@@ -258,7 +293,7 @@ mod tests {
     }
 
     #[test]
-    fn components_affine_leq() {
+    fn std_components_affine_leq() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -266,7 +301,7 @@ mod tests {
         let c1 = (3.*&x + 4.*&y + 6.).leq(5.);
         let mut arow: usize = 1;
         let mut jrow: usize = 2;
-        let comp1 = c1.components(&mut arow, &mut jrow);
+        let comp1 = c1.std_components(&mut arow, &mut jrow);
 
         assert_eq!(comp1.ca.len(), 1);
         assert_eq!(comp1.ca[0], c1);
@@ -310,7 +345,7 @@ mod tests {
     }
 
     #[test]
-    fn components_affine_geq() {
+    fn std_components_affine_geq() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -318,7 +353,7 @@ mod tests {
         let c1 = (3.*&x + 4.*&y + 6.).geq(5.);
         let mut arow: usize = 1;
         let mut jrow: usize = 2;
-        let comp1 = c1.components(&mut arow, &mut jrow);
+        let comp1 = c1.std_components(&mut arow, &mut jrow);
 
         assert_eq!(comp1.ca.len(), 1);
         assert_eq!(comp1.ca[0], c1);
@@ -362,7 +397,7 @@ mod tests {
     }
 
     #[test]
-    fn components_nonlinear_eq() {
+    fn std_components_nonlinear_eq() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -370,7 +405,7 @@ mod tests {
         let c1 = (3.*&x*&x + 4.*&x*&y + 7.*&y*&y + 8.).equal(5.);
         let mut arow: usize = 1;
         let mut jrow: usize = 2;
-        let comp1 = c1.components(&mut arow, &mut jrow);
+        let comp1 = c1.std_components(&mut arow, &mut jrow);
 
         assert_eq!(comp1.ca.len(), 0);
         assert_eq!(comp1.cj.len(), 1);
@@ -430,7 +465,7 @@ mod tests {
     }
 
     #[test]
-    fn components_nonlinear_leq() {
+    fn std_components_nonlinear_leq() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -438,7 +473,7 @@ mod tests {
         let c1 = (3.*&x*&x + 4.*&x*&y + 7.*&y*&y + 8.).leq(5.);
         let mut arow: usize = 1;
         let mut jrow: usize = 2;
-        let comp1 = c1.components(&mut arow, &mut jrow);
+        let comp1 = c1.std_components(&mut arow, &mut jrow);
 
         assert_eq!(comp1.ca.len(), 0);
         assert_eq!(comp1.cj.len(), 1);
@@ -507,7 +542,7 @@ mod tests {
     }
 
     #[test]
-    fn components_nonlinear_geq() {
+    fn std_components_nonlinear_geq() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -515,7 +550,7 @@ mod tests {
         let c1 = (3.*&x*&x + 4.*&x*&y + 7.*&y*&y + 8.).geq(5.);
         let mut arow: usize = 1;
         let mut jrow: usize = 2;
-        let comp1 = c1.components(&mut arow, &mut jrow);
+        let comp1 = c1.std_components(&mut arow, &mut jrow);
 
         assert_eq!(comp1.ca.len(), 0);
         assert_eq!(comp1.cj.len(), 1);

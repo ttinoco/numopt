@@ -18,26 +18,26 @@ pub struct NodeStdComp {
 }
 
 pub trait NodeStd {
-    fn properties(&self) -> NodeStdProp {
+    fn std_properties(&self) -> NodeStdProp {
         NodeStdProp {
             affine: false,
             a: HashMap::new(),
             b: 0.,
         }
     }
-    fn components(&self) -> NodeStdComp {
+    fn std_components(&self) -> NodeStdComp {
         NodeStdComp {
             phi: ConstantScalar::new(0.),
             gphi: Vec::new(),
             hphi: Vec::new(),
-            prop: self.properties(),
+            prop: self.std_properties(),
         }
     }
 }
 
 impl NodeStd for Node {
 
-    fn properties(&self) -> NodeStdProp {
+    fn std_properties(&self) -> NodeStdProp {
         match self {
             Node::ConstantScalar(x) => {
                 NodeStdProp {
@@ -55,20 +55,20 @@ impl NodeStd for Node {
                     b: 0.,
                 }
             },
-            Node::FunctionAdd(x) => x.properties(),
-            Node::FunctionCos(x) => x.properties(),
-            Node::FunctionDiv(x) => x.properties(),
-            Node::FunctionMul(x) => x.properties(),
-            Node::FunctionSin(x) => x.properties(),
+            Node::FunctionAdd(x) => x.std_properties(),
+            Node::FunctionCos(x) => x.std_properties(),
+            Node::FunctionDiv(x) => x.std_properties(),
+            Node::FunctionMul(x) => x.std_properties(),
+            Node::FunctionSin(x) => x.std_properties(),
         }
     }
 
-    fn components(&self) -> NodeStdComp {
+    fn std_components(&self) -> NodeStdComp {
 
         let phi = self.clone();
         let mut gphi: Vec<(Node, Node)> = Vec::new();
         let mut hphi: Vec<(Node, Node, Node)> = Vec::new();
-        let prop = self.properties();
+        let prop = self.std_properties();
 
         // Affine
         if prop.affine {
@@ -117,14 +117,14 @@ mod tests {
     use crate::model::variable::VariableScalar;
 
     #[test]
-    fn components_affine() {
+    fn std_components_affine() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
 
         // Affine
         let z1 = 7.*&x + 10.*&y + 5.;
-        let c1 = z1.components();
+        let c1 = z1.std_components();
 
         assert!(c1.prop.affine);
         assert_eq!(c1.phi, z1);
@@ -144,14 +144,14 @@ mod tests {
     }
 
     #[test]
-    fn components_not_affine() {
+    fn std_components_not_affine() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
 
         // Not affine
         let z2 = 7.*&x.cos() + 10.*&y*&x + 5.;
-        let c2 = z2.components();
+        let c2 = z2.std_components();
         
         assert!(!c2.prop.affine);
         assert_eq!(c2.phi, z2);

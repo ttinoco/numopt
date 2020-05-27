@@ -45,8 +45,8 @@ impl NodeBase for FunctionSin {
 
 impl NodeStd for FunctionSin {
 
-    fn properties(&self) -> NodeStdProp {
-        let mut p = self.arg.properties();
+    fn std_properties(&self) -> NodeStdProp {
+        let mut p = self.arg.std_properties();
         p.affine = false;
         p
     }
@@ -101,19 +101,19 @@ mod tests {
     }
 
     #[test]
-    fn properties() {
+    fn std_properties() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
 
         let z1 = &x.sin();
-        let p1 = z1.properties();
+        let p1 = z1.std_properties();
         assert!(!p1.affine);
         assert_eq!(p1.a.len(), 1);
         assert!(p1.a.contains_key(&x));
 
         let z2 = 3.*(&x + &y).sin();
-        let p2 = z2.properties();
+        let p2 = z2.std_properties();
         assert!(!p2.affine);
         assert_eq!(p2.a.len(), 2);
         assert!(p2.a.contains_key(&x));

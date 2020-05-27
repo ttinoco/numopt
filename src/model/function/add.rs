@@ -46,13 +46,13 @@ impl NodeBase for FunctionAdd {
 
 impl NodeStd for FunctionAdd {
 
-    fn properties(&self) -> NodeStdProp {
+    fn std_properties(&self) -> NodeStdProp {
         
         let mut affine = true;
         let mut a: HashMap<Node, f64> = HashMap::new();
         let mut b = 0_f64;
         for arg in self.arguments().iter() {
-            let p = arg.properties();
+            let p = arg.std_properties();
             affine &= p.affine;
             b += p.b;
             for (key, val) in p.a.iter() {
@@ -169,21 +169,21 @@ mod tests {
     }
 
     #[test]
-    fn properties() {
+    fn std_properties() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
         let z = VariableScalar::new_continuous("z");
 
         let z1 = &x + &x;
-        let p1 = z1.properties();
+        let p1 = z1.std_properties();
         assert!(p1.affine);
         assert_eq!(p1.b, 0.);
         assert_eq!(p1.a.len(), 1);
         assert_eq!(*p1.a.get(&x).unwrap(), 2.);
 
         let z2 = &x + 8. + &y + 40. + &x;
-        let p2 = z2.properties();
+        let p2 = z2.std_properties();
         assert!(p2.affine);
         assert_eq!(p2.b, 48.);
         assert_eq!(p2.a.len(), 2);
@@ -192,7 +192,7 @@ mod tests {
         assert!(!p2.a.contains_key(&z));
 
         let z3 = &x + &y + 40. + &z.cos();
-        let p3 = z3.properties();
+        let p3 = z3.std_properties();
         assert!(!p3.affine);
         assert_eq!(p3.a.len(), 3);
         assert!(p3.a.contains_key(&x));

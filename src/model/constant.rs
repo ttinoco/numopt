@@ -67,10 +67,10 @@ mod tests {
     }
 
     #[test]
-    fn properties() {
+    fn std_properties() {
 
         let c = ConstantScalar::new(5.);
-        let p = c.properties();
+        let p = c.std_properties();
         assert!(p.affine);
         assert_eq!(p.b, 5.);
         assert!(p.a.is_empty());
