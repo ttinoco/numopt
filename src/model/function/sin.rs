@@ -25,8 +25,8 @@ impl FunctionSin {
 
 impl NodeBase for FunctionSin {
 
-    fn arguments(&self) -> Vec<Node> {
-        vec![self.arg.clone()]
+    fn arguments(&self) -> Vec<&Node> {
+        vec![&self.arg]
     }
 
     fn partial(&self, arg: &Node) -> Node { 

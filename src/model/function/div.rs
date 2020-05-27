@@ -24,8 +24,8 @@ impl FunctionDiv {
 
 impl NodeBase for FunctionDiv {
 
-    fn arguments(&self) -> Vec<Node> {
-        vec![self.args.0.clone(), self.args.1.clone()]
+    fn arguments(&self) -> Vec<&Node> {
+        vec![&self.args.0, &self.args.1]
     }
 
     fn partial(&self, arg: &Node) -> Node { 
@@ -148,7 +148,7 @@ mod tests {
         let z5 = &f1/(&f1 + 3.);
         let z5x = z5.derivative(&x);
         assert_eq!(format!("{}", z5x),
-                   "(-1*x + 2)/((x + -2 + 3)*(x + -2 + 3)) + 1/(x + -2 + 3)");
+                   "(-1*x + 2)/((x + 1)*(x + 1)) + 1/(x + 1)");
     }
 
     #[test]

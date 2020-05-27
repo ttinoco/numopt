@@ -135,22 +135,29 @@ macro_rules! impl_node_add_node {
                     self.clone()
                 }
 
-                // Both constants
-                else if self.is_constant() && rhs.is_constant() {
-                    let vals: HashMap<&Node, f64> = HashMap::new();
-                    ConstantScalar::new(self.eval(&vals) + rhs.eval(&vals))
-                }
-
                 // Other
                 else {
+                    let mut c: f64 = 0.;
                     let mut args: Vec<Node> = Vec::new();
                     for a in &[self.clone(), rhs.clone()] {
                         match a {
+                            Node::ConstantScalar(x) => c += x.value(),
                             Node::FunctionAdd(x) => {
-                                args.extend(x.arguments()) // flatten add
+                                for x in x.arguments().iter() {
+                                    match x {
+                                        Node::ConstantScalar(y) => c += y.value(),
+                                        _ => args.push((*x).clone()),
+                                    }
+                                }
                             },
                             _ => args.push(a.clone()),
                         };
+                    }
+                    if args.is_empty() {
+                        return ConstantScalar::new(c);
+                    }
+                    if c != 0. {
+                        args.push(ConstantScalar::new(c));
                     }
                     FunctionAdd::new(args)
                 }
@@ -165,27 +172,34 @@ macro_rules! impl_node_add_scalar {
             type Output = Node;
             fn add(self, rhs: $y) -> Node {
 
-                // Self constant
-                if self.is_constant() {
-                    let vals: HashMap<&Node, f64> = HashMap::new();
-                    ConstantScalar::new(self.eval(&vals) + rhs.to_f64().unwrap())
-                }
-
                 // Rhs zero
-                else if rhs == <$y>::zero() {
+                if rhs == <$y>::zero() {
                     self.clone()
                 }
 
                 // Other
                 else {
+                    let mut c: f64 = 0.;
                     let mut args: Vec<Node> = Vec::new();
                     for a in &[self.clone(), ConstantScalar::new(rhs.to_f64().unwrap())] {
                         match a {
+                            Node::ConstantScalar(x) => c += x.value(),
                             Node::FunctionAdd(x) => {
-                                args.extend(x.arguments())
+                                for x in x.arguments().iter() {
+                                    match x {
+                                        Node::ConstantScalar(y) => c += y.value(),
+                                        _ => args.push((*x).clone()),
+                                    }
+                                }
                             },
                             _ => args.push(a.clone()),
-                        };
+                        };        
+                    }
+                    if args.is_empty() {
+                        return ConstantScalar::new(c);
+                    }
+                    if c != 0. {
+                        args.push(ConstantScalar::new(c));
                     }
                     FunctionAdd::new(args)
                 }
@@ -200,22 +214,29 @@ macro_rules! impl_node_add_scalar {
                     rhs.clone()
                 }
 
-                // Rhs constant
-                else if rhs.is_constant() {
-                    let vals: HashMap<&Node, f64> = HashMap::new();
-                    ConstantScalar::new(self.to_f64().unwrap() + rhs.eval(&vals))
-                }
-
                 // Other
                 else {
+                    let mut c: f64 = 0.;
                     let mut args: Vec<Node> = Vec::new();
                     for a in &[ConstantScalar::new(self.to_f64().unwrap()), rhs.clone()] {
                         match a {
+                            Node::ConstantScalar(x) => c += x.value(),
                             Node::FunctionAdd(x) => {
-                                args.extend(x.arguments())
+                                for x in x.arguments().iter() {
+                                    match x {
+                                        Node::ConstantScalar(y) => c += y.value(),
+                                        _ => args.push((*x).clone()),
+                                    }
+                                }
                             },
                             _ => args.push(a.clone()),
-                        };
+                        };    
+                    }
+                    if args.is_empty() {
+                        return ConstantScalar::new(c);
+                    }
+                    if c != 0. {
+                        args.push(ConstantScalar::new(c));
                     }
                     FunctionAdd::new(args)
                 }
@@ -266,12 +287,12 @@ macro_rules! impl_node_mul_node {
 
                         // Constant times add
                         (Node::ConstantScalar(_x), Node::FunctionAdd(_y)) => {
-                            FunctionAdd::new(r.arguments().iter().map(|x| &s*x).collect())
+                            FunctionAdd::new(r.arguments().iter().map(|x| &s*(*x)).collect())
                         },
 
                         // Add time constant
                         (Node::FunctionAdd(_x), Node::ConstantScalar(_y)) => {
-                            FunctionAdd::new(s.arguments().iter().map(|x| x*&r).collect())
+                            FunctionAdd::new(s.arguments().iter().map(|x| (*x)*&r).collect())
                         },
 
                         // Other
@@ -318,7 +339,7 @@ macro_rules! impl_node_mul_scalar {
 
                         // Add times constant
                         Node::FunctionAdd(_x) => {
-                            FunctionAdd::new(s.arguments().iter().map(|x| x*r).collect())
+                            FunctionAdd::new(s.arguments().iter().map(|x| (*x)*r).collect())
                         },
 
                         // Other
@@ -359,7 +380,7 @@ macro_rules! impl_node_mul_scalar {
 
                         // Constant times add
                         Node::FunctionAdd(_x) => {
-                            FunctionAdd::new(r.arguments().iter().map(|x| s*x).collect())
+                            FunctionAdd::new(r.arguments().iter().map(|x| s*(*x)).collect())
                         },
 
                         // Other
@@ -596,7 +617,7 @@ mod tests {
         assert_eq!(z8, x);
 
         let z9 = (&x + 1.) + &y;
-        assert_eq!(format!("{:?}", z9.arguments()), "[x, 1, y]");
+        assert_eq!(format!("{:?}", z9.arguments()), "[x, y, 1]");
         assert_eq!(z9.eval(&var_values), 8.);
 
         let z10 = &x + (&y + 5.);
@@ -604,11 +625,15 @@ mod tests {
         assert_eq!(z10.eval(&var_values), 12.);
 
         let z11 = (&x + 2.) + (&y + 7.);
-        assert_eq!(format!("{:?}", z11.arguments()), "[x, 2, y, 7]");
+        assert_eq!(format!("{:?}", z11.arguments()), "[x, y, 9]");
         assert_eq!(z11.eval(&var_values), 16.);
 
         let z12 = &c1 + &c2;
         assert!(z12.is_constant_with_value(3.));
+
+        let z13 = (&x + 4.) + (5. + &y);
+        assert_eq!(format!("{}", z13), "x + y + 9");
+        assert_eq!(z13.eval(&var_values), 16.);
     }
 
     #[test]
@@ -624,11 +649,11 @@ mod tests {
         assert_eq!(z1.eval(&var_values), 18.);
 
         let z2 = 13. + &x;
-        assert_eq!(format!("{}", z2), "13 + x");
+        assert_eq!(format!("{}", z2), "x + 13");
         assert_eq!(z2.eval(&var_values), 16.);
 
         let z3 = 2. + &z2 + 6.;
-        assert_eq!(format!("{}", z3), "2 + 13 + x + 6");
+        assert_eq!(format!("{}", z3), "x + 21");
         assert_eq!(z3.eval(&var_values), 24.);
 
         let z4 = &x + 0.;
@@ -638,11 +663,11 @@ mod tests {
         assert_eq!(z5, x);
 
         let z6 = (&x + 1.) + 2.;
-        assert_eq!(format!("{:?}", z6.arguments()), "[x, 1, 2]");
+        assert_eq!(format!("{:?}", z6.arguments()), "[x, 3]");
         assert_eq!(z6.eval(&var_values), 6.);
 
         let z7 = 3. + (&x + 4.);
-        assert_eq!(format!("{:?}", z7.arguments()), "[3, x, 4]");
+        assert_eq!(format!("{:?}", z7.arguments()), "[x, 7]");
         assert_eq!(z7.eval(&var_values), 10.);
 
         let z8 = 4. + &c1;
@@ -650,6 +675,14 @@ mod tests {
 
         let z9 = &c1 + 5.;
         assert!(z9.is_constant_with_value(6.));
+
+        let z10 = (&x + 4.) + 5.;
+        assert_eq!(format!("{}", z10), "x + 9");
+        assert_eq!(z10.eval(&var_values), 12.);
+        
+        let z11 = 3. + (&x + 4.) + 5.;
+        assert_eq!(format!("{}", z11), "x + 12");
+        assert_eq!(z11.eval(&var_values), 15.);
     }
 
     #[test]
@@ -769,7 +802,7 @@ mod tests {
         assert_eq!(z12.eval(&var_values), 24.);
 
         let z13 = (4. + &x)*10.;
-        assert_eq!(format!("{}", z13), "40 + x*10");
+        assert_eq!(format!("{}", z13), "x*10 + 40");
         assert_eq!(z13.eval(&var_values), 70.);
     }
 
@@ -835,11 +868,11 @@ mod tests {
         assert_eq!(z1.eval(&var_values), -12.);
 
         let z2 = 13. - &x;
-        assert_eq!(format!("{}", z2), "13 + -1*x");
+        assert_eq!(format!("{}", z2), "-1*x + 13");
         assert_eq!(z2.eval(&var_values), 10.);
 
         let z3 = 2. - &z2 - 6.;
-        assert_eq!(format!("{}", z3), "2 + -13 + -1*-1*x + -6");
+        assert_eq!(format!("{}", z3), "-1*-1*x + -17");
         assert_eq!(z3.eval(&var_values), -14.);
     }
 
@@ -864,15 +897,15 @@ mod tests {
         assert_eq!(z2.eval(&var_values), 9./16.);
 
         let z3 = (3. + &x)/(&y + 4.);
-        assert_eq!(format!("{}", z3), "(3 + x)/(y + 4)");
+        assert_eq!(format!("{}", z3), "(x + 3)/(y + 4)");
         assert_eq!(z3.eval(&var_values), 6./8.);
 
         let z4 = &x/(3.+&y);
-        assert_eq!(format!("{}", z4), "x/(3 + y)");
+        assert_eq!(format!("{}", z4), "x/(y + 3)");
         assert_eq!(z4.eval(&var_values), 3./7.);
 
         let z5 = (2.+&x)/&y;
-        assert_eq!(format!("{}", z5), "(2 + x)/y");
+        assert_eq!(format!("{}", z5), "(x + 2)/y");
         assert_eq!(z5.eval(&var_values), 5./4.);
 
         let z6 = &x/&c1;

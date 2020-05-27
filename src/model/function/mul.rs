@@ -24,8 +24,8 @@ impl FunctionMul {
 
 impl NodeBase for FunctionMul {
 
-    fn arguments(&self) -> Vec<Node> {
-        vec![self.args.0.clone(), self.args.1.clone()]
+    fn arguments(&self) -> Vec<&Node> {
+        vec![&self.args.0, &self.args.1]
     }
 
     fn partial(&self, arg: &Node) -> Node { 
@@ -133,7 +133,7 @@ mod tests {
         let z3x = z3.derivative(&x);
         let z3y = z3.derivative(&y);
         assert_eq!(z3x, y);
-        assert_eq!(format!("{}", z3y), "y*-1*y + y*-1*y + x + -3 + -1*y*y");
+        assert_eq!(format!("{}", z3y), "y*-1*y + y*-1*y + x + -1*y*y + -3");
 
         let f1 = 3.*&x;
         let z4 = &f1*(&f1*&y);

@@ -156,6 +156,7 @@ impl ConstraintStd for Constraint {
 mod tests {
 
     use super::*;
+    use crate::model::node_base::NodeBase;
     use crate::model::node_cmp::NodeCmp;
     use crate::model::variable::VariableScalar;
 
@@ -242,7 +243,7 @@ mod tests {
                 counter += 1;
             }
             else {
-                panic!("error");
+                panic!("unexpected variable");
             }
         }
         assert_eq!(counter, 2);
@@ -288,6 +289,9 @@ mod tests {
                 assert_eq!(*row, 1);
                 assert_eq!(*val, -1.);
                 counter += 1;
+            }
+            else {
+                panic!("unexpected variable");
             }
         }
         assert_eq!(counter, 3);
@@ -338,6 +342,9 @@ mod tests {
                 assert_eq!(*val, -1.);
                 counter += 1;
             }
+            else {
+                panic!("unexpected variable");
+            }
         }
         assert_eq!(counter, 3);    
         assert_eq!(comp1.b[0], -1.);
@@ -370,8 +377,52 @@ mod tests {
         assert_eq!(comp1.a.len(), 0);
         assert_eq!(comp1.b.len(), 0);
         assert_eq!(comp1.f.len(), 1);
+        assert_eq!(format!("{}", comp1.f[0]),
+                   "3*x*x + 4*x*y + 7*y*y + 3");
         assert_eq!(comp1.j.len(), 2);
+        let mut counter: usize = 0;
+        for (row, col, val) in comp1.j.iter() {
+            if *col == x {
+                assert_eq!(*row, 2);
+                assert_eq!(format!("{}", *val),
+                           "y*4 + 3*x + x*3");
+                counter += 1;
+            }
+            else if *col == y {
+                assert_eq!(*row, 2);
+                assert_eq!(format!("{}", *val),
+                           "7*y + y*7 + 4*x");
+                counter += 1;
+            }
+            else {
+                panic!("unexpected variable");
+            }
+        }
+        assert_eq!(counter, 2);
         assert_eq!(comp1.h.len(), 3);
+        let mut counter: usize = 0;
+        for (row, col, val) in comp1.h.iter() {
+            if *row == x && *col == x {
+                assert!((*val).is_constant_with_value(6.));
+                counter += 1;
+            }
+            else if *row == x && *col == y {
+                assert!((*val).is_constant_with_value(4.));
+                counter += 1;
+            }
+            else if *row == y && *col == x{
+                assert!((*val).is_constant_with_value(4.));
+                counter += 1;
+            }
+            else if *row == y && *col == y {
+                assert!((*val).is_constant_with_value(14.));
+                counter += 1;
+            }
+            else {
+                panic!("unexpected variable pair")
+            }
+        }
+        assert_eq!(counter, 3);
         assert_eq!(comp1.u.len(), 0);
         assert_eq!(comp1.l.len(), 0);
         assert_eq!(arow, 1);
@@ -381,12 +432,154 @@ mod tests {
     #[test]
     fn components_nonlinear_leq() {
 
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
+        let c1 = (3.*&x*&x + 4.*&x*&y + 7.*&y*&y + 8.).leq(5.);
+        let mut arow: usize = 1;
+        let mut jrow: usize = 2;
+        let comp1 = c1.components(&mut arow, &mut jrow);
+
+        assert_eq!(comp1.ca.len(), 0);
+        assert_eq!(comp1.cj.len(), 1);
+        assert_eq!(comp1.a.len(), 0);
+        assert_eq!(comp1.b.len(), 0);
+        assert_eq!(comp1.f.len(), 1);
+        assert_eq!(format!("{}", comp1.f[0]),
+                   "3*x*x + 4*x*y + 7*y*y + -1*s + 3");
+        assert_eq!(comp1.j.len(), 3);
+        let mut counter: usize = 0;
+        for (row, col, val) in comp1.j.iter() {
+            if *col == x {
+                assert_eq!(*row, 2);
+                assert_eq!(format!("{}", *val),
+                           "y*4 + 3*x + x*3");
+                counter += 1;
+            }
+            else if *col == y {
+                assert_eq!(*row, 2);
+                assert_eq!(format!("{}", *val),
+                           "7*y + y*7 + 4*x");
+                counter += 1;
+            }
+            else if *col == *c1.slack() {
+                assert_eq!(*row, 2);
+                assert!((*val).is_constant_with_value(-1.));
+                counter += 1;
+            }
+            else {
+                panic!("unexpected variable");
+            }
+        }
+        assert_eq!(counter, 3);
+        assert_eq!(comp1.h.len(), 3);
+        let mut counter: usize = 0;
+        for (row, col, val) in comp1.h.iter() {
+            if *row == x && *col == x {
+                assert!((*val).is_constant_with_value(6.));
+                counter += 1;
+            }
+            else if *row == x && *col == y {
+                assert!((*val).is_constant_with_value(4.));
+                counter += 1;
+            }
+            else if *row == y && *col == x{
+                assert!((*val).is_constant_with_value(4.));
+                counter += 1;
+            }
+            else if *row == y && *col == y {
+                assert!((*val).is_constant_with_value(14.));
+                counter += 1;
+            }
+            else {
+                panic!("unexpected variable pair")
+            }
+        }
+        assert_eq!(counter, 3);
+        assert_eq!(comp1.u.len(), 1);
+        let (var, val, c) = comp1.u.iter().next().unwrap();
+        assert_eq!(*var, *c1.slack());
+        assert_eq!(*val, 0.);
+        assert_eq!(*c, c1);
+        assert_eq!(comp1.l.len(), 0);
+        assert_eq!(arow, 1);
+        assert_eq!(jrow, 3);
     }
 
     #[test]
     fn components_nonlinear_geq() {
 
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
 
+        let c1 = (3.*&x*&x + 4.*&x*&y + 7.*&y*&y + 8.).geq(5.);
+        let mut arow: usize = 1;
+        let mut jrow: usize = 2;
+        let comp1 = c1.components(&mut arow, &mut jrow);
+
+        assert_eq!(comp1.ca.len(), 0);
+        assert_eq!(comp1.cj.len(), 1);
+        assert_eq!(comp1.a.len(), 0);
+        assert_eq!(comp1.b.len(), 0);
+        assert_eq!(comp1.f.len(), 1);
+        assert_eq!(format!("{}", comp1.f[0]),
+                   "3*x*x + 4*x*y + 7*y*y + -1*s + 3");
+        assert_eq!(comp1.j.len(), 3);
+        let mut counter: usize = 0;
+        for (row, col, val) in comp1.j.iter() {
+            if *col == x {
+                assert_eq!(*row, 2);
+                assert_eq!(format!("{}", *val),
+                           "y*4 + 3*x + x*3");
+                counter += 1;
+            }
+            else if *col == y {
+                assert_eq!(*row, 2);
+                assert_eq!(format!("{}", *val),
+                           "7*y + y*7 + 4*x");
+                counter += 1;
+            }
+            else if *col == *c1.slack() {
+                assert_eq!(*row, 2);
+                assert!((*val).is_constant_with_value(-1.));
+                counter += 1;
+            }
+            else {
+                panic!("unexpected variable");
+            }
+        }
+        assert_eq!(counter, 3);
+        assert_eq!(comp1.h.len(), 3);
+        let mut counter: usize = 0;
+        for (row, col, val) in comp1.h.iter() {
+            if *row == x && *col == x {
+                assert!((*val).is_constant_with_value(6.));
+                counter += 1;
+            }
+            else if *row == x && *col == y {
+                assert!((*val).is_constant_with_value(4.));
+                counter += 1;
+            }
+            else if *row == y && *col == x{
+                assert!((*val).is_constant_with_value(4.));
+                counter += 1;
+            }
+            else if *row == y && *col == y {
+                assert!((*val).is_constant_with_value(14.));
+                counter += 1;
+            }
+            else {
+                panic!("unexpected variable pair")
+            }
+        }
+        assert_eq!(counter, 3);
+        assert_eq!(comp1.u.len(), 0);
+        assert_eq!(comp1.l.len(), 1);
+        let (var, val, c) = comp1.l.iter().next().unwrap();
+        assert_eq!(*var, *c1.slack());
+        assert_eq!(*val, 0.);
+        assert_eq!(*c, c1);
+        assert_eq!(arow, 1);
+        assert_eq!(jrow, 3);
     }
 }

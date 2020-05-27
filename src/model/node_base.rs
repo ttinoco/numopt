@@ -5,14 +5,14 @@ use crate::model::node::Node;
 
 pub trait NodeBase {
 
-    fn arguments(&self) -> Vec<Node> { Vec::new() }
+    fn arguments(&self) -> Vec<&Node> { Vec::new() }
     fn partial(&self, arg: &Node) -> Node;
-    fn eval(&self, var_values: &HashMap<&Node, f64>) -> f64 { NAN }
+    fn eval(&self, _var_values: &HashMap<&Node, f64>) -> f64 { NAN }
 }
 
 impl NodeBase for Node {
     
-    fn arguments(&self) -> Vec<Node> {
+    fn arguments(&self) -> Vec<&Node> {
         match self {
             Node::ConstantScalar(x) => x.arguments(),
             Node::VariableScalar(x) => x.arguments(),

@@ -26,8 +26,8 @@ impl FunctionAdd {
 
 impl NodeBase for FunctionAdd {
 
-    fn arguments(&self) -> Vec<Node> {
-        self.args.iter().map(|x| x.clone()).collect()
+    fn arguments(&self) -> Vec<&Node> {
+        self.args.iter().collect()
     }
 
     fn partial(&self, arg: &Node) -> Node { 

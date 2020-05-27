@@ -25,8 +25,8 @@ impl FunctionCos {
 
 impl NodeBase for FunctionCos {
 
-    fn arguments(&self) -> Vec<Node> {
-        vec![self.arg.clone()]
+    fn arguments(&self) -> Vec<&Node> {
+        vec![&self.arg]
     }
 
     fn partial(&self, arg: &Node) -> Node { 
