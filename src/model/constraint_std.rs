@@ -13,7 +13,7 @@ pub struct ConstraintStdComp {
     pub b: Vec<f64>,                     // values
     pub f: Vec<Node>,                    // expressions
     pub j: Vec<(usize, Node, Node)>,     // row, var, expression
-    pub h: Vec<(Node, Node, Node)>,      // var, var, expression
+    pub h: Vec<Vec<(Node, Node, Node)>>, // var, var, expression
     pub u: Vec<(Node, f64, Constraint)>, // var, value, constraint
     pub l: Vec<(Node, f64, Constraint)>, // var, value, constraint
     pub prop: Vec<NodeStdProp>,
@@ -66,7 +66,7 @@ impl ConstraintStd for Constraint {
         let mut b: Vec<f64> = Vec::new();
         let mut f: Vec<Node> = Vec::new();    
         let mut j: Vec<(usize, Node, Node)> = Vec::new();
-        let mut h: Vec<(Node, Node, Node)> = Vec::new();
+        let mut h: Vec<Vec<(Node, Node, Node)>> = Vec::new();
         let mut u: Vec<(Node, f64, Constraint)> = Vec::new();
         let mut l: Vec<(Node, f64, Constraint)> = Vec::new();
     
@@ -134,9 +134,11 @@ impl ConstraintStd for Constraint {
         else {
 
             // H
+            let mut hh: Vec<(Node, Node, Node)> = Vec::new();
             for (v1, v2, e) in comp.hphi.iter() {
-                h.push((v1.clone(), v2.clone(), e.clone()))
-            }   
+                hh.push((v1.clone(), v2.clone(), e.clone()))
+            }
+            h.push(hh);   
 
             // f(x) = 0
             if *self.kind() == ConstraintKind::Equal {
@@ -434,9 +436,10 @@ mod tests {
             }
         }
         assert_eq!(counter, 2);
-        assert_eq!(comp1.h.len(), 3);
+        assert_eq!(comp1.h.len(), 1);
+        assert_eq!(comp1.h[0].len(), 3);
         let mut counter: usize = 0;
-        for (row, col, val) in comp1.h.iter() {
+        for (row, col, val) in comp1.h[0].iter() {
             if *row == x && *col == x {
                 assert!((*val).is_constant_with_value(6.));
                 counter += 1;
@@ -507,9 +510,10 @@ mod tests {
             }
         }
         assert_eq!(counter, 3);
-        assert_eq!(comp1.h.len(), 3);
+        assert_eq!(comp1.h.len(), 1);
+        assert_eq!(comp1.h[0].len(), 3);
         let mut counter: usize = 0;
-        for (row, col, val) in comp1.h.iter() {
+        for (row, col, val) in comp1.h[0].iter() {
             if *row == x && *col == x {
                 assert!((*val).is_constant_with_value(6.));
                 counter += 1;
@@ -584,9 +588,10 @@ mod tests {
             }
         }
         assert_eq!(counter, 3);
-        assert_eq!(comp1.h.len(), 3);
+        assert_eq!(comp1.h.len(), 1);
+        assert_eq!(comp1.h[0].len(), 3);
         let mut counter: usize = 0;
-        for (row, col, val) in comp1.h.iter() {
+        for (row, col, val) in comp1.h[0].iter() {
             if *row == x && *col == x {
                 assert!((*val).is_constant_with_value(6.));
                 counter += 1;

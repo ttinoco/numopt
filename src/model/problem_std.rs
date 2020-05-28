@@ -63,8 +63,7 @@ impl ProblemStd for Problem {
                                                   .map(|(i,v)| (v,i))
                                                   .collect();
         
-        println!("var2index: {:?}", var2index);
-        
+        println!("var2index: {:?}", var2index); 
 
         // Objective (phi)
         let phi_data = comp.obj.phi;
@@ -102,7 +101,7 @@ impl ProblemStd for Problem {
         let aindex2constr: HashMap<usize, Constraint> = comp.constr.ca.into_iter()
                                                                       .enumerate()
                                                                       .collect();
-        let num_a: usize = comp.constr.b.len();                                                                      
+        let num_a: usize = comp.constr.b.len();
         let mut a_row: Vec<usize> = Vec::with_capacity(comp.constr.a.len());
         let mut a_col: Vec<usize> = Vec::with_capacity(comp.constr.a.len());
         let mut a_data: Vec<f64> = Vec::with_capacity(comp.constr.a.len());
@@ -113,7 +112,49 @@ impl ProblemStd for Problem {
         }
         let b_data = comp.constr.b;
 
+        println!("a_row: {:?}", a_row);
+        println!("a_col: {:?}", a_col);
+        println!("a_data: {:?}", a_data);
+        println!("b_data: {:?}", b_data);
+
         // Nonlinear equality constraints (f(x) = 0)
+        let jindex2constr: HashMap<usize, Constraint> = comp.constr.cj.into_iter()
+                                                                      .enumerate()
+                                                                      .collect();
+        let num_j: usize = comp.constr.f.len();
+        let mut j_row: Vec<usize> = Vec::with_capacity(comp.constr.j.len());
+        let mut j_col: Vec<usize> = Vec::with_capacity(comp.constr.j.len());
+        let mut j_data: Vec<Node> = Vec::with_capacity(comp.constr.j.len());
+        for (row, var, exp) in comp.constr.j.into_iter() {
+            j_row.push(row);
+            j_col.push(*var2index.get(&var).unwrap());
+            j_data.push(exp);
+        }
+        let f_data = comp.constr.f;
+        let mut h_row: Vec<Vec<usize>> = Vec::with_capacity(num_j);
+        let mut h_col: Vec<Vec<usize>> = Vec::with_capacity(num_j);
+        let mut h_data: Vec<Vec<Node>> = Vec::with_capacity(num_j);
+        for hh in comp.constr.h.into_iter() {
+            let mut hh_row: Vec<usize> = Vec::with_capacity(hh.len());
+            let mut hh_col: Vec<usize> = Vec::with_capacity(hh.len());
+            let mut hh_data: Vec<Node> = Vec::with_capacity(hh.len());
+            for (v1, v2, exp) in hh.into_iter() {
+                hh_row.push(*var2index.get(&v1).unwrap());
+                hh_col.push(*var2index.get(&v2).unwrap());
+                hh_data.push(exp);
+            }
+            h_row.push(hh_row);
+            h_col.push(hh_col);
+            h_data.push(hh_data);
+        }
+
+        println!("f: {:?}", f_data);
+        println!("j_row: {:?}", j_row);
+        println!("j_col: {:?}", j_col);
+        println!("j_data: {:?}", j_data);
+        println!("h_row: {:?}", h_row);
+        println!("h_col: {:?}", h_col);
+        println!("h_data: {:?}", h_data);
 
         // Bounds (l <= x <= u)
 
@@ -146,7 +187,7 @@ mod tests {
 
         let mut p = Problem::new();
         p.set_objective(Objective::minimize(&(3.*&x + 4.*&y + 1.)));
-        p.add_constraint(&(&x + &y).equal(2.));
+        p.add_constraint(&(2.*&x + &y).equal(2.));
         p.add_constraint(&(&x.leq(5.)));
         p.add_constraint(&(&x.geq(0.)));
         p.add_constraint(&(&y.leq(5.)));
