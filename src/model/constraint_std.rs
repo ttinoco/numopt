@@ -7,15 +7,15 @@ use crate::model::constant::ConstantScalar;
 use crate::model::constraint::{Constraint, ConstraintKind};
 
 pub struct ConstraintStdComp {
-    pub ca: Vec<Constraint>,
-    pub cj: Vec<Constraint>,
-    pub a: Vec<(usize, Node, f64)>,
-    pub b: Vec<f64>,               
-    pub f: Vec<Node>,                
-    pub j: Vec<(usize, Node, Node)>,
-    pub h: Vec<(Node, Node, Node)>,
-    pub u: Vec<(Node, f64, Constraint)>,
-    pub l: Vec<(Node, f64, Constraint)>,
+    pub ca: Vec<Constraint>,             // constraints
+    pub cj: Vec<Constraint>,             // constraints
+    pub a: Vec<(usize, Node, f64)>,      // row, var, value
+    pub b: Vec<f64>,                     // values
+    pub f: Vec<Node>,                    // expressions
+    pub j: Vec<(usize, Node, Node)>,     // row, var, expression
+    pub h: Vec<(Node, Node, Node)>,      // var, var, expression
+    pub u: Vec<(Node, f64, Constraint)>, // var, value, constraint
+    pub l: Vec<(Node, f64, Constraint)>, // var, value, constraint
     pub prop: Vec<NodeStdProp>,
 }
 

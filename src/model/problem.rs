@@ -1,4 +1,5 @@
 use std::fmt;
+use std::collections::HashMap;
 
 use crate::model::node::Node;
 use crate::model::constraint::Constraint;
@@ -13,6 +14,7 @@ pub struct Problem {
 
     objective: Objective,
     constraints: Vec<Constraint>,
+    init_values: HashMap<Node, f64>,
 }
 
 impl Objective {
@@ -36,16 +38,34 @@ impl Problem {
         self.constraints.push(c.clone())
     }
 
+    pub fn add_constraints(&mut self, c: &[&Constraint]) -> () {
+        self.constraints.extend(c.iter()
+                                 .map(|cc| (*cc).clone())
+                                 .collect::<Vec<Constraint>>());
+    }
+
     pub fn constraints(&self) -> &Vec<Constraint> { &self.constraints }
 
-    pub fn new(objective: Objective, constraints: Vec<Constraint>) -> Problem {
+    pub fn new() -> Problem {
         Problem {
-            objective: objective,
-            constraints: constraints,
+            objective: Objective::empty(),
+            constraints: Vec::new(),
+            init_values: HashMap::new(),
         }
     }
 
     pub fn objective(&self) -> &Objective { &self.objective }
+
+    pub fn set_objective(&mut self, obj: Objective) -> () {
+        self.objective = obj;
+    }
+
+    pub fn set_init_values(&mut self, init_values: &HashMap<&Node, f64>) -> () {
+        self.init_values.clear();
+        for (key, val) in init_values.iter() {
+            self.init_values.insert((*key).clone(), *val);
+        }
+    }
 }
 
 impl<'a> fmt::Display for Problem {
@@ -84,10 +104,9 @@ mod tests {
         let c2 = (&x).geq_and_tag(0., "x limit");
         let c3 = (&y).geq_and_tag(0., "y limit");
 
-        let p = Problem::new(
-            Objective::minimize(&f),
-            vec!(c1, c2, c3),
-        );
+        let mut p = Problem::new();
+        p.set_objective(Objective::minimize(&f));
+        p.add_constraints(&vec!(&c1, &c2, &c3));
 
         let refstr = "\nMinimize 4*cos(x) + y\n\n\
                       Subject to\n\

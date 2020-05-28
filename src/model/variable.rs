@@ -17,6 +17,8 @@ pub struct VariableScalar {
 
 impl VariableScalar {
 
+    pub fn name(&self) -> &str { self.name.as_ref() }
+
     pub fn new(name: &str, kind: VariableKind) -> Node {
         Node::VariableScalar(Rc::new(
             Self {
@@ -65,6 +67,13 @@ mod tests {
     use crate::model::node_std::NodeStd;
     use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
+
+    #[test]
+    fn construction() {
+
+        let x = VariableScalar::new_continuous("x");
+        assert_eq!(x.name(), "x");
+    }
 
     #[test]
     fn partial() {

@@ -11,9 +11,9 @@ pub struct NodeStdProp {
 }
 
 pub struct NodeStdComp {
-    pub phi: Node,
-    pub gphi: Vec<(Node, Node)>,
-    pub hphi: Vec<(Node, Node, Node)>,
+    pub phi: Node,                     // expression
+    pub gphi: Vec<(Node, Node)>,       // var, expression
+    pub hphi: Vec<(Node, Node, Node)>, // var, var, expression
     pub prop: NodeStdProp,
 }
 

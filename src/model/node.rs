@@ -41,6 +41,13 @@ impl Node {
             _ => false
         }
     }
+
+    pub fn name(&self) -> &str {
+        match self {
+            Node::VariableScalar(x) => x.name(),
+            _ => "",
+        }
+    }
 }
 
 impl Hash for Node {
