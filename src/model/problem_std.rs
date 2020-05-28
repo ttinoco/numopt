@@ -1,5 +1,7 @@
 use std::collections::{HashSet, HashMap};
 
+use crate::problem;
+
 use crate::model::node::Node;
 use crate::model::node_std::{NodeStd, NodeStdComp};
 use crate::model::constant::ConstantScalar;
@@ -7,9 +9,23 @@ use crate::model::constraint::Constraint;
 use crate::model::constraint_std::{ConstraintStd, ConstraintStdComp};
 use crate::model::problem::{Problem, Objective};
 
+const INF: f64 = 1e8;
+
 pub struct ProblemStdComp {
     pub obj: NodeStdComp,
     pub constr: ConstraintStdComp,
+}
+
+pub enum ProblemStdProb {
+    Base()
+}
+
+pub struct ProblemStdMaps {
+    pub var2index: HashMap<Node, usize>,
+    pub aindex2constr: HashMap<usize, Constraint>,
+    pub jindex2constr: HashMap<usize, Constraint>,
+    pub uindex2constr: HashMap<usize, Constraint>,
+    pub lindex2constr: HashMap<usize, Constraint>,
 }
 
 pub trait ProblemStd {
@@ -157,15 +173,59 @@ impl ProblemStd for Problem {
         println!("h_data: {:?}", h_data);
 
         // Bounds (l <= x <= u)
+        let mut uindex2constr: HashMap<usize, Constraint> = HashMap::new();
+        let mut lindex2constr: HashMap<usize, Constraint> = HashMap::new();
+        let mut u_data = vec![INF; num_vars];
+        let mut l_data = vec![-INF; num_vars];
+        for (var, val, constr) in comp.constr.u.into_iter() {
+            let index = *var2index.get(&var).unwrap();
+            if val <= u_data[index] {
+                u_data[index] = val;
+                uindex2constr.insert(index, constr);
+            }
+        }
+        for (var, val, constr) in comp.constr.l.into_iter() {
+            let index = *var2index.get(&var).unwrap();
+            if val >= l_data[index] {
+                l_data[index] = val;
+                lindex2constr.insert(index, constr);
+            }
+        }
+
+        println!("u_data: {:?}", u_data);
+        println!("l_data: {:?}", l_data);
 
         // Integer restrictions
+        let mut p_data = vec![false; num_vars];
+        for (var, index) in var2index.iter() {
+            match var {
+                Node::VariableScalar(x) => {
+                    if x.is_integer() {
+                        p_data[*index] = true;
+                    }
+                }
+                _ => (),
+            }
+        }
+        
+        println!("p_data: {:?}", p_data);
+
+        // Initial values
+        let mut x0_data: Vec<f64> = vec![0.; num_vars];
+        for (var, val) in self.init_values().iter() {
+            match var2index.get(var) {
+                Some(index) => x0_data[*index] = *val,
+                None => (), 
+            }
+        }
+
+        println!("x0_data: {:?}", x0_data);
         
         // Problem
         // LP
         // MILP
         // NLP
         // MINLP
-
 
     }
 }

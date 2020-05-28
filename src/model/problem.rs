@@ -46,6 +46,8 @@ impl Problem {
 
     pub fn constraints(&self) -> &Vec<Constraint> { &self.constraints }
 
+    pub fn init_values(&self) -> &HashMap<Node, f64> { &self.init_values }
+
     pub fn new() -> Problem {
         Problem {
             objective: Objective::empty(),

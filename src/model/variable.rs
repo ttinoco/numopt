@@ -17,6 +17,20 @@ pub struct VariableScalar {
 
 impl VariableScalar {
 
+    pub fn is_continuous(&self) -> bool {
+        match self.kind {
+            VariableKind::VarContinuous => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_integer(&self) -> bool {
+        match self.kind {
+            VariableKind::VarInteger => true,
+            _ => false,
+        }
+    }
+
     pub fn name(&self) -> &str { self.name.as_ref() }
 
     pub fn new(name: &str, kind: VariableKind) -> Node {
@@ -63,6 +77,7 @@ impl<'a> fmt::Display for VariableScalar {
 #[cfg(test)]
 mod tests {
 
+    use crate::model::node::Node;
     use crate::model::node_base::NodeBase;
     use crate::model::node_std::NodeStd;
     use crate::model::node_diff::NodeDiff;
@@ -73,6 +88,23 @@ mod tests {
 
         let x = VariableScalar::new_continuous("x");
         assert_eq!(x.name(), "x");
+        match x {
+            Node::VariableScalar(xx) => {
+                assert!(xx.is_continuous());
+                assert!(!xx.is_integer());
+            },
+            _ => panic!("construction failed"),
+        }
+
+        let y = VariableScalar::new_integer("y");
+        assert_eq!(y.name(), "y");
+        match y {
+            Node::VariableScalar(yy) => {
+                assert!(yy.is_integer());
+                assert!(!yy.is_continuous());
+            },
+            _ => panic!("construction failed"),
+        }
     }
 
     #[test]
