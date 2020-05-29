@@ -79,14 +79,14 @@ impl<T: MatItem> CooMat<T> {
     /// Vector of data values.
     pub fn data(&self) -> &[T] { &self.data }
 
+    // Vector of mutable data values
+    pub fn data_mut(&mut self) -> &mut [T] { &mut self.data }
+
     /// Sets row index.
     pub fn set_row_ind(&mut self, k: usize, row: usize) -> () { self.row_inds[k] = row }
 
     /// Sets column index.
     pub fn set_col_ind(&mut self, k: usize, row: usize) -> () { self.col_inds[k] = row }
-
-    /// Sets data value.
-    pub fn set_data(&mut self, k:usize, d: T) -> () { self.data[k] = d }
 
     /// Creates iterator for nonzero elements.
     pub fn iter(&self) -> CooMatIter<T> { CooMatIter::new(&self) }

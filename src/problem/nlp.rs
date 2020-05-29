@@ -246,41 +246,45 @@ mod tests {
             gphi[4] = 0.;
 
             // hphi
-            hphi.set_data(0, 2.*x3);       // x0, x0
-            hphi.set_data(1, x3);          // x1, x0
-            hphi.set_data(2, x3);          // x2, x0
-            hphi.set_data(3, 2.*x0+x1+x2); // x3, x0
-            hphi.set_data(4, x0);          // x3, x1
-            hphi.set_data(5, x0);          // x3, x2
+            let hphi_data = hphi.data_mut();
+            hphi_data[0] = 2.*x3;       // x0, x0
+            hphi_data[1] = x3;          // x1, x0
+            hphi_data[2] = x3;          // x2, x0
+            hphi_data[3] = 2.*x0+x1+x2; // x3, x0
+            hphi_data[4] = x0;          // x3, x1
+            hphi_data[5] = x0;          // x3, x2
 
             // f
             f[0] = x0*x1*x2*x3 - x4;
             f[1] = x0*x0 + x1*x1 + x2*x2 + x3*x3 - 40.;
 
             // j
-            j.set_data(0, x1*x2*x3); // 0, x0
-            j.set_data(1, x0*x2*x3); // 0, x1
-            j.set_data(2, x0*x1*x3); // 0, x2
-            j.set_data(3, x0*x1*x2); // 0, x3
-            j.set_data(4, -1.);      // 0, x4
-            j.set_data(5, 2.*x0);    // 1, x0
-            j.set_data(6, 2.*x1);    // 1, x1
-            j.set_data(7, 2.*x2);    // 1, x2
-            j.set_data(8, 2.*x3);    // 1, x3
+            let j_data = j.data_mut();
+            j_data[0] = x1*x2*x3; // 0, x0
+            j_data[1] = x0*x2*x3; // 0, x1
+            j_data[2] = x0*x1*x3; // 0, x2
+            j_data[3] = x0*x1*x2; // 0, x3
+            j_data[4] = -1.;      // 0, x4
+            j_data[5] = 2.*x0;    // 1, x0
+            j_data[6] = 2.*x1;    // 1, x1
+            j_data[7] = 2.*x2;    // 1, x2
+            j_data[8] = 2.*x3;    // 1, x3
 
             // h0
-            h[0].set_data(0, x2*x3);
-            h[0].set_data(1, x1*x3);
-            h[0].set_data(2, x0*x3);
-            h[0].set_data(3, x1*x2);
-            h[0].set_data(4, x0*x2);
-            h[0].set_data(5, x0*x1);
+            let h0_data = h[0].data_mut();
+            h0_data[0] = x2*x3;
+            h0_data[1] = x1*x3;
+            h0_data[2] = x0*x3;
+            h0_data[3] = x1*x2;
+            h0_data[4] = x0*x2;
+            h0_data[5] = x0*x1;
 
             // h1
-            h[1].set_data(0, 2.);
-            h[1].set_data(1, 2.);
-            h[1].set_data(2, 2.);
-            h[1].set_data(3, 2.);
+            let h1_data = h[1].data_mut();
+            h1_data[0] = 2.;
+            h1_data[1] = 2.;
+            h1_data[2] = 2.;
+            h1_data[3] = 2.;
         });
 
         let p = ProblemNlp::new(

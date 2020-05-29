@@ -233,9 +233,10 @@ impl ProblemBase for Problem {
         assert_eq!(self.nf(), nu.len());
  
         let mut k: usize = 0;
+        let data = self.hcomb.data_mut();
         for (h, nuval) in self.h.iter().zip(nu.iter()) {
             for val in h.data().iter() {
-                self.hcomb.set_data(k, (*nuval)*(*val));
+                data[k] = (*nuval)*(*val);
                 k += 1;
             }
         }    

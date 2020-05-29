@@ -39,7 +39,7 @@ pub struct ModelStdMaps {
 
 pub trait ModelStd {
     fn std_components(&self) -> ModelStdComp;
-    fn std_problem(&self) -> ();
+    fn std_problem(&self) -> (ModelStdProb, ModelStdMaps);
 }
 
 impl ModelStd for Model {
@@ -68,7 +68,7 @@ impl ModelStd for Model {
         }
     }
 
-    fn std_problem(&self) -> () {
+    fn std_problem(&self) -> (ModelStdProb, ModelStdMaps) {
 
         // Components
         let comp = self.std_components();
@@ -87,7 +87,9 @@ impl ModelStd for Model {
                                                   .enumerate()
                                                   .map(|(i,v)| (v,i))
                                                   .collect();
-        
+        let var2index_eval: HashMap<Node, usize> = var2index.iter()
+                                                            .map(|(v,i)| (v.clone(), *i))
+                                                            .collect();
         println!("var2index: {:?}", var2index); 
 
         // Objective (phi)
@@ -114,13 +116,26 @@ impl ModelStd for Model {
             }
             hphi_data.push(e);
         }
+        let mut hphi_mat = CooMat::new(
+            (num_vars, num_vars),
+            hphi_row,
+            hphi_col,
+            vec![0.; hphi_data.len()]
+        );
 
         println!("phi_data: {}", phi_data);
         println!("gphi_indices: {:?}", gphi_indices);
         println!("gphi_data: {:?}", gphi_data);
-        println!("hphi_row: {:?}", hphi_row);
-        println!("hphi_col: {:?}", hphi_col);
+        println!("hphi_mat: {:?}", hphi_mat);
         println!("hphi_data: {:?}", hphi_data);
+
+        // Objective grad (c)
+        let mut c_data: Vec<f64> = vec![0.; num_vars];
+        for (var, val) in comp.obj.prop.a.iter() {
+            c_data[*var2index.get(var).unwrap()] = *val;
+        }
+
+        println!("c: {:?}", c_data);
 
         // Linear equality constraints (Ax = b)
         let aindex2constr: HashMap<usize, Constraint> = comp.constr.ca.into_iter()
@@ -135,11 +150,16 @@ impl ModelStd for Model {
             a_col.push(*var2index.get(&var).unwrap());
             a_data.push(val);
         }
+        let a_mat = CooMat::new(
+            (num_a, num_vars),
+            a_row,
+            a_col,
+            a_data
+        );
+
         let b_data = comp.constr.b;
 
-        println!("a_row: {:?}", a_row);
-        println!("a_col: {:?}", a_col);
-        println!("a_data: {:?}", a_data);
+        println!("a_mat: {:?}", a_mat);
         println!("b_data: {:?}", b_data);
 
         // Nonlinear equality constraints (f(x) = 0)
@@ -155,10 +175,15 @@ impl ModelStd for Model {
             j_col.push(*var2index.get(&var).unwrap());
             j_data.push(exp);
         }
+        let j_mat = CooMat::new(
+            (num_j, num_vars),
+            j_row,
+            j_col,
+            vec![0.; j_data.len()]
+        );
         let f_data = comp.constr.f;
-        let mut h_row: Vec<Vec<usize>> = Vec::with_capacity(num_j);
-        let mut h_col: Vec<Vec<usize>> = Vec::with_capacity(num_j);
         let mut h_data: Vec<Vec<Node>> = Vec::with_capacity(num_j);
+        let mut h_vec: Vec<CooMat<f64>> = Vec::with_capacity(num_j);
         for hh in comp.constr.h.into_iter() {
             let mut hh_row: Vec<usize> = Vec::with_capacity(hh.len());
             let mut hh_col: Vec<usize> = Vec::with_capacity(hh.len());
@@ -168,17 +193,19 @@ impl ModelStd for Model {
                 hh_col.push(*var2index.get(&v2).unwrap());
                 hh_data.push(exp);
             }
-            h_row.push(hh_row);
-            h_col.push(hh_col);
+            h_vec.push(CooMat::new(
+                (num_vars, num_vars),
+                hh_row,
+                hh_col,
+                vec![0.; hh_data.len()]
+            ));
             h_data.push(hh_data);
         }
 
         println!("f: {:?}", f_data);
-        println!("j_row: {:?}", j_row);
-        println!("j_col: {:?}", j_col);
+        println!("j_mat: {:?}", j_mat);
         println!("j_data: {:?}", j_data);
-        println!("h_row: {:?}", h_row);
-        println!("h_col: {:?}", h_col);
+        println!("h_vec: {:?}", h_vec);
         println!("h_data: {:?}", h_data);
 
         // Bounds (l <= x <= u)
@@ -205,12 +232,14 @@ impl ModelStd for Model {
         println!("l_data: {:?}", l_data);
 
         // Integer restrictions
+        let mut num_int: usize = 0;
         let mut p_data = vec![false; num_vars];
         for (var, index) in var2index.iter() {
             match var {
                 Node::VariableScalar(x) => {
                     if x.is_integer() {
                         p_data[*index] = true;
+                        num_int += 1;
                     }
                 }
                 _ => (),
@@ -241,7 +270,7 @@ impl ModelStd for Model {
 
             // Var values
             let mut var_values: HashMap<&Node, f64> = HashMap::with_capacity(x.len());
-            for (var, index) in var2index.iter() {
+            for (var, index) in var2index_eval.iter() {
                 var_values.insert(var, x[*index]);
             }
 
@@ -254,46 +283,109 @@ impl ModelStd for Model {
             }
 
             // hphi
-            //for (val, exp) in hphi.iter_mut().zip(hphi_data.iter()) {
-
-            //}
+            let hphi_dest = hphi.data_mut();
+            for (val, exp) in hphi_dest.iter_mut().zip(hphi_data.iter()) {
+                *val = exp.eval(&var_values);           
+            }
 
             // f
+            for (val, exp) in f.iter_mut().zip(f_data.iter()) {
+                *val = exp.eval(&var_values);
+            }
 
             // j
+            let j_dest = j.data_mut();
+            for (val, exp) in j_dest.iter_mut().zip(j_data.iter()) {
+                *val = exp.eval(&var_values);
+            }
             
             // h
-
+            for (hh, hh_data) in h.iter_mut().zip(h_data.iter()) {
+                let hh_dest = hh.data_mut();
+                for (val, exp) in hh_dest.iter_mut().zip(hh_data.iter()) {
+                    *val = exp.eval(&var_values);
+                }
+            }
         });
 
+        // Maps
+        let maps = ModelStdMaps {
+            var2index: var2index,
+            aindex2constr: aindex2constr,
+            jindex2constr: jindex2constr,
+            uindex2constr: uindex2constr,
+            lindex2constr: lindex2constr,
+        };
+
         // Problem
+        let problem: ModelStdProb;
+
         // Lp
-        if hphi_data.is_empty() && f_data.is_empty() && !p_data.iter().any(|x| *x) {
-
-        
-
+        if comp.obj.prop.affine && num_j == 0 && num_int == 0 {
+            problem = ModelStdProb::Lp(
+                ProblemLp::new(
+                    c_data,
+                    a_mat,
+                    b_data,
+                    l_data,
+                    u_data,
+                    Some(x0_data)
+                )
+            );
         }
 
         // Milp
-        else if hphi_data.is_empty() && f_data.is_empty() && p_data.iter().any(|x| *x) {
-
-
+        else if comp.obj.prop.affine && num_j == 0 && num_int > 0 {
+            problem = ModelStdProb::Milp(
+                ProblemMilp::new(
+                    c_data,
+                    a_mat,
+                    b_data,
+                    l_data,
+                    u_data,
+                    p_data,
+                    Some(x0_data)
+                )
+            );
         }
 
         // Nlp
-        else if !p_data.iter().any(|x| *x) {
-
-
+        else if num_int == 0 {
+            problem = ModelStdProb::Nlp(
+                ProblemNlp::new(
+                    hphi_mat,
+                    a_mat,
+                    b_data,
+                    j_mat,
+                    h_vec,
+                    l_data,
+                    u_data,
+                    Some(x0_data),
+                    eval_fn,
+                )
+            );
         }
 
         // Base (Milp)
         else {
-
-
+            problem = ModelStdProb::Base(
+                Problem::new(
+                    hphi_mat,
+                    a_mat,
+                    b_data,
+                    j_mat,
+                    h_vec,
+                    l_data,
+                    u_data,
+                    p_data,
+                    Some(x0_data),
+                    eval_fn,
+                )
+            );
         }
 
         // Return
-
+        (problem, maps)
     }
 }
 
@@ -307,7 +399,7 @@ mod tests {
     use crate::model::variable::VariableScalar;
 
     #[test]
-    fn std_problem() {
+    fn std_problem_lp() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -323,6 +415,6 @@ mod tests {
 
         println!("{}", p);
 
-        p.std_problem();
+        let (std_p, std_maps) = p.std_problem();
     }
 }
