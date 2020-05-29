@@ -11,3 +11,7 @@ mod constraint;
 mod constraint_std;
 mod model;
 mod model_std;
+
+pub use variable::VariableScalar;
+pub use constraint::Constraint;
+pub use model::Model; 

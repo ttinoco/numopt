@@ -193,7 +193,6 @@ impl ConstraintStd for Constraint {
 mod tests {
 
     use super::*;
-    use crate::model::node_base::NodeBase;
     use crate::model::node_cmp::NodeCmp;
     use crate::model::variable::VariableScalar;
 

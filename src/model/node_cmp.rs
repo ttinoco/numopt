@@ -4,16 +4,14 @@ use crate::model::node::Node;
 use crate::model::constant::ConstantScalar;
 use crate::model::constraint::{Constraint, ConstraintKind};
 
-const DEFAULT_LABEL: &str = "";
-
 pub trait NodeCmp<T> {
 
     fn equal_and_tag(&self, other: T, tag: &str) -> Constraint;
-    fn equal(&self, other: T) -> Constraint { self.equal_and_tag(other, DEFAULT_LABEL) }
+    fn equal(&self, other: T) -> Constraint { self.equal_and_tag(other, "") }
     fn geq_and_tag(&self, other: T, tag: &str) -> Constraint;
-    fn geq(&self, other: T) -> Constraint { self.geq_and_tag(other, DEFAULT_LABEL) }
+    fn geq(&self, other: T) -> Constraint { self.geq_and_tag(other, "") }
     fn leq_and_tag(&self, other: T, tag: &str) -> Constraint;
-    fn leq(&self, other: T) -> Constraint { self.leq_and_tag(other, DEFAULT_LABEL) }
+    fn leq(&self, other: T) -> Constraint { self.leq_and_tag(other, "") }
 }
 
 macro_rules! impl_node_cmp_scalar {
