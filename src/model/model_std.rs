@@ -1,26 +1,35 @@
 use std::collections::{HashSet, HashMap};
 
-use crate::problem;
+use crate::matrix::CooMat;
+
+use crate::problem::{Problem,
+                     ProblemLp,
+                     ProblemMilp,
+                     ProblemNlp};
 
 use crate::model::node::Node;
+use crate::model::node_base::NodeBase;
 use crate::model::node_std::{NodeStd, NodeStdComp};
 use crate::model::constant::ConstantScalar;
 use crate::model::constraint::Constraint;
 use crate::model::constraint_std::{ConstraintStd, ConstraintStdComp};
-use crate::model::problem::{Problem, Objective};
+use crate::model::model::{Model, Objective};
 
 const INF: f64 = 1e8;
 
-pub struct ProblemStdComp {
+pub struct ModelStdComp {
     pub obj: NodeStdComp,
     pub constr: ConstraintStdComp,
 }
 
-pub enum ProblemStdProb {
-    Base()
+pub enum ModelStdProb {
+    Base(Problem),
+    Lp(ProblemLp),
+    Milp(ProblemMilp),
+    Nlp(ProblemNlp),
 }
 
-pub struct ProblemStdMaps {
+pub struct ModelStdMaps {
     pub var2index: HashMap<Node, usize>,
     pub aindex2constr: HashMap<usize, Constraint>,
     pub jindex2constr: HashMap<usize, Constraint>,
@@ -28,14 +37,14 @@ pub struct ProblemStdMaps {
     pub lindex2constr: HashMap<usize, Constraint>,
 }
 
-pub trait ProblemStd {
-    fn std_components(&self) -> ProblemStdComp;
+pub trait ModelStd {
+    fn std_components(&self) -> ModelStdComp;
     fn std_problem(&self) -> ();
 }
 
-impl ProblemStd for Problem {
+impl ModelStd for Model {
 
-    fn std_components(&self) -> ProblemStdComp {
+    fn std_components(&self) -> ModelStdComp {
 
         // Objective std comp
         let obj = match self.objective() {
@@ -53,7 +62,7 @@ impl ProblemStd for Problem {
         }
 
         // Return
-        ProblemStdComp {
+        ModelStdComp {
             obj: obj,
             constr: constr,
         }
@@ -220,12 +229,70 @@ impl ProblemStd for Problem {
         }
 
         println!("x0_data: {:?}", x0_data);
-        
+       
+        // Eval
+        let eval_fn = Box::new(move | phi: &mut f64, 
+                                      gphi: &mut Vec<f64>, 
+                                      hphi: &mut CooMat<f64>,
+                                      f: &mut Vec<f64>,
+                                      j: &mut CooMat<f64>,
+                                      h: &mut Vec<CooMat<f64>>,
+                                      x: &[f64] | {
+
+            // Var values
+            let mut var_values: HashMap<&Node, f64> = HashMap::with_capacity(x.len());
+            for (var, index) in var2index.iter() {
+                var_values.insert(var, x[*index]);
+            }
+
+            // phi
+            *phi = phi_data.eval(&var_values);
+
+            // gphi
+            for (index, exp) in gphi_indices.iter().zip(gphi_data.iter()) {
+                (*gphi)[*index] = exp.eval(&var_values);
+            }
+
+            // hphi
+            //for (val, exp) in hphi.iter_mut().zip(hphi_data.iter()) {
+
+            //}
+
+            // f
+
+            // j
+            
+            // h
+
+        });
+
         // Problem
-        // LP
-        // MILP
-        // NLP
-        // MINLP
+        // Lp
+        if hphi_data.is_empty() && f_data.is_empty() && !p_data.iter().any(|x| *x) {
+
+        
+
+        }
+
+        // Milp
+        else if hphi_data.is_empty() && f_data.is_empty() && p_data.iter().any(|x| *x) {
+
+
+        }
+
+        // Nlp
+        else if !p_data.iter().any(|x| *x) {
+
+
+        }
+
+        // Base (Milp)
+        else {
+
+
+        }
+
+        // Return
 
     }
 }
@@ -245,7 +312,7 @@ mod tests {
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
 
-        let mut p = Problem::new();
+        let mut p = Model::new();
         p.set_objective(Objective::minimize(&(3.*&x + 4.*&y + 1.)));
         p.add_constraint(&(2.*&x + &y).equal(2.));
         p.add_constraint(&(&x.leq(5.)));

@@ -10,7 +10,7 @@ pub enum Objective {
     Empty,
 }
 
-pub struct Problem {
+pub struct Model {
 
     objective: Objective,
     constraints: Vec<Constraint>,
@@ -32,7 +32,7 @@ impl Objective {
     }
 }
 
-impl Problem {
+impl Model {
 
     pub fn add_constraint(&mut self, c: &Constraint) -> () {
         self.constraints.push(c.clone())
@@ -48,8 +48,8 @@ impl Problem {
 
     pub fn init_values(&self) -> &HashMap<Node, f64> { &self.init_values }
 
-    pub fn new() -> Problem {
-        Problem {
+    pub fn new() -> Model {
+        Model {
             objective: Objective::empty(),
             constraints: Vec::new(),
             init_values: HashMap::new(),
@@ -70,7 +70,7 @@ impl Problem {
     }
 }
 
-impl<'a> fmt::Display for Problem {
+impl<'a> fmt::Display for Model {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.objective {
             Objective::Minimize(x) => write!(f, "\nMinimize {}\n\n", x).unwrap(),
@@ -106,7 +106,7 @@ mod tests {
         let c2 = (&x).geq_and_tag(0., "x limit");
         let c3 = (&y).geq_and_tag(0., "y limit");
 
-        let mut p = Problem::new();
+        let mut p = Model::new();
         p.set_objective(Objective::minimize(&f));
         p.add_constraints(&vec!(&c1, &c2, &c3));
 
