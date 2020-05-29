@@ -116,7 +116,7 @@ impl ModelStd for Model {
             }
             hphi_data.push(e);
         }
-        let mut hphi_mat = CooMat::new(
+        let hphi_mat = CooMat::new(
             (num_vars, num_vars),
             hphi_row,
             hphi_col,
@@ -397,6 +397,8 @@ mod tests {
     use super::*;
     use crate::model::node_cmp::NodeCmp;
     use crate::model::variable::VariableScalar;
+    use crate::assert_vec_approx_eq;
+    use crate::problem::ProblemLpBase;
 
     #[test]
     fn std_problem_lp() {
@@ -404,17 +406,60 @@ mod tests {
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
 
+        let c1 = (2.*&x + &y).equal(2.);
+        let c2 = x.leq(5.);
+        let c3 = x.geq(0.);
+        let c4 = y.leq(5.);
+        let c5 = y.geq(0.);
+
         let mut p = Model::new();
         p.set_objective(Objective::minimize(&(3.*&x + 4.*&y + 1.)));
-        p.add_constraint(&(2.*&x + &y).equal(2.));
-        p.add_constraint(&(&x.leq(5.)));
-        p.add_constraint(&(&x.geq(0.)));
-        p.add_constraint(&(&y.leq(5.)));
-        p.add_constraint(&(&y.geq(0.)));
+        p.add_constraint(&c1);
+        p.add_constraint(&c2);
+        p.add_constraint(&c3);
+        p.add_constraint(&c4);
+        p.add_constraint(&c5);
         p.set_init_values(&hashmap!{ &x => 2., &y => 3. });
 
         println!("{}", p);
 
         let (std_p, std_maps) = p.std_problem();
+        let lp = match std_p {
+            ModelStdProb::Lp(x) => x,
+            _ => panic!("invalid std problem")
+        };
+
+        assert_vec_approx_eq!(lp.x0().unwrap(), vec![2., 3.], epsilon=0.);
+        assert_vec_approx_eq!(lp.c(), vec![3., 4.,], epsilon=0.);
+        assert_eq!(lp.na(), 1);
+        assert_eq!(lp.nx(), 2);
+        assert_eq!(lp.a().nnz(), 2);
+        for (row, col, val) in lp.a().iter() {
+            if *row == 0 && *col == 0 {
+                assert_eq!(*val, 2.);
+            }
+            else if *row == 0 && *col == 1 {
+                assert_eq!(*val, 1.);
+            }
+            else {
+                panic!("invalid a matrix")
+            }
+        }
+        assert_vec_approx_eq!(lp.b(), vec![2.], epsilon=0.);
+        assert_vec_approx_eq!(lp.l(), vec![0., 0.], epsilon=0.);
+        assert_vec_approx_eq!(lp.u(), vec![5., 5.], epsilon=0.);
+
+        assert_eq!(std_maps.var2index.len(), 2);
+        assert_eq!(*std_maps.var2index.get(&x).unwrap(), 0);
+        assert_eq!(*std_maps.var2index.get(&y).unwrap(), 1);
+        assert_eq!(std_maps.aindex2constr.len(), 1);
+        assert_eq!(*std_maps.aindex2constr.get(&0).unwrap(), c1);
+        assert_eq!(std_maps.jindex2constr.len(), 0);
+        assert_eq!(std_maps.uindex2constr.len(), 2);
+        assert_eq!(*std_maps.uindex2constr.get(&0).unwrap(), c2);
+        assert_eq!(*std_maps.uindex2constr.get(&1).unwrap(), c4);
+        assert_eq!(std_maps.lindex2constr.len(), 2);
+        assert_eq!(*std_maps.lindex2constr.get(&0).unwrap(), c3);
+        assert_eq!(*std_maps.lindex2constr.get(&1).unwrap(), c5);
     }
 }

@@ -118,10 +118,10 @@ impl<T: MatItem> CooMat<T> {
         let mut k: usize; 
         counter.copy_from_slice(&vec![0; self.rows()]);
         for (row, col, val) in self.iter() {
-            k = indptr[row] + counter[row]; 
-            indices[k] = col;
-            data[k] = val;
-            counter[row] += 1;
+            k = indptr[*row] + counter[*row]; 
+            indices[k] = *col;
+            data[k] = *val;
+            counter[*row] += 1;
         }
         
         // Return
@@ -142,7 +142,7 @@ impl<T: MatItem> Mul<Vec<T>> for &CooMat<T> {
         assert_eq!(self.cols(), rhs.len());
         let mut y = vec![T::zero(); self.rows()];
         for (row, col, val) in self.iter() {
-            y[row] += rhs[col]*val;
+            y[*row] += rhs[*col]*(*val);
         }
         y
     }
@@ -158,12 +158,12 @@ impl<'a, T: MatItem> CooMatIter<'a, T> {
 }
 
 impl<'a, T: MatItem> Iterator for CooMatIter<'a, T> {
-    type Item = (usize, usize, T);
+    type Item = (&'a usize, &'a usize, &'a T);
     fn next(&mut self) -> Option<Self::Item> {
         if self.k < self.mat.nnz() {
-            let item = (self.mat.row_inds[self.k],
-                    self.mat.col_inds[self.k],
-                    self.mat.data[self.k]);
+            let item = (&self.mat.row_inds[self.k],
+                        &self.mat.col_inds[self.k],
+                        &self.mat.data[self.k]);
             self.k += 1;
             return Some(item);
         }

@@ -172,8 +172,8 @@ impl Problem {
         let mut hcomb = CooMat::from_nnz((nx, nx), hcomb_nnz);
         for hh in h.iter() {
             for (row, col, _val) in hh.iter() {
-                hcomb.set_row_ind(k, row);
-                hcomb.set_col_ind(k, col);
+                hcomb.set_row_ind(k, *row);
+                hcomb.set_col_ind(k, *col);
                 k += 1;
             }
         }

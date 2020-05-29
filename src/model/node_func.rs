@@ -1,6 +1,5 @@
 
 use crate::model::node::Node;
-use crate::model::node_base::NodeBase;
 use crate::model::constant::ConstantScalar;
 use crate::model::function::cos::FunctionCos;
 use crate::model::function::sin::FunctionSin;
@@ -38,6 +37,7 @@ mod tests {
     use maplit::hashmap;
 
     use super::*;
+    use crate::model::node_base::NodeBase;
     use crate::model::variable::VariableScalar;
     use crate::model::constant::ConstantScalar;
 
