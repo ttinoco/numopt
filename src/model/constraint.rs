@@ -49,13 +49,13 @@ impl Constraint {
     pub fn violation(&self, var_values: &HashMap<&Node, f64>) -> f64 {
         match self.0.kind {
             ConstraintKind::Equal => { 
-                (self.0.lhs.eval(var_values)-self.0.rhs.eval(var_values)).abs()
+                (self.0.lhs.evaluate(var_values)-self.0.rhs.evaluate(var_values)).abs()
             },
             ConstraintKind::LessEqual => { 
-                0_f64.max(self.0.lhs.eval(var_values)-self.0.rhs.eval(var_values))
+                0_f64.max(self.0.lhs.evaluate(var_values)-self.0.rhs.evaluate(var_values))
             },
             ConstraintKind::GreaterEqual => {
-                0_f64.max(self.0.rhs.eval(var_values)-self.0.lhs.eval(var_values))
+                0_f64.max(self.0.rhs.evaluate(var_values)-self.0.lhs.evaluate(var_values))
             },
         }
     }

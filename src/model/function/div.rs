@@ -40,8 +40,8 @@ impl NodeBase for FunctionDiv {
         }
     }
 
-    fn eval(&self, var_values: &HashMap<&Node, f64>) -> f64 { 
-        self.args.0.eval(var_values)/self.args.1.eval(var_values)
+    fn evaluate(&self, var_values: &HashMap<&Node, f64>) -> f64 { 
+        self.args.0.evaluate(var_values)/self.args.1.evaluate(var_values)
     }
 }
 

@@ -275,35 +275,35 @@ impl ModelStd for Model {
             }
 
             // phi
-            *phi = phi_data.eval(&var_values);
+            *phi = phi_data.evaluate(&var_values);
 
             // gphi
             for (index, exp) in gphi_indices.iter().zip(gphi_data.iter()) {
-                (*gphi)[*index] = exp.eval(&var_values);
+                (*gphi)[*index] = exp.evaluate(&var_values);
             }
 
             // hphi
             let hphi_dest = hphi.data_mut();
             for (val, exp) in hphi_dest.iter_mut().zip(hphi_data.iter()) {
-                *val = exp.eval(&var_values);           
+                *val = exp.evaluate(&var_values);           
             }
 
             // f
             for (val, exp) in f.iter_mut().zip(f_data.iter()) {
-                *val = exp.eval(&var_values);
+                *val = exp.evaluate(&var_values);
             }
 
             // j
             let j_dest = j.data_mut();
             for (val, exp) in j_dest.iter_mut().zip(j_data.iter()) {
-                *val = exp.eval(&var_values);
+                *val = exp.evaluate(&var_values);
             }
             
             // h
             for (hh, hh_data) in h.iter_mut().zip(h_data.iter()) {
                 let hh_dest = hh.data_mut();
                 for (val, exp) in hh_dest.iter_mut().zip(hh_data.iter()) {
-                    *val = exp.eval(&var_values);
+                    *val = exp.evaluate(&var_values);
                 }
             }
         });
@@ -395,13 +395,15 @@ mod tests {
     use maplit::hashmap;
 
     use super::*;
+    use crate::model::node_func::NodeFunc;
     use crate::model::node_cmp::NodeCmp;
     use crate::model::variable::VariableScalar;
     use crate::assert_vec_approx_eq;
-    use crate::problem::ProblemLpBase;
 
     #[test]
     fn std_problem_lp() {
+
+        use crate::problem::ProblemLpBase;
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -411,30 +413,109 @@ mod tests {
         let c3 = x.geq(0.);
         let c4 = y.leq(5.);
         let c5 = y.geq(0.);
+        let c6 = (7.*&x + 5.*&y - 10.).geq(&x + &y - 3.);
 
-        let mut p = Model::new();
-        p.set_objective(Objective::minimize(&(3.*&x + 4.*&y + 1.)));
-        p.add_constraint(&c1);
-        p.add_constraint(&c2);
-        p.add_constraint(&c3);
-        p.add_constraint(&c4);
-        p.add_constraint(&c5);
-        p.set_init_values(&hashmap!{ &x => 2., &y => 3. });
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&(3.*&x + 4.*&y + 1.)));
+        m.add_constraint(&c1);
+        m.add_constraint(&c2);
+        m.add_constraint(&c3);
+        m.add_constraint(&c4);
+        m.add_constraint(&c5);
+        m.add_constraint(&c6);
+        m.set_init_values(&hashmap!{ &x => 2., &y => 3. });
 
-        println!("{}", p);
+        println!("{}", m);
 
-        let (std_p, std_maps) = p.std_problem();
+        let (std_p, std_maps) = m.std_problem();
         let lp = match std_p {
             ModelStdProb::Lp(x) => x,
             _ => panic!("invalid std problem")
         };
 
-        assert_vec_approx_eq!(lp.x0().unwrap(), vec![2., 3.], epsilon=0.);
-        assert_vec_approx_eq!(lp.c(), vec![3., 4.,], epsilon=0.);
-        assert_eq!(lp.na(), 1);
-        assert_eq!(lp.nx(), 2);
-        assert_eq!(lp.a().nnz(), 2);
+        assert_vec_approx_eq!(lp.x0().unwrap(), vec![0., 2., 3.], epsilon=0.);
+        assert_vec_approx_eq!(lp.c(), vec![0., 3., 4.,], epsilon=0.);
+        assert_eq!(lp.na(), 2);
+        assert_eq!(lp.nx(), 3);
+        assert_eq!(lp.a().nnz(), 5);
         for (row, col, val) in lp.a().iter() {
+            if *row == 0 && *col == 1 {
+                assert_eq!(*val, 2.);
+            }
+            else if *row == 0 && *col == 2 {
+                assert_eq!(*val, 1.);
+            }
+            else if *row == 1 && *col == 0 {
+                assert_eq!(*val, -1.);
+            }
+            else if *row == 1 && *col == 1 {
+                assert_eq!(*val, 6.);
+            }
+            else if *row == 1 && *col == 2 {
+                assert_eq!(*val, 4.);
+            }
+            else {
+                panic!("invalid a matrix")
+            }
+        }
+        assert_vec_approx_eq!(lp.b(), vec![2., 7.], epsilon=0.);
+        assert_vec_approx_eq!(lp.l(), vec![0., 0., 0.], epsilon=0.);
+        assert_vec_approx_eq!(lp.u(), vec![1e8, 5., 5.], epsilon=0.);
+
+        assert_eq!(std_maps.var2index.len(), 3);
+        assert_eq!(*std_maps.var2index.get(c6.slack()).unwrap(), 0);
+        assert_eq!(*std_maps.var2index.get(&x).unwrap(), 1);
+        assert_eq!(*std_maps.var2index.get(&y).unwrap(), 2);
+        assert_eq!(std_maps.aindex2constr.len(), 2);
+        assert_eq!(*std_maps.aindex2constr.get(&0).unwrap(), c1);
+        assert_eq!(*std_maps.aindex2constr.get(&1).unwrap(), c6);
+        assert_eq!(std_maps.jindex2constr.len(), 0);
+        assert_eq!(std_maps.uindex2constr.len(), 2);
+        assert_eq!(*std_maps.uindex2constr.get(&1).unwrap(), c2);
+        assert_eq!(*std_maps.uindex2constr.get(&2).unwrap(), c4);
+        assert_eq!(std_maps.lindex2constr.len(), 3);
+        assert_eq!(*std_maps.lindex2constr.get(&0).unwrap(), c6);
+        assert_eq!(*std_maps.lindex2constr.get(&1).unwrap(), c3);
+        assert_eq!(*std_maps.lindex2constr.get(&2).unwrap(), c5);
+    }
+
+    #[test]
+    fn std_problem_milp() {
+
+        use crate::problem::ProblemMilpBase;
+
+        let x = VariableScalar::new_integer("x");
+        let y = VariableScalar::new_continuous("y");
+
+        let c1 = (2.*&x + &y).equal(2.);
+        let c2 = x.leq(5.);
+        let c3 = x.geq(0.);
+        let c4 = y.leq(5.);
+        let c5 = y.geq(0.);
+
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&(3.*&x + 4.*&y + 1.)));
+        m.add_constraint(&c1);
+        m.add_constraint(&c2);
+        m.add_constraint(&c3);
+        m.add_constraint(&c4);
+        m.add_constraint(&c5);
+        m.set_init_values(&hashmap!{ &x => 2., &y => 3. });
+
+        println!("{}", m);
+
+        let (std_p, std_maps) = m.std_problem();
+        let milp = match std_p {
+            ModelStdProb::Milp(x) => x,
+            _ => panic!("invalid std problem")
+        };
+
+        assert_vec_approx_eq!(milp.x0().unwrap(), vec![2., 3.], epsilon=0.);
+        assert_vec_approx_eq!(milp.c(), vec![3., 4.,], epsilon=0.);
+        assert_eq!(milp.na(), 1);
+        assert_eq!(milp.nx(), 2);
+        assert_eq!(milp.a().nnz(), 2);
+        for (row, col, val) in milp.a().iter() {
             if *row == 0 && *col == 0 {
                 assert_eq!(*val, 2.);
             }
@@ -445,9 +526,12 @@ mod tests {
                 panic!("invalid a matrix")
             }
         }
-        assert_vec_approx_eq!(lp.b(), vec![2.], epsilon=0.);
-        assert_vec_approx_eq!(lp.l(), vec![0., 0.], epsilon=0.);
-        assert_vec_approx_eq!(lp.u(), vec![5., 5.], epsilon=0.);
+        assert_vec_approx_eq!(milp.b(), vec![2.], epsilon=0.);
+        assert_vec_approx_eq!(milp.l(), vec![0., 0.], epsilon=0.);
+        assert_vec_approx_eq!(milp.u(), vec![5., 5.], epsilon=0.);
+        assert_eq!(milp.p().len(), 2);
+        assert!(milp.p()[0]);
+        assert!(!milp.p()[1]);
 
         assert_eq!(std_maps.var2index.len(), 2);
         assert_eq!(*std_maps.var2index.get(&x).unwrap(), 0);
@@ -461,5 +545,73 @@ mod tests {
         assert_eq!(std_maps.lindex2constr.len(), 2);
         assert_eq!(*std_maps.lindex2constr.get(&0).unwrap(), c3);
         assert_eq!(*std_maps.lindex2constr.get(&1).unwrap(), c5);
+    }
+
+    #[test]
+    fn std_problem_nlp() {
+
+        use crate::problem::ProblemNlpBase;
+
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
+
+        let f = 3.*x.cos() + 4.*&y*&y - 10.;
+        let c1 = (2.*&x + 3.*&y).equal(7.);
+        let c2 = (x.sin() + &x*&y + 4.).leq(&x + 10.);
+        let c3 = 5_f64.geq(&x*&x);
+
+        let mut m = Model::new();
+        m.set_objective(Objective::maximize(&f));
+        m.add_constraint(&c1);
+        m.add_constraint(&c2);
+        m.add_constraint(&c3);
+        m.set_init_values(&hashmap!{ &x => 2., &y => 3. });
+
+        println!("{}", m);
+
+        let (std_p, std_maps) = m.std_problem();
+        let mut nlp = match std_p {
+            ModelStdProb::Nlp(x) => x,
+            _ => panic!("invalid std problem")
+        };
+
+        nlp.evaluate(&vec![2., 3., 4., 5.]);
+
+        assert_vec_approx_eq!(nlp.x0().unwrap(), vec![0., 0., 2., 3.], epsilon=0.);
+        assert_eq!(nlp.phi(), 3.*4_f64.cos() + 4.*5.*5. - 10.);
+        assert_vec_approx_eq!(nlp.gphi(), 
+                              vec![0., 0., -3.*4_f64.sin(), 8.*5.],
+                              epsilon=1e-8);
+        assert_eq!(nlp.hphi().nnz(), 2);
+        for (v1, v2, val) in nlp.hphi().iter() {
+            if *v1 == 2 && *v2 == 2 {
+                assert_eq!(*val, -3.*4_f64.cos());
+            }
+            else if *v1 == 3 && *v2 == 3 {
+                assert_eq!(*val, 8.);
+            }
+            else {
+                panic!("invalid variable pair");
+            }
+        }
+
+        assert_eq!(nlp.a().nnz(), 2);
+        for (row, col, val) in nlp.a().iter() {
+            if *row == 0 && *col == 2 {
+                assert_eq!(*val, 2.);
+            }
+            else if *row == 0 && *col == 3 {
+                assert_eq!(*val, 3.);
+            }
+            else {
+                panic!("invalid a matrix entry");
+            }
+        }
+        assert_vec_approx_eq!(nlp.b(), vec![7.], epsilon=0.);
+
+        //let c2 = (x.sin() + &x*&y + 4.).leq(&x + 10.);
+        //let c3 = 5_f64.geq(&x*&x);
+
+
     }
 }

@@ -38,8 +38,8 @@ impl NodeBase for FunctionSin {
         }
     }
 
-    fn eval(&self, var_values: &HashMap<&Node, f64>) -> f64 {
-        self.arg.eval(var_values).sin()
+    fn evaluate(&self, var_values: &HashMap<&Node, f64>) -> f64 {
+        self.arg.evaluate(var_values).sin()
     }
 }
 

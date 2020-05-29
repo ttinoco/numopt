@@ -39,8 +39,8 @@ impl NodeBase for FunctionAdd {
         ConstantScalar::new(0.)
     }
 
-    fn eval(&self, var_values: &HashMap<&Node, f64>) -> f64 { 
-        self.args.iter().map(|x| x.eval(var_values)).sum()
+    fn evaluate(&self, var_values: &HashMap<&Node, f64>) -> f64 { 
+        self.args.iter().map(|x| x.evaluate(var_values)).sum()
     }
 }
 
@@ -163,7 +163,7 @@ mod tests {
         let z5 = &f1 + &f1;
         let z5x = z5.derivative(&x);
         let z5y = z5.derivative(&y);
-        assert_eq!(z5.eval(&hashmap!{ &x => 3., &y => 4. }), 2.*(3.+1.+4.));
+        assert_eq!(z5.evaluate(&hashmap!{ &x => 3., &y => 4. }), 2.*(3.+1.+4.));
         assert!(z5x.is_constant_with_value(2.));
         assert!(z5y.is_constant_with_value(2.));
     }

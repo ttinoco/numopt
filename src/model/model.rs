@@ -73,14 +73,24 @@ impl Model {
 impl<'a> fmt::Display for Model {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.objective {
-            Objective::Minimize(x) => write!(f, "\nMinimize {}\n\n", x).unwrap(),
-            Objective::Maximize(x) => write!(f, "\nMaximize {}\n\n", x).unwrap(),
-            Objective::Empty => write!(f, "\nFind point\n\n").unwrap(),
+            Objective::Minimize(_) => write!(f, "\nMinimize\n")?,
+            Objective::Maximize(_) => write!(f, "\nMaximize\n")?,
+            Objective::Empty => write!(f, "\nFind point\n")?,
+        };
+        match &self.objective {
+            Objective::Minimize(x) => write!(f, "{}\n", x)?,
+            Objective::Maximize(x) => write!(f, "{}\n", x)?,
+            Objective::Empty => write!(f, "\n")?,
         };
         if self.constraints.len() > 0 {
-            write!(f, "Subject to\n").unwrap();
+            write!(f, "\nSubject to\n")?;
             for c in self.constraints.iter() {
-                write!(f, "{} : {}\n", c, c.label()).unwrap();
+                if c.label() != "" {
+                    write!(f, "{} : {}\n", c, c.label())?;
+                }
+                else {
+                    write!(f, "{}\n", c)?;
+                }
             }
         }
         Ok(())
@@ -106,16 +116,17 @@ mod tests {
         let c2 = (&x).geq_and_tag(0., "x limit");
         let c3 = (&y).geq_and_tag(0., "y limit");
 
-        let mut p = Model::new();
-        p.set_objective(Objective::minimize(&f));
-        p.add_constraints(&vec!(&c1, &c2, &c3));
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&f));
+        m.add_constraints(&vec!(&c1, &c2, &c3));
 
-        let refstr = "\nMinimize 4*cos(x) + y\n\n\
+        let refstr = "\nMinimize\n\
+                      4*cos(x) + y\n\n\
                       Subject to\n\
                       x + y >= 0 : comb limit\n\
                       x >= 0 : x limit\n\
                       y >= 0 : y limit\n";
 
-        assert_eq!(refstr, format!("{}", p));
+        assert_eq!(refstr, format!("{}", m));
     }
 }

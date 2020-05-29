@@ -7,7 +7,7 @@ pub trait NodeBase {
 
     fn arguments(&self) -> Vec<&Node> { Vec::new() }
     fn partial(&self, arg: &Node) -> Node;
-    fn eval(&self, _var_values: &HashMap<&Node, f64>) -> f64 { NAN }
+    fn evaluate(&self, _var_values: &HashMap<&Node, f64>) -> f64 { NAN }
 }
 
 impl NodeBase for Node {
@@ -36,7 +36,7 @@ impl NodeBase for Node {
         }
     }
 
-    fn eval(&self, var_values: &HashMap<&Node, f64>) -> f64 {
+    fn evaluate(&self, var_values: &HashMap<&Node, f64>) -> f64 {
         match self {
             Node::ConstantScalar(x) => x.value(),
             Node::VariableScalar(_) => {
@@ -45,11 +45,11 @@ impl NodeBase for Node {
                     None => NAN,
                 }
             },
-            Node::FunctionAdd(x) => x.eval(var_values),
-            Node::FunctionCos(x) => x.eval(var_values),
-            Node::FunctionDiv(x) => x.eval(var_values),
-            Node::FunctionMul(x) => x.eval(var_values),
-            Node::FunctionSin(x) => x.eval(var_values),            
+            Node::FunctionAdd(x) => x.evaluate(var_values),
+            Node::FunctionCos(x) => x.evaluate(var_values),
+            Node::FunctionDiv(x) => x.evaluate(var_values),
+            Node::FunctionMul(x) => x.evaluate(var_values),
+            Node::FunctionSin(x) => x.evaluate(var_values),            
         }
     }
 }

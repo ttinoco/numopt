@@ -38,8 +38,8 @@ impl NodeBase for FunctionCos {
         }
     }
 
-    fn eval(&self, var_values: &HashMap<&Node, f64>) -> f64 { 
-        self.arg.eval(var_values).cos()
+    fn evaluate(&self, var_values: &HashMap<&Node, f64>) -> f64 { 
+        self.arg.evaluate(var_values).cos()
     }
 }
 
