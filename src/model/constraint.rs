@@ -4,7 +4,6 @@ use std::collections::HashMap;
 
 use super::node::Node;
 use super::node_base::NodeBase;
-use super::variable::VariableScalar;
 
 #[derive(PartialEq)]
 pub enum ConstraintKind {
@@ -18,7 +17,6 @@ struct ConstraintInner {
     kind: ConstraintKind,
     rhs: Node,
     label: String,
-    slack: Node,
 }
 
 pub struct Constraint(Rc<ConstraintInner>);
@@ -38,13 +36,11 @@ impl Constraint {
                 kind: kind,
                 rhs: rhs,
                 label: String::from(label),
-                slack: VariableScalar::new_continuous("s"),
             }
         ))
     }
 
     pub fn rhs(&self) -> &Node { &self.0.rhs }
-    pub fn slack(&self) -> &Node { &self.0.slack }
 
     pub fn violation(&self, var_values: &HashMap<&Node, f64>) -> f64 {
         match self.0.kind {

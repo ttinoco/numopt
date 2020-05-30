@@ -189,8 +189,16 @@ impl ModelStd for Model {
             let mut hh_col: Vec<usize> = Vec::with_capacity(hh.len());
             let mut hh_data: Vec<Node> = Vec::with_capacity(hh.len());
             for (v1, v2, exp) in hh.into_iter() {
-                hh_row.push(*var2index.get(&v1).unwrap());
-                hh_col.push(*var2index.get(&v2).unwrap());
+                let i = *var2index.get(&v1).unwrap();
+                let j = *var2index.get(&v2).unwrap();
+                if i >= j {
+                    hh_row.push(i);
+                    hh_col.push(j);
+                }
+                else {
+                    hh_row.push(j);
+                    hh_col.push(i);
+                }
                 hh_data.push(exp);
             }
             h_vec.push(CooMat::new(
@@ -463,9 +471,20 @@ mod tests {
         assert_vec_approx_eq!(lp.u(), vec![1e8, 5., 5.], epsilon=0.);
 
         assert_eq!(std_maps.var2index.len(), 3);
-        assert_eq!(*std_maps.var2index.get(c6.slack()).unwrap(), 0);
-        assert_eq!(*std_maps.var2index.get(&x).unwrap(), 1);
-        assert_eq!(*std_maps.var2index.get(&y).unwrap(), 2);
+        for (var, index) in std_maps.var2index.iter() {
+            if *var == x {
+                assert_eq!(*index, 1);
+            }
+            else if *var == y {
+                assert_eq!(*index, 2);
+            }
+            else if (*var).name() == "_s_a1_" {
+                assert_eq!(*index, 0);
+            }
+            else {
+                panic!("invalid var2index data");
+            }
+        }
         assert_eq!(std_maps.aindex2constr.len(), 2);
         assert_eq!(*std_maps.aindex2constr.get(&0).unwrap(), c1);
         assert_eq!(*std_maps.aindex2constr.get(&1).unwrap(), c6);
@@ -576,6 +595,7 @@ mod tests {
         };
 
         nlp.evaluate(&vec![2., 3., 4., 5.]);
+        nlp.combine_h(&vec![1.5, 2.3]);
 
         assert_vec_approx_eq!(nlp.x0().unwrap(), vec![0., 0., 2., 3.], epsilon=0.);
         assert_eq!(nlp.phi(), 3.*4_f64.cos() + 4.*5.*5. - 10.);
@@ -609,9 +629,70 @@ mod tests {
         }
         assert_vec_approx_eq!(nlp.b(), vec![7.], epsilon=0.);
 
-        //let c2 = (x.sin() + &x*&y + 4.).leq(&x + 10.);
-        //let c3 = 5_f64.geq(&x*&x);
-
-
+        assert_eq!(nlp.f().len(), 2);
+        assert_eq!(nlp.f()[0], 4_f64.sin() + 4.*5. + 4. - 4. - 10. - 2.);
+        assert_eq!(nlp.f()[1], 5. - 4.*4. - 3.);
+        assert_eq!(nlp.j().nnz(), 5);
+        for (row, col, val) in nlp.j().iter() {
+            if *row == 0 && *col == 2 {
+                assert_eq!(*val, 4_f64.cos() + 5. - 1.);
+            }
+            else if *row == 0 && *col == 3 {
+                assert_eq!(*val, 4.);
+            }
+            else if *row == 0 && *col == 0 {
+                assert_eq!(*val, -1.);
+            }
+            else if *row == 1 && *col == 2 {
+                assert_eq!(*val, -2.*4.);
+            }
+            else if *row == 1 && *col == 1 {
+                assert_eq!(*val, -1.);
+            }
+            else {
+                panic!("invalid j matrix entry");
+            }
+        }
+        assert_eq!(nlp.h().len(), 2);
+        assert_eq!(nlp.h()[0].nnz(), 2);
+        assert_eq!(nlp.h()[1].nnz(), 1);
+        for (var1, var2, val) in nlp.h()[0].iter() {
+            if *var1 == 2 && *var2 == 2 {
+                assert_eq!(*val, -4_f64.sin());
+            }
+            else if *var1 == 3 && *var2 == 2 {
+                assert_eq!(*val, 1.);
+            }
+            else {
+                panic!("invalid h[0] entry")
+            }
+        }
+        for (var1, var2, val) in nlp.h()[1].iter() {
+            if *var1 == 2 && *var2 == 2 {
+                assert_eq!(*val, -2.);
+            }
+            else {
+                panic!("invalid h[1] entry")
+            }
+        }
+        assert_eq!(nlp.hcomb().nnz(), 3);
+        let mut first = true;
+        for (var1, var2, val) in nlp.hcomb().iter() {
+            if *var1 == 2 && *var2 == 2 && first {
+                assert_eq!(*val, 1.5*(-4_f64.sin()));
+                first = false;
+            }
+            else if *var1 == 2 && *var2 == 2 && !first {
+                assert_eq!(*val, 2.3*-2.);
+            }
+            else if *var1 == 3 && *var2 == 2 {
+                assert_eq!(*val, 1.*1.5);
+            }
+            else {
+                panic!("invalid hcomb entry")
+            }
+        }
+        assert_vec_approx_eq!(nlp.l(), vec![-1e8, 0., -1e8, -1e8], epsilon=0.);
+        assert_vec_approx_eq!(nlp.u(), vec![0., 1e8, 1e8, 1e8], epsilon=0.);
     }
 }

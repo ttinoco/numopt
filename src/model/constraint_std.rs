@@ -4,6 +4,7 @@ use crate::model::node::Node;
 use crate::model::node_std::NodeStd;
 use crate::model::node_std::NodeStdProp;
 use crate::model::constant::ConstantScalar;
+use crate::model::variable::VariableScalar;
 use crate::model::constraint::{Constraint, ConstraintKind};
 
 pub struct ConstraintStdComp {
@@ -109,7 +110,7 @@ impl ConstraintStd for Constraint {
 
             // a^Tx + b - s == 0 and s <= 0 or s >= 0
             else {
-                let s = self.slack();
+                let s = VariableScalar::new_continuous(format!("_s_a{}_", *arow).as_str());
                 for (x, val) in prop.a.iter() {
                     a.push((*arow, x.clone(), *val)); 
                 }
@@ -152,8 +153,8 @@ impl ConstraintStd for Constraint {
 
             // f(x) - s == 0 and s <= 0 or s >= 0
             else {
-                let s = self.slack();
-                f.push(comp.phi-s);
+                let s = VariableScalar::new_continuous(format!("_s_j{}_", *jrow).as_str());
+                f.push(comp.phi-&s);
                 cj.push(self.clone());
                 for (x, e) in comp.gphi.iter() {
                     j.push((*jrow, x.clone(), e.clone()));
@@ -321,7 +322,7 @@ mod tests {
                 assert_eq!(*val, 4.);
                 counter += 1;
             }
-            else if *col == *c1.slack() {
+            else if (*col).name() == "_s_a1_" {
                 assert_eq!(*row, 1);
                 assert_eq!(*val, -1.);
                 counter += 1;
@@ -337,7 +338,7 @@ mod tests {
         assert_eq!(comp1.h.len(), 0);
         assert_eq!(comp1.u.len(), 1);
         let (var, val, c) = &comp1.u[0];
-        assert_eq!(*var, *c1.slack());
+        assert_eq!((*var).name(), "_s_a1_");
         assert_eq!(*val, 0.);
         assert_eq!(*c, c1);
         assert_eq!(comp1.l.len(), 0);
@@ -373,7 +374,7 @@ mod tests {
                 assert_eq!(*val, 4.);
                 counter += 1;
             }
-            else if *col == *c1.slack() {
+            else if (*col).name() == "_s_a1_" {
                 assert_eq!(*row, 1);
                 assert_eq!(*val, -1.);
                 counter += 1;
@@ -390,7 +391,7 @@ mod tests {
         assert_eq!(comp1.u.len(), 0);
         assert_eq!(comp1.l.len(), 1);
         let (var, val, c) = &comp1.l[0];
-        assert_eq!(*var, *c1.slack());
+        assert_eq!((*var).name(), "_s_a1_");
         assert_eq!(*val, 0.);
         assert_eq!(*c, c1);
         assert_eq!(arow, 2);
@@ -483,7 +484,7 @@ mod tests {
         assert_eq!(comp1.b.len(), 0);
         assert_eq!(comp1.f.len(), 1);
         assert_eq!(format!("{}", comp1.f[0]),
-                   "3*x*x + 4*x*y + 7*y*y + -1*s + 3");
+                   "3*x*x + 4*x*y + 7*y*y + -1*_s_j2_ + 3");
         assert_eq!(comp1.j.len(), 3);
         let mut counter: usize = 0;
         for (row, col, val) in comp1.j.iter() {
@@ -499,7 +500,7 @@ mod tests {
                            "7*y + y*7 + 4*x");
                 counter += 1;
             }
-            else if *col == *c1.slack() {
+            else if (*col).name() == "_s_j2_"  {
                 assert_eq!(*row, 2);
                 assert!((*val).is_constant_with_value(-1.));
                 counter += 1;
@@ -536,7 +537,7 @@ mod tests {
         assert_eq!(counter, 3);
         assert_eq!(comp1.u.len(), 1);
         let (var, val, c) = comp1.u.iter().next().unwrap();
-        assert_eq!(*var, *c1.slack());
+        assert_eq!((*var).name(), "_s_j2_");
         assert_eq!(*val, 0.);
         assert_eq!(*c, c1);
         assert_eq!(comp1.l.len(), 0);
@@ -561,7 +562,7 @@ mod tests {
         assert_eq!(comp1.b.len(), 0);
         assert_eq!(comp1.f.len(), 1);
         assert_eq!(format!("{}", comp1.f[0]),
-                   "3*x*x + 4*x*y + 7*y*y + -1*s + 3");
+                   "3*x*x + 4*x*y + 7*y*y + -1*_s_j2_ + 3");
         assert_eq!(comp1.j.len(), 3);
         let mut counter: usize = 0;
         for (row, col, val) in comp1.j.iter() {
@@ -577,7 +578,7 @@ mod tests {
                            "7*y + y*7 + 4*x");
                 counter += 1;
             }
-            else if *col == *c1.slack() {
+            else if (*col).name() == "_s_j2_" {
                 assert_eq!(*row, 2);
                 assert!((*val).is_constant_with_value(-1.));
                 counter += 1;
@@ -615,7 +616,7 @@ mod tests {
         assert_eq!(comp1.u.len(), 0);
         assert_eq!(comp1.l.len(), 1);
         let (var, val, c) = comp1.l.iter().next().unwrap();
-        assert_eq!(*var, *c1.slack());
+        assert_eq!((*var).name(), "_s_j2_");
         assert_eq!(*val, 0.);
         assert_eq!(*c, c1);
         assert_eq!(arow, 1);
