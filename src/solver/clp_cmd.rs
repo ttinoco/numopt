@@ -18,8 +18,6 @@ use crate::problem::{ProblemSol,
 /// that utilzes the command-line tool "clp". 
 /// The command-line tool needs to be on the system path.
 pub struct SolverClpCmd<T> {
-    status: SolverStatus,
-    solution: Option<ProblemSol>,
     phantom: PhantomData<T>,
     parameters: HashMap<String, SolverParam>,
 }
@@ -32,8 +30,6 @@ impl<T: ProblemLpBase + ProblemMilpIO> Solver<T> for SolverClpCmd<T> {
         parameters.insert("logLevel".to_string(), SolverParam::IntParam(1));
 
         Self {
-            status: SolverStatus::Unknown,
-            solution: None,
             phantom: PhantomData,
             parameters: parameters,
         } 
@@ -41,15 +37,9 @@ impl<T: ProblemLpBase + ProblemMilpIO> Solver<T> for SolverClpCmd<T> {
 
     fn get_params(&self) -> &HashMap<String, SolverParam> { &self.parameters }
     fn get_params_mut(&mut self) -> &mut HashMap<String, SolverParam> { &mut self.parameters }
-    fn status(&self) -> &SolverStatus { &self.status }
-    fn solution(&self) -> &Option<ProblemSol> { &self.solution }
 
-    fn solve(&mut self, p: &mut T) -> Result<(), SimpleError> {
+    fn solve(&mut self, p: &mut T) -> Result<(SolverStatus, ProblemSol), SimpleError> {
 
-        // Reset
-        self.status = SolverStatus::Error;
-        self.solution = None;
-     
         // Input filename
         let input_file = Builder::new()
             .prefix("clp")
@@ -122,15 +112,11 @@ impl<T: ProblemLpBase + ProblemMilpIO> Solver<T> for SolverClpCmd<T> {
             }
         };
 
-        // Set status and solution
-        self.status = status;
-        self.solution = Some(solution);        
-
         // Clean up output file
         remove_file(&output_filename).ok();
         
         // All good
-        Ok(())
+        Ok((status, solution))
     }
 }
 
@@ -174,22 +160,20 @@ mod tests {
 
         let mut s = SolverClpCmd::new(&p);
         s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
-        s.solve(&mut p).unwrap();
+        let (status, solution) = s.solve(&mut p).unwrap();
 
-        assert_eq!(*s.status(), SolverStatus::Solved);
-        assert!(s.solution().is_some());
-        assert_vec_approx_eq!(s.solution().as_ref().unwrap().x, 
+        assert_eq!(status, SolverStatus::Solved);
+        assert_vec_approx_eq!(solution.x, 
                               &vec![1.7142857, 2.8571429, -1.1428571, 0., 0.], 
                               epsilon=1e-8);
-        assert_vec_approx_eq!(s.solution().as_ref().unwrap().lam, 
+        assert_vec_approx_eq!(solution.lam, 
                               &vec![0., 31.428571, 21.428571], 
                               epsilon=1e-8);
-        assert_vec_approx_eq!(s.solution().as_ref().unwrap().mu, 
+        assert_vec_approx_eq!(solution.mu, 
                               &vec![1.4210855e-14, 0., 0., 3.1428571e+01, 2.1428571e+01], 
                               epsilon=1e-8);
-        assert_vec_approx_eq!(s.solution().as_ref().unwrap().pi, 
+        assert_vec_approx_eq!(solution.pi, 
                               &vec![0.;5], 
                               epsilon=1e-8);
-
     }
 }

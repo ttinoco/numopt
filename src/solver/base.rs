@@ -48,14 +48,8 @@ pub trait Solver<T> {
     /// Gets mutable reference of optimization solver parameters.
     fn get_params_mut(&mut self) -> &mut HashMap<String, SolverParam>;
     
-    /// Gets optimization solver status.
-    fn status(&self) -> &SolverStatus;
-
-    /// Gets solution candidate obtained by optimization solver.
-    fn solution(&self) -> &Option<ProblemSol>;
-
     /// Solves optimization problem.
-    fn solve(&mut self, p: &mut T) -> Result<(), SimpleError>;
+    fn solve(&mut self, p: &mut T) -> Result<(SolverStatus, ProblemSol), SimpleError>;
 
     /// Sets optimization solver parameter.
     fn set_param(&mut self, name: &str, value: SolverParam) -> Result<(), SimpleError> { 

@@ -1,5 +1,9 @@
 use std::fmt;
 use std::collections::HashMap;
+use simple_error::SimpleError;
+
+use crate::solver::SolverStatus;
+use crate::problem::ProblemSol;
 
 use crate::model::node::Node;
 use crate::model::constraint::Constraint;
@@ -15,6 +19,8 @@ pub struct Model {
     objective: Objective,
     constraints: Vec<Constraint>,
     init_values: HashMap<Node, f64>,
+    solver_status: Option<SolverStatus>,
+    solution_estimate: Option<ProblemSol>,
 }
 
 impl Objective {
@@ -53,6 +59,8 @@ impl Model {
             objective: Objective::empty(),
             constraints: Vec::new(),
             init_values: HashMap::new(),
+            solver_status: None,
+            solution_estimate: None,
         }
     }
 

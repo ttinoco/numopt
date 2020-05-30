@@ -23,8 +23,6 @@ use crate::problem::{ProblemSol,
 /// The library needs to be on the linker path.
 /// This solver is available when the feature "ipopt" is enabled.                 
 pub struct SolverIpopt<T> {
-    status: SolverStatus,
-    solution: Option<ProblemSol>,
     phantom: PhantomData<T>,
     parameters: HashMap<String, SolverParam>,
 }
@@ -38,8 +36,6 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
         parameters.insert("sb".to_string(), SolverParam::StrParam(String::from("no")));
         
         Self {
-            status: SolverStatus::Unknown,
-            solution: None,
             phantom: PhantomData,
             parameters: parameters,
         } 
@@ -47,15 +43,10 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
 
     fn get_params(&self) -> &HashMap<String, SolverParam> { &self.parameters }
     fn get_params_mut(&mut self) -> &mut HashMap<String, SolverParam> { &mut self.parameters }
-    fn status(&self) -> &SolverStatus { &self.status }
-    fn solution(&self) -> &Option<ProblemSol> { &self.solution }
+    
+    fn solve(&mut self, p: &mut T) -> Result<(SolverStatus, ProblemSol), SimpleError> {
 
-    fn solve(&mut self, p: &mut T) -> Result<(), SimpleError> {
-
-        // Reset
-        self.status = SolverStatus::Error;
-        self.solution = None;
-
+        // Init
         let n: c_int = p.nx().to_i32().unwrap();
         let m: c_int = (p.na() + p.nf()).to_i32().unwrap();
         let glu: Vec<f64> = vec![0.; p.na()+p.nf()];
@@ -122,27 +113,27 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
         };
 
         // Set status and solution
+        let mut status = SolverStatus::Error;
         if cstatus == 0 {
-            self.status = SolverStatus::Solved;
+            status = SolverStatus::Solved;
         }  
-        let mut sol = ProblemSol::new(p.nx(), p.na(), p.nf()); 
-        sol.x.copy_from_slice(&x);
+        let mut solution = ProblemSol::new(p.nx(), p.na(), p.nf()); 
+        solution.x.copy_from_slice(&x);
         for k in 0..p.na() {
-            sol.lam[k] = -lamnu[k];
+            solution.lam[k] = -lamnu[k];
         }
         for k in p.na()..(p.na()+p.nf()) {
-            sol.nu[k-p.na()] = -lamnu[k];
+            solution.nu[k-p.na()] = -lamnu[k];
         }
-        sol.pi.copy_from_slice(&pi);
-        sol.mu.copy_from_slice(&mu);
-        self.solution = Some(sol);
+        solution.pi.copy_from_slice(&pi);
+        solution.mu.copy_from_slice(&mu);
 
         // Clean up
         unsafe {
             cipopt::FreeIpoptProblem(cprob);
         };
 
-        Ok(())
+        Ok((status, solution))
     }
 }
 
@@ -561,10 +552,10 @@ mod tests {
         let mut s = SolverIpopt::new(&p);
         s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
         s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
-        s.solve(&mut p).unwrap();
+        let (status, solution) = s.solve(&mut p).unwrap();
 
-        assert_eq!(*s.status(), SolverStatus::Solved);
-        assert_vec_approx_eq!(s.solution().as_ref().unwrap().x,
+        assert_eq!(status, SolverStatus::Solved);
+        assert_vec_approx_eq!(solution.x,
                               &vec![1., 4.742999629, 3.821149993, 1.379408294, 25.],
                               epsilon=1e-7);
 
@@ -604,22 +595,20 @@ mod tests {
         let mut s = SolverIpopt::new(&p);
         s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
         s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
-        s.solve(&mut p).unwrap();
+        let (status, solution) = s.solve(&mut p).unwrap();
 
-        assert_eq!(*s.status(), SolverStatus::Solved);
-        assert!(s.solution().is_some());
-        assert_vec_approx_eq!(s.solution().as_ref().unwrap().x, 
+        assert_eq!(status, SolverStatus::Solved);
+        assert_vec_approx_eq!(solution.x, 
                               &vec![1.7142857, 2.8571429, -1.1428571, 0., 0.], 
                               epsilon=1e-6);
-        assert_vec_approx_eq!(s.solution().as_ref().unwrap().lam, 
+        assert_vec_approx_eq!(solution.lam, 
                               &vec![0., 31.428571, 21.428571], 
                               epsilon=1e-6);
-        assert_vec_approx_eq!(s.solution().as_ref().unwrap().mu, 
+        assert_vec_approx_eq!(solution.mu, 
                               &vec![1.4210855e-14, 0., 0., 3.1428571e+01, 2.1428571e+01], 
                               epsilon=1e-6);
-        assert_vec_approx_eq!(s.solution().as_ref().unwrap().pi, 
+        assert_vec_approx_eq!(solution.pi, 
                               &vec![0.;5], 
                               epsilon=1e-6);
-
     }
 }
