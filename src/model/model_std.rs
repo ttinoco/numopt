@@ -90,8 +90,7 @@ impl ModelStd for Model {
         let var2index_eval: HashMap<Node, usize> = var2index.iter()
                                                             .map(|(v,i)| (v.clone(), *i))
                                                             .collect();
-        println!("var2index: {:?}", var2index); 
-
+    
         // Objective (phi)
         let phi_data = comp.obj.phi;
         let mut gphi_indices: Vec<usize> = Vec::with_capacity(comp.obj.gphi.len());
@@ -123,19 +122,11 @@ impl ModelStd for Model {
             vec![0.; hphi_data.len()]
         );
 
-        println!("phi_data: {}", phi_data);
-        println!("gphi_indices: {:?}", gphi_indices);
-        println!("gphi_data: {:?}", gphi_data);
-        println!("hphi_mat: {:?}", hphi_mat);
-        println!("hphi_data: {:?}", hphi_data);
-
         // Objective grad (c)
         let mut c_data: Vec<f64> = vec![0.; num_vars];
         for (var, val) in comp.obj.prop.a.iter() {
             c_data[*var2index.get(var).unwrap()] = *val;
         }
-
-        println!("c: {:?}", c_data);
 
         // Linear equality constraints (Ax = b)
         let aindex2constr: HashMap<usize, Constraint> = comp.constr.ca.into_iter()
@@ -158,9 +149,6 @@ impl ModelStd for Model {
         );
 
         let b_data = comp.constr.b;
-
-        println!("a_mat: {:?}", a_mat);
-        println!("b_data: {:?}", b_data);
 
         // Nonlinear equality constraints (f(x) = 0)
         let jindex2constr: HashMap<usize, Constraint> = comp.constr.cj.into_iter()
@@ -210,12 +198,6 @@ impl ModelStd for Model {
             h_data.push(hh_data);
         }
 
-        println!("f: {:?}", f_data);
-        println!("j_mat: {:?}", j_mat);
-        println!("j_data: {:?}", j_data);
-        println!("h_vec: {:?}", h_vec);
-        println!("h_data: {:?}", h_data);
-
         // Bounds (l <= x <= u)
         let mut uindex2constr: HashMap<usize, Constraint> = HashMap::new();
         let mut lindex2constr: HashMap<usize, Constraint> = HashMap::new();
@@ -236,9 +218,6 @@ impl ModelStd for Model {
             }
         }
 
-        println!("u_data: {:?}", u_data);
-        println!("l_data: {:?}", l_data);
-
         // Integer restrictions
         let mut num_int: usize = 0;
         let mut p_data = vec![false; num_vars];
@@ -253,8 +232,6 @@ impl ModelStd for Model {
                 _ => (),
             }
         }
-        
-        println!("p_data: {:?}", p_data);
 
         // Initial values
         let mut x0_data: Vec<f64> = vec![0.; num_vars];
@@ -264,8 +241,6 @@ impl ModelStd for Model {
                 None => (), 
             }
         }
-
-        println!("x0_data: {:?}", x0_data);
        
         // Eval
         let eval_fn = Box::new(move | phi: &mut f64, 
@@ -433,8 +408,6 @@ mod tests {
         m.add_constraint(&c6);
         m.set_init_values(&hashmap!{ &x => 2., &y => 3. });
 
-        println!("{}", m);
-
         let (std_p, std_maps) = m.std_problem();
         let lp = match std_p {
             ModelStdProb::Lp(x) => x,
@@ -521,8 +494,6 @@ mod tests {
         m.add_constraint(&c5);
         m.set_init_values(&hashmap!{ &x => 2., &y => 3. });
 
-        println!("{}", m);
-
         let (std_p, std_maps) = m.std_problem();
         let milp = match std_p {
             ModelStdProb::Milp(x) => x,
@@ -585,8 +556,6 @@ mod tests {
         m.add_constraint(&c2);
         m.add_constraint(&c3);
         m.set_init_values(&hashmap!{ &x => 2., &y => 3. });
-
-        println!("{}", m);
 
         let (std_p, std_maps) = m.std_problem();
         let mut nlp = match std_p {
@@ -694,5 +663,33 @@ mod tests {
         }
         assert_vec_approx_eq!(nlp.l(), vec![-1e8, 0., -1e8, -1e8], epsilon=0.);
         assert_vec_approx_eq!(nlp.u(), vec![0., 1e8, 1e8, 1e8], epsilon=0.);
+
+        assert_eq!(std_maps.var2index.len(), 4);
+        for (var, index) in std_maps.var2index.iter() {
+            if *var == x{
+                assert_eq!(*index, 2);
+            }
+            else if *var == y {
+                assert_eq!(*index, 3);
+            }
+            else if (*var).name() == "_s_j0_" {
+                assert_eq!(*index, 0);
+            }
+            else if (*var).name() == "_s_j1_" {
+                assert_eq!(*index, 1);
+            }
+            else {
+                panic!("invalid var2index entry");
+            }
+        }
+        assert_eq!(std_maps.aindex2constr.len(), 1);
+        assert_eq!(*std_maps.aindex2constr.get(&0).unwrap(), c1);
+        assert_eq!(std_maps.jindex2constr.len(), 2);
+        assert_eq!(*std_maps.jindex2constr.get(&0).unwrap(), c2);
+        assert_eq!(*std_maps.jindex2constr.get(&1).unwrap(), c3);
+        assert_eq!(std_maps.uindex2constr.len(), 1);
+        assert_eq!(*std_maps.uindex2constr.get(&0).unwrap(), c2);
+        assert_eq!(std_maps.lindex2constr.len(), 1);
+        assert_eq!(*std_maps.lindex2constr.get(&1).unwrap(), c3);
     }
 }
