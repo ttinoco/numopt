@@ -2,11 +2,12 @@ use std::fmt;
 use std::collections::HashMap;
 use simple_error::SimpleError;
 
-use crate::solver::SolverStatus;
+use crate::solver::{Solver, SolverStatus};
 use crate::problem::ProblemSol;
 
 use crate::model::node::Node;
 use crate::model::constraint::Constraint;
+use crate::model::model_std::{ModelStdProb, ModelStdMaps};
 
 pub enum Objective {
     Minimize(Node),
@@ -19,9 +20,16 @@ pub struct Model {
     objective: Objective,
     constraints: Vec<Constraint>,
     init_values: HashMap<Node, f64>,
+    std_prob: Option<ModelStdProb>,
+    std_maps: Option<ModelStdMaps>,
     solver_status: Option<SolverStatus>,
-    solution_estimate: Option<ProblemSol>,
+    solution: Option<ProblemSol>,
 }
+
+// pub trait ModelSolve<P, S: Solver<P>> {
+
+//     fn solve(&mut self, solver: S) -> Result<(), SimpleError>;
+// }
 
 impl Objective {
 
@@ -59,8 +67,10 @@ impl Model {
             objective: Objective::empty(),
             constraints: Vec::new(),
             init_values: HashMap::new(),
+            std_maps: None,
+            std_prob: None,
             solver_status: None,
-            solution_estimate: None,
+            solution: None,
         }
     }
 
@@ -77,6 +87,18 @@ impl Model {
         }
     }
 }
+
+// impl<P, S: Solver<P>> ModelSolve<P, S> for Model {
+
+//     fn solve(&mut self, solver: S) -> Result<(), SimpleError> {
+
+//         // Reset
+//         self.solver_status = None;
+//         self.solution = None;
+
+//         Ok(())
+//     }
+// }
 
 impl<'a> fmt::Display for Model {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
