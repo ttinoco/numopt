@@ -4,7 +4,6 @@ use tempfile::Builder;
 use std::io::prelude::*;
 use std::fs::remove_file;
 use std::process::Command;
-use std::marker::PhantomData;
 use simple_error::SimpleError;
 use std::io::{self, BufReader};
 use std::collections::HashMap;
@@ -12,22 +11,35 @@ use std::collections::HashMap;
 use crate::solver::{Solver, 
                     SolverParam,
                     SolverStatus};
-use crate::problem::{ProblemSol,
+use crate::problem::{Problem,
+                     ProblemSol,
+                     ProblemLpBase,
                      ProblemMilpBase, 
                      ProblemMilpIO};
 
 /// Interface to the optimization solver Cbc from COIN-OR 
 /// that utilzes the command-line tool "cbc". 
 /// The command-line tool needs to be on the system path.
-pub struct SolverCbcCmd<T: ProblemMilpBase> {
-    phantom: PhantomData<T>,
+pub struct SolverCbcCmd {
     parameters: HashMap<String, SolverParam>,
 }
 
-impl<T: ProblemMilpBase> SolverCbcCmd<T> {
+impl SolverCbcCmd {
+
+    pub fn new() -> Self { 
+
+        let mut parameters: HashMap<String, SolverParam> = HashMap::new();
+        parameters.insert("logLevel".to_string(), SolverParam::IntParam(1));
+
+        Self {
+            parameters: parameters,
+        } 
+    }
 
     /// Reads cbc solver solution file.
-    pub fn read_sol_file(fname: &str, p: &T, cbc: bool) -> io::Result<(SolverStatus, ProblemSol)> {
+    pub fn read_sol_file(fname: &str, 
+                         p: &dyn ProblemMilpBase, 
+                         cbc: bool) -> io::Result<(SolverStatus, ProblemSol)> {
         
         let mut name: String;
         let mut dtype: String;
@@ -111,23 +123,19 @@ impl<T: ProblemMilpBase> SolverCbcCmd<T> {
     }
 }
 
-impl<T: ProblemMilpBase + ProblemMilpIO>  Solver<T> for SolverCbcCmd<T> {
-
-    fn new(_p: &T) -> Self { 
-
-        let mut parameters: HashMap<String, SolverParam> = HashMap::new();
-        parameters.insert("logLevel".to_string(), SolverParam::IntParam(1));
-
-        Self {
-            phantom: PhantomData,
-            parameters: parameters,
-        } 
-    }
+impl Solver for SolverCbcCmd {
 
     fn get_params(&self) -> &HashMap<String, SolverParam> { &self.parameters }
     fn get_params_mut(&mut self) -> &mut HashMap<String, SolverParam> { &mut self.parameters }
     
-    fn solve(&mut self, p: &mut T) -> Result<(SolverStatus, ProblemSol), SimpleError> {
+    fn solve(&self, problem: &mut Problem) -> Result<(SolverStatus, ProblemSol), SimpleError> {
+
+        // Get problem
+        let p  = match problem {
+            Problem::Milp(x) => x,
+            Problem::Lp(x) => ProblemLpBase::base_mut(x),
+            _ => return Err(SimpleError::new("problem type not supported"))
+        };
 
         // Input filename
         let input_file = Builder::new()
@@ -212,7 +220,7 @@ mod tests {
     use serial_test::serial;
 
     use crate::matrix::CooMat;
-    use crate::problem::{ProblemLp, ProblemMilp};
+    use crate::problem::{Problem, ProblemLp, ProblemMilp};
     use crate::solver::{Solver, SolverParam, SolverStatus, SolverCbcCmd};
     use crate::assert_vec_approx_eq;
 
@@ -229,7 +237,7 @@ mod tests {
         //            x0 integer
         //            x1 integer
 
-        let mut p = ProblemMilp::new(
+        let mut p = Problem::Milp(ProblemMilp::new(
             vec![-1.,-1., 0., 0.],
             CooMat::new(
                 (2, 4),
@@ -241,9 +249,9 @@ mod tests {
             vec![1e8,1e8,0.,1e8],
             vec![true, true, false, false],
             None,
-        );
+        ));
 
-        let mut s = SolverCbcCmd::new(&p);
+        let mut s = SolverCbcCmd::new();
         s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
 
         let (status, solution) = s.solve(&mut p).unwrap();
@@ -269,7 +277,7 @@ mod tests {
         //            x3 <= 0
         //            x4 <= 0
 
-        let mut p = ProblemLp::new(
+        let mut p = Problem::Lp(ProblemLp::new(
             vec![180.,160., 0., 0., 0.],
             CooMat::new(
                 (3, 5),
@@ -280,9 +288,9 @@ mod tests {
             vec![0.,0.,-1e8,-1e8,-1e8],
             vec![5.,5.,0.,0.,0.],
             None,
-        );
+        ));
 
-        let mut s = SolverCbcCmd::new(&p);
+        let mut s = SolverCbcCmd::new();
         s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
         let (status, solution) = s.solve(&mut p).unwrap();
 

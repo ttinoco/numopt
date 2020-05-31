@@ -2,7 +2,7 @@ use std::fmt;
 use simple_error::SimpleError;
 use std::collections::HashMap;
 
-use crate::problem::{ProblemSol};
+use crate::problem::{Problem, ProblemSol};
 
 /// Optimization solver status.
 #[derive(Debug, PartialEq)]
@@ -34,10 +34,7 @@ pub enum SolverParam {
 }
 
 /// A trait for optimization solvers.
-pub trait Solver<T> {
-
-    /// Creates new optimization solver.
-    fn new(p: &T) -> Self;
+pub trait Solver {
 
     /// Gets optimization solver parameter value.
     fn get_param(&self, name: &str) -> Option<&SolverParam> { self.get_params().get(name) }
@@ -48,9 +45,6 @@ pub trait Solver<T> {
     /// Gets mutable reference of optimization solver parameters.
     fn get_params_mut(&mut self) -> &mut HashMap<String, SolverParam>;
     
-    /// Solves optimization problem.
-    fn solve(&mut self, p: &mut T) -> Result<(SolverStatus, ProblemSol), SimpleError>;
-
     /// Sets optimization solver parameter.
     fn set_param(&mut self, name: &str, value: SolverParam) -> Result<(), SimpleError> { 
        
@@ -74,6 +68,9 @@ pub trait Solver<T> {
 
         Ok(())
     }
+
+    /// Solves optimization problem.
+    fn solve(&self, problem: &mut Problem) -> Result<(SolverStatus, ProblemSol), SimpleError>;
 }
 
 impl fmt::Display for SolverStatus {

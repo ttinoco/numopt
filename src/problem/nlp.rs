@@ -1,13 +1,13 @@
 
 use crate::matrix::CooMat;
 
-use crate::problem::{Problem, 
-                     ProblemEval,
-                     ProblemBase};
+use crate::problem::{ProblemEval,
+                     ProblemMinlp, 
+                     ProblemMinlpBase};
 
 /// Smooth nonlinear optimization problem (Nlp).
 pub struct ProblemNlp {
-    base: Problem,
+    base: ProblemMinlp,
 }
 
 /// A trait for smooth nonlinear optimization problems
@@ -66,8 +66,8 @@ pub trait ProblemNlpBase {
     /// function Hessians.
     fn combine_h(&mut self, nu: &[f64]) -> ();
 
-    /// A reference to the problem as a "general" Minlp problem.
-    fn base(&self) -> &Problem;
+    /// A reference to the problem as an Minlp problem.
+    fn base(&self) -> &ProblemMinlp;
 
     /// Number of optimization variables.
     fn nx(&self) -> usize { self.gphi().len() }
@@ -92,7 +92,7 @@ impl ProblemNlp {
                x0: Option<Vec<f64>>,
                eval_fn: ProblemEval) -> Self {
         let p = vec![false;a.cols()];
-        let base = Problem::new(hphi, a, b, j, h, l, u, p, x0, eval_fn);
+        let base = ProblemMinlp::new(hphi, a, b, j, h, l, u, p, x0, eval_fn);
         Self {
             base: base,
         }       
@@ -114,10 +114,10 @@ impl ProblemNlpBase for ProblemNlp {
     fn u(&self) -> &[f64] { &self.base.u() }
     fn evaluate(&mut self, x: &[f64]) -> () { self.base.evaluate(x) }
     fn combine_h(&mut self, nu: &[f64]) -> () { self.base.combine_h(nu) }
-    fn base(&self) -> &Problem { &self.base }
+    fn base(&self) -> &ProblemMinlp { &self.base }
 }
 
-impl ProblemBase for ProblemNlp {
+impl ProblemMinlpBase for ProblemNlp {
     fn x0(&self) -> Option<&[f64]> { self.base.x0() }
     fn phi(&self) -> f64 { self.base.phi() }
     fn gphi(&self) -> &[f64] { &self.base.gphi() }

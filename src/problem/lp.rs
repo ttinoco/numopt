@@ -1,6 +1,6 @@
 use crate::matrix::CooMat;
-use crate::problem::{Problem,
-                     ProblemBase,
+use crate::problem::{ProblemMinlp,
+                     ProblemMinlpBase,
                      ProblemNlpBase,
                      ProblemMilp,
                      ProblemMilpBase};
@@ -86,42 +86,42 @@ impl ProblemMilpBase for ProblemLp {
     fn l(&self) -> &[f64] { ProblemMilpBase::l(&self.base) }
     fn u(&self) -> &[f64] { ProblemMilpBase::u(&self.base) }
     fn p(&self) -> &[bool] { ProblemMilpBase::p(&self.base) }
-    fn base(&self) -> &Problem { self.base.base() }
-    fn base_mut(&mut self) -> &mut Problem { self.base.base_mut() }
+    fn base(&self) -> &ProblemMinlp { self.base.base() }
+    fn base_mut(&mut self) -> &mut ProblemMinlp { self.base.base_mut() }
 }
 
-impl ProblemBase for ProblemLp {
-    fn x0(&self) -> Option<&[f64]> { ProblemBase::x0(&self.base) }
-    fn phi(&self) -> f64 { ProblemBase::phi(&self.base) }
-    fn gphi(&self) -> &[f64] { ProblemBase::gphi(&self.base) }
-    fn hphi(&self) -> &CooMat<f64> { ProblemBase::hphi(&self.base) }
-    fn a(&self) -> &CooMat<f64> { ProblemBase::a(&self.base) }
-    fn b(&self) -> &[f64] { ProblemBase::b(&self.base) }
-    fn f(&self) -> &[f64] { ProblemBase::f(&self.base) }
-    fn j(&self) -> &CooMat<f64> { ProblemBase::j(&self.base) }
-    fn h(&self) -> &Vec<CooMat<f64>> { ProblemBase::h(&self.base) }
-    fn hcomb(&self) -> &CooMat<f64> { ProblemBase::hcomb(&self.base) }
-    fn l(&self) -> &[f64] { ProblemBase::l(&self.base) }
-    fn u(&self) -> &[f64] { ProblemBase::u(&self.base) }
-    fn p(&self) -> &[bool] { ProblemBase::p(&self.base) }
-    fn evaluate(&mut self, x: &[f64]) -> () { ProblemBase::evaluate(&mut self.base, x) }
+impl ProblemMinlpBase for ProblemLp {
+    fn x0(&self) -> Option<&[f64]> { ProblemMinlpBase::x0(&self.base) }
+    fn phi(&self) -> f64 { ProblemMinlpBase::phi(&self.base) }
+    fn gphi(&self) -> &[f64] { ProblemMinlpBase::gphi(&self.base) }
+    fn hphi(&self) -> &CooMat<f64> { ProblemMinlpBase::hphi(&self.base) }
+    fn a(&self) -> &CooMat<f64> { ProblemMinlpBase::a(&self.base) }
+    fn b(&self) -> &[f64] { ProblemMinlpBase::b(&self.base) }
+    fn f(&self) -> &[f64] { ProblemMinlpBase::f(&self.base) }
+    fn j(&self) -> &CooMat<f64> { ProblemMinlpBase::j(&self.base) }
+    fn h(&self) -> &Vec<CooMat<f64>> { ProblemMinlpBase::h(&self.base) }
+    fn hcomb(&self) -> &CooMat<f64> { ProblemMinlpBase::hcomb(&self.base) }
+    fn l(&self) -> &[f64] { ProblemMinlpBase::l(&self.base) }
+    fn u(&self) -> &[f64] { ProblemMinlpBase::u(&self.base) }
+    fn p(&self) -> &[bool] { ProblemMinlpBase::p(&self.base) }
+    fn evaluate(&mut self, x: &[f64]) -> () { ProblemMinlpBase::evaluate(&mut self.base, x) }
     fn combine_h(&mut self, _nu: &[f64]) -> () {}
 }
 
 impl ProblemNlpBase for ProblemLp {
-    fn x0(&self) -> Option<&[f64]> { ProblemBase::x0(&self.base) }
-    fn phi(&self) -> f64 { ProblemBase::phi(&self.base) }
-    fn gphi(&self) -> &[f64] { ProblemBase::gphi(&self.base) }
-    fn hphi(&self) -> &CooMat<f64> { ProblemBase::hphi(&self.base) }
-    fn a(&self) -> &CooMat<f64> { ProblemBase::a(&self.base) }
-    fn b(&self) -> &[f64] { ProblemBase::b(&self.base) }
-    fn f(&self) -> &[f64] { ProblemBase::f(&self.base) }
-    fn j(&self) -> &CooMat<f64> { ProblemBase::j(&self.base) }
-    fn h(&self) -> &Vec<CooMat<f64>> { ProblemBase::h(&self.base) }
-    fn hcomb(&self) -> &CooMat<f64> { ProblemBase::hcomb(&self.base) }
-    fn l(&self) -> &[f64] { ProblemBase::l(&self.base) }
-    fn u(&self) -> &[f64] { ProblemBase::u(&self.base) }
-    fn evaluate(&mut self, x: &[f64]) -> () { ProblemBase::evaluate(&mut self.base, x) }
+    fn x0(&self) -> Option<&[f64]> { ProblemMinlpBase::x0(&self.base) }
+    fn phi(&self) -> f64 { ProblemMinlpBase::phi(&self.base) }
+    fn gphi(&self) -> &[f64] { ProblemMinlpBase::gphi(&self.base) }
+    fn hphi(&self) -> &CooMat<f64> { ProblemMinlpBase::hphi(&self.base) }
+    fn a(&self) -> &CooMat<f64> { ProblemMinlpBase::a(&self.base) }
+    fn b(&self) -> &[f64] { ProblemMinlpBase::b(&self.base) }
+    fn f(&self) -> &[f64] { ProblemMinlpBase::f(&self.base) }
+    fn j(&self) -> &CooMat<f64> { ProblemMinlpBase::j(&self.base) }
+    fn h(&self) -> &Vec<CooMat<f64>> { ProblemMinlpBase::h(&self.base) }
+    fn hcomb(&self) -> &CooMat<f64> { ProblemMinlpBase::hcomb(&self.base) }
+    fn l(&self) -> &[f64] { ProblemMinlpBase::l(&self.base) }
+    fn u(&self) -> &[f64] { ProblemMinlpBase::u(&self.base) }
+    fn evaluate(&mut self, x: &[f64]) -> () { ProblemMinlpBase::evaluate(&mut self.base, x) }
     fn combine_h(&mut self, _nu: &[f64]) -> () {}
-    fn base(&self) -> &Problem { self.base.base() }
+    fn base(&self) -> &ProblemMinlp { self.base.base() }
 }

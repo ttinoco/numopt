@@ -3,13 +3,13 @@ use std::io::{self, Write, BufWriter};
  
 use ndarray::ArrayView1;
 use crate::matrix::CooMat;
-use crate::problem::{Problem, 
-                     ProblemBase}; 
+use crate::problem::{ProblemMinlp, 
+                     ProblemMinlpBase}; 
 
 /// Mixed-integer linear optimization problem (Milp).
 pub struct ProblemMilp {
     c: Vec<f64>,
-    base: Problem,
+    base: ProblemMinlp,
 }
 
 /// A trait for mixed-integer linear optimization 
@@ -44,11 +44,11 @@ pub trait ProblemMilpBase {
     /// to be integers.
     fn p(&self) -> &[bool];
 
-    /// A reference to the problem as a "general" Minlp problem.
-    fn base(&self) -> &Problem;
+    /// A reference to the problem as an Minlp problem.
+    fn base(&self) -> &ProblemMinlp;
 
-    /// A mutable reference to the problem as a "general" Minlp problem.
-    fn base_mut(&mut self) -> &mut Problem;
+    /// A mutable reference to the problem as an Minlp problem.
+    fn base_mut(&mut self) -> &mut ProblemMinlp;
 
     /// Number of optimization variables.
     fn nx(&self) -> usize { self.c().len() }
@@ -94,16 +94,16 @@ impl ProblemMilp {
             gphi.copy_from_slice(&c);
         });
         let nx = a.cols();
-        let base = Problem::new(CooMat::from_nnz((nx, nx), 0), // Hphi
-                                a, 
-                                b,
-                                CooMat::from_nnz((0, nx), 0),  // J
-                                Vec::new(), 
-                                l, 
-                                u, 
-                                p, 
-                                x0,
-                                eval_fn);
+        let base = ProblemMinlp::new(CooMat::from_nnz((nx, nx), 0), // Hphi
+                                     a, 
+                                     b,
+                                     CooMat::from_nnz((0, nx), 0),  // J
+                                     Vec::new(), 
+                                     l, 
+                                     u, 
+                                     p, 
+                                     x0,
+                                     eval_fn);
         Self {
             c: cc,
             base: base,
@@ -119,11 +119,11 @@ impl ProblemMilpBase for ProblemMilp {
     fn l(&self) -> &[f64] { &self.base.l() }
     fn u(&self) -> &[f64] { &self.base.u() }
     fn p(&self) -> &[bool] { self.base.p() }
-    fn base(&self) -> &Problem { &self.base }
-    fn base_mut(&mut self) -> &mut Problem { &mut self.base }
+    fn base(&self) -> &ProblemMinlp { &self.base }
+    fn base_mut(&mut self) -> &mut ProblemMinlp { &mut self.base }
 }
 
-impl ProblemBase for ProblemMilp {
+impl ProblemMinlpBase for ProblemMilp {
     fn x0(&self) -> Option<&[f64]> { self.base.x0() }
     fn phi(&self) -> f64 { self.base().phi() }
     fn gphi(&self) -> &[f64] { self.base().gphi() }

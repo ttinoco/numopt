@@ -3,11 +3,11 @@ use std::collections::HashMap;
 use simple_error::SimpleError;
 
 use crate::solver::{Solver, SolverStatus};
-use crate::problem::ProblemSol;
+use crate::problem::{Problem, ProblemSol};
 
 use crate::model::node::Node;
 use crate::model::constraint::Constraint;
-use crate::model::model_std::{ModelStdProb, ModelStdMaps};
+use crate::model::model_std::{ModelStd, ModelStdProb, ModelStdMaps};
 
 pub enum Objective {
     Minimize(Node),
@@ -25,11 +25,6 @@ pub struct Model {
     solver_status: Option<SolverStatus>,
     solution: Option<ProblemSol>,
 }
-
-// pub trait ModelSolve<P, S: Solver<P>> {
-
-//     fn solve(&mut self, solver: S) -> Result<(), SimpleError>;
-// }
 
 impl Objective {
 
@@ -86,19 +81,30 @@ impl Model {
             self.init_values.insert((*key).clone(), *val);
         }
     }
+
+    pub fn solve(&mut self, solver: &dyn Solver) -> Result<(), SimpleError> {
+
+        // Reset
+        self.std_prob = None;
+        self.std_maps = None;
+        self.solver_status = None;
+        self.solution = None;
+
+        // Construct
+        let (std_prob, std_maps) = self.std_problem();
+        
+        // Solve
+        let (status, solution) = match std_prob {
+             ModelStdProb::Minlp(x) => solver.solve(&mut Problem::Minlp(x))?,
+             ModelStdProb::Lp(x) => solver.solve(&mut Problem::Lp(x))?,
+             ModelStdProb::Milp(x) => solver.solve(&mut Problem::Milp(x))?,
+             ModelStdProb::Nlp(x) => solver.solve(&mut Problem::Nlp(x))?,
+        };
+
+        // Done
+        Ok(())
+    }
 }
-
-// impl<P, S: Solver<P>> ModelSolve<P, S> for Model {
-
-//     fn solve(&mut self, solver: S) -> Result<(), SimpleError> {
-
-//         // Reset
-//         self.solver_status = None;
-//         self.solution = None;
-
-//         Ok(())
-//     }
-// }
 
 impl<'a> fmt::Display for Model {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

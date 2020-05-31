@@ -1,14 +1,17 @@
 //! Optimization problem data structures, types, and traits.
 
 mod base;
+mod minlp;
 mod milp;
 mod lp;
 mod nlp;
 
 pub use crate::problem::base::{Problem,
-                               ProblemBase,
                                ProblemEval,
                                ProblemSol};
+
+pub use crate::problem::minlp::{ProblemMinlp,
+                                ProblemMinlpBase};
 
 pub use crate::problem::lp::{ProblemLp,
                              ProblemLpBase};

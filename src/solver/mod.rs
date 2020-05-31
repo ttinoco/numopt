@@ -5,7 +5,7 @@ mod clp_cmd;
 mod cbc_cmd;
 mod ipopt;
 
-pub use crate::solver::base::{Solver, 
+pub use crate::solver::base::{Solver,
                               SolverParam,
                               SolverStatus};
 

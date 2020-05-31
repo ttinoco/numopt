@@ -3,7 +3,6 @@
 use std::ptr;
 use std::ffi::CString;
 use ndarray::ArrayView1;
-use std::marker::PhantomData;
 use simple_error::SimpleError;
 use std::collections::HashMap;
 use num_traits::cast::ToPrimitive;
@@ -13,6 +12,7 @@ use libc::{c_int, c_void, c_char, c_double};
 mod cipopt;
 
 use crate::solver::{Solver, 
+                    SolverExec,
                     SolverParam,
                     SolverStatus};
 use crate::problem::{ProblemSol,

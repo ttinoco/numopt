@@ -2,10 +2,10 @@ use std::collections::{HashSet, HashMap};
 
 use crate::matrix::CooMat;
 
-use crate::problem::{Problem,
-                     ProblemLp,
+use crate::problem::{ProblemMinlp,
                      ProblemMilp,
-                     ProblemNlp};
+                     ProblemNlp,
+                     ProblemLp};
 
 use crate::model::node::Node;
 use crate::model::node_base::NodeBase;
@@ -23,7 +23,7 @@ pub struct ModelStdComp {
 }
 
 pub enum ModelStdProb {
-    Base(Problem),
+    Minlp(ProblemMinlp),
     Lp(ProblemLp),
     Milp(ProblemMilp),
     Nlp(ProblemNlp),
@@ -349,10 +349,10 @@ impl ModelStd for Model {
             );
         }
 
-        // Base (Milp)
+        // Minlp
         else {
-            problem = ModelStdProb::Base(
-                Problem::new(
+            problem = ModelStdProb::Minlp(
+                ProblemMinlp::new(
                     hphi_mat,
                     a_mat,
                     b_data,

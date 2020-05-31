@@ -2,7 +2,6 @@ use std::ffi::OsStr;
 use tempfile::Builder;
 use std::fs::remove_file;
 use std::process::{Command, Stdio};
-use std::marker::PhantomData;
 use simple_error::SimpleError;
 use std::collections::HashMap;
 
@@ -10,35 +9,43 @@ use crate::solver::{Solver,
                     SolverParam,
                     SolverStatus,
                     SolverCbcCmd};
-use crate::problem::{ProblemSol,
+use crate::problem::{Problem,
+                     ProblemSol,
                      ProblemLpBase, 
                      ProblemMilpIO};
 
 /// Interface to the optimization solver Clp from COIN-OR 
 /// that utilzes the command-line tool "clp". 
 /// The command-line tool needs to be on the system path.
-pub struct SolverClpCmd<T> {
-    phantom: PhantomData<T>,
+pub struct SolverClpCmd {
     parameters: HashMap<String, SolverParam>,
 }
 
-impl<T: ProblemLpBase + ProblemMilpIO> Solver<T> for SolverClpCmd<T> {
+impl SolverClpCmd {
 
-    fn new(_p: &T) -> Self { 
+    pub fn new() -> Self { 
 
         let mut parameters: HashMap<String, SolverParam> = HashMap::new();
         parameters.insert("logLevel".to_string(), SolverParam::IntParam(1));
 
         Self {
-            phantom: PhantomData,
             parameters: parameters,
         } 
     }
+}
+
+impl Solver for SolverClpCmd {
 
     fn get_params(&self) -> &HashMap<String, SolverParam> { &self.parameters }
     fn get_params_mut(&mut self) -> &mut HashMap<String, SolverParam> { &mut self.parameters }
 
-    fn solve(&mut self, p: &mut T) -> Result<(SolverStatus, ProblemSol), SimpleError> {
+    fn solve(&self, problem: &mut Problem) -> Result<(SolverStatus, ProblemSol), SimpleError> {
+
+        // Get problem
+        let p  = match problem {
+            Problem::Lp(x) => x,
+            _ => return Err(SimpleError::new("problem type not supported"))
+        };
 
         // Input filename
         let input_file = Builder::new()
@@ -126,7 +133,7 @@ mod tests {
     use serial_test::serial;
 
     use crate::matrix::CooMat;
-    use crate::problem::ProblemLp;
+    use crate::problem::{Problem, ProblemLp};
     use crate::solver::{Solver, SolverParam, SolverStatus, SolverClpCmd};
     use crate::assert_vec_approx_eq;
 
@@ -145,7 +152,7 @@ mod tests {
         //            x3 <= 0
         //            x4 <= 0
 
-        let mut p = ProblemLp::new(
+        let mut p = Problem::Lp(ProblemLp::new(
             vec![180.,160., 0., 0., 0.],
             CooMat::new(
                 (3, 5),
@@ -156,9 +163,9 @@ mod tests {
             vec![0.,0.,-1e8,-1e8,-1e8],
             vec![5.,5.,0.,0.,0.],
             None,
-        );
+        ));
 
-        let mut s = SolverClpCmd::new(&p);
+        let mut s = SolverClpCmd::new();
         s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
         let (status, solution) = s.solve(&mut p).unwrap();
 
