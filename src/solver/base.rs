@@ -2,7 +2,7 @@ use std::fmt;
 use simple_error::SimpleError;
 use std::collections::HashMap;
 
-use crate::problem::{Problem, ProblemSol};
+use crate::problem::base::{Problem, ProblemSol};
 
 /// Optimization solver status.
 #[derive(Debug, PartialEq)]

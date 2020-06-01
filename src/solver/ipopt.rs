@@ -11,40 +11,47 @@ use libc::{c_int, c_void, c_char, c_double};
 #[path = "cipopt.rs"]
 mod cipopt;
 
-use crate::solver::{Solver, 
-                    SolverExec,
-                    SolverParam,
-                    SolverStatus};
-use crate::problem::{ProblemSol,
-                     ProblemNlpBase};
+use crate::solver::base::{Solver, 
+                          SolverParam,
+                          SolverStatus};
+use crate::problem::base::{Problem, ProblemSol};
+use crate::problem::nlp::ProblemNlp;
 
 /// Interface to the optimization solver Ipopt from COIN-OR
 /// that links with the library "libipopt". 
 /// The library needs to be on the linker path.
 /// This solver is available when the feature "ipopt" is enabled.                 
-pub struct SolverIpopt<T> {
-    phantom: PhantomData<T>,
+pub struct SolverIpopt {
     parameters: HashMap<String, SolverParam>,
 }
 
-impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
+impl SolverIpopt {
 
-    fn new(_p: &T) -> Self {
+    pub fn new() -> Self {
         
         let mut parameters: HashMap<String, SolverParam> = HashMap::new();
         parameters.insert("print_level".to_string(), SolverParam::IntParam(5));
         parameters.insert("sb".to_string(), SolverParam::StrParam(String::from("no")));
         
         Self {
-            phantom: PhantomData,
             parameters: parameters,
         } 
     }
+}
+
+impl Solver for SolverIpopt {
 
     fn get_params(&self) -> &HashMap<String, SolverParam> { &self.parameters }
     fn get_params_mut(&mut self) -> &mut HashMap<String, SolverParam> { &mut self.parameters }
     
-    fn solve(&mut self, p: &mut T) -> Result<(SolverStatus, ProblemSol), SimpleError> {
+    fn solve(&self, problem: &mut Problem) -> Result<(SolverStatus, ProblemSol), SimpleError> {
+
+        // Get problem
+        let p  = match problem {
+            Problem::Nlp(x) => x,
+            Problem::Lp(x) => x.as_mut_nlp(),
+            _ => return Err(SimpleError::new("problem type not supported"))
+        };
 
         // Init
         let n: c_int = p.nx().to_i32().unwrap();
@@ -64,11 +71,11 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
                                        nnzj, 
                                        nnzh, 
                                        0, 
-                                       eval_f_cb::<T>, 
-                                       eval_g_cb::<T>, 
-                                       eval_grad_f_cb::<T>, 
-                                       eval_jac_g_cb::<T>, 
-                                       eval_h_cb::<T>)
+                                       eval_f_cb, 
+                                       eval_g_cb, 
+                                       eval_grad_f_cb, 
+                                       eval_jac_g_cb, 
+                                       eval_h_cb)
         };
         if cprob.is_null() {
             return Err(SimpleError::new("failed to create ipopt problem"))
@@ -137,17 +144,16 @@ impl<T: ProblemNlpBase> Solver<T> for SolverIpopt<T> {
     }
 }
 
-extern fn eval_f_cb<T>(n: c_int, 
-                       x: *const c_double, 
-                       new_x: c_int, 
-                       obj_value: *mut c_double, 
-                       user_data: *mut c_void) -> c_int 
-where T: ProblemNlpBase {
+extern fn eval_f_cb(n: c_int, 
+                    x: *const c_double, 
+                    new_x: c_int, 
+                    obj_value: *mut c_double, 
+                    user_data: *mut c_void) -> c_int {
     unsafe {
         if x.is_null() || obj_value.is_null() || user_data.is_null(){
             return cipopt::FALSE;
         }
-        let p: &mut T = &mut *(user_data as *mut T);
+        let p: &mut ProblemNlp = &mut *(user_data as *mut ProblemNlp);
         match n.to_usize() {
             Some(nn) => { if nn != p.nx() { return cipopt::FALSE; } },
             None => return cipopt::FALSE,
@@ -161,17 +167,16 @@ where T: ProblemNlpBase {
     cipopt::TRUE
 }
 
-extern fn eval_grad_f_cb<T>(n: c_int, 
-                            x: *const c_double, 
-                            new_x: c_int, 
-                            grad_f: *mut c_double, 
-                            user_data: *mut c_void) -> c_int 
-where T: ProblemNlpBase {
+extern fn eval_grad_f_cb(n: c_int, 
+                         x: *const c_double, 
+                         new_x: c_int, 
+                         grad_f: *mut c_double, 
+                         user_data: *mut c_void) -> c_int {
     unsafe {
         if x.is_null() || grad_f.is_null() || user_data.is_null() {
             return cipopt::FALSE;
         }
-        let p: &mut T = &mut *(user_data as *mut T);
+        let p: &mut ProblemNlp = &mut *(user_data as *mut ProblemNlp);
         match n.to_usize() {
             Some(nn) => { if nn != p.nx() { return cipopt::FALSE; } },
             None => return cipopt::FALSE,
@@ -185,18 +190,17 @@ where T: ProblemNlpBase {
     cipopt::TRUE
 }
 
-extern fn eval_g_cb<T>(n: c_int, 
-                       x: *const c_double, 
-                       new_x: c_int, 
-                       m: c_int,
-                       g: *mut c_double, 
-                       user_data: *mut c_void) -> c_int 
-where T: ProblemNlpBase {
+extern fn eval_g_cb(n: c_int, 
+                    x: *const c_double, 
+                    new_x: c_int, 
+                    m: c_int,
+                    g: *mut c_double, 
+                    user_data: *mut c_void) -> c_int {
     unsafe {
         if x.is_null() || g.is_null() || user_data.is_null() {
             return cipopt::FALSE;
         }
-        let p: &mut T = &mut *(user_data as *mut T);
+        let p: &mut ProblemNlp = &mut *(user_data as *mut ProblemNlp);
         match n.to_usize() {
             Some(nn) => { if nn != p.nx() { return cipopt::FALSE; } },
             None => return cipopt::FALSE,
@@ -217,21 +221,20 @@ where T: ProblemNlpBase {
     cipopt::TRUE
 }
 
-extern fn eval_jac_g_cb<T>(n: c_int, 
-                           x: *const c_double, 
-                           new_x: c_int, 
-                           m: c_int,
-                           nele_jac: c_int,
-                           irow: *mut c_int,
-                           jcol: *mut c_int,
-                           values: *mut c_double, 
-                           user_data: *mut c_void) -> c_int 
-where T: ProblemNlpBase {
+extern fn eval_jac_g_cb(n: c_int, 
+                        x: *const c_double, 
+                        new_x: c_int, 
+                        m: c_int,
+                        nele_jac: c_int,
+                        irow: *mut c_int,
+                        jcol: *mut c_int,
+                        values: *mut c_double, 
+                        user_data: *mut c_void) -> c_int {
     unsafe {
         if user_data.is_null() {
             return cipopt::FALSE;
         }
-        let p: &mut T = &mut *(user_data as *mut T);
+        let p: &mut ProblemNlp = &mut *(user_data as *mut ProblemNlp);
         match n.to_usize() {
             Some(nn) => { if nn != p.nx() { return cipopt::FALSE; } },
             None => return cipopt::FALSE,
@@ -282,24 +285,23 @@ where T: ProblemNlpBase {
     cipopt::TRUE
 }
 
-extern fn eval_h_cb<T>(n: c_int, 
-                       x: *const c_double, 
-                       new_x: c_int,
-                       obj_factor: c_double, 
-                       m: c_int,
-                       lambda: *const c_double,
-                       new_lambda: c_int,
-                       nele_hess: c_int,
-                       irow: *mut c_int,
-                       jcol: *mut c_int,
-                       values: *mut c_double, 
-                       user_data: *mut c_void) -> c_int 
-where T: ProblemNlpBase {
+extern fn eval_h_cb(n: c_int, 
+                    x: *const c_double, 
+                    new_x: c_int,
+                    obj_factor: c_double, 
+                    m: c_int,
+                    lambda: *const c_double,
+                    new_lambda: c_int,
+                    nele_hess: c_int,
+                    irow: *mut c_int,
+                    jcol: *mut c_int,
+                    values: *mut c_double, 
+                    user_data: *mut c_void) -> c_int {
     unsafe {
         if user_data.is_null() {
             return cipopt::FALSE;
         }
-        let p: &mut T = &mut *(user_data as *mut T);
+        let p: &mut ProblemNlp = &mut *(user_data as *mut ProblemNlp);
         match n.to_usize() {
             Some(nn) => { if nn != p.nx() { return cipopt::FALSE; } },
             None => return cipopt::FALSE,
@@ -340,7 +342,7 @@ where T: ProblemNlpBase {
                 if lambda.is_null() {
                     return cipopt::FALSE;
                 }
-                let ll: Vec<f64> = (0..(p.na()+p.nf())).map(|i| *lambda.add(i)).collect();
+                let ll: Vec<f64> = (p.na()..(p.na()+p.nf())).map(|i| *lambda.add(i)).collect();
                 p.combine_h(&ll);
             }
             if new_x == cipopt::TRUE || new_lambda == cipopt::TRUE {
@@ -391,9 +393,12 @@ mod tests {
 
     use serial_test::serial;
 
-    use crate::matrix::CooMat;
-    use crate::problem::{ProblemLp, ProblemNlpBase, ProblemNlp};
-    use crate::solver::{Solver, SolverParam, SolverStatus, SolverIpopt};
+    use crate::matrix::coo::CooMat;
+    use crate::problem::base::Problem;
+    use crate::problem::lp::ProblemLp;
+    use crate::problem::nlp::ProblemNlp;
+    use crate::solver::base::{Solver, SolverParam, SolverStatus};
+    use crate::solver::ipopt::SolverIpopt;
     use crate::assert_vec_approx_eq;
 
     #[test]
@@ -537,7 +542,7 @@ mod tests {
             h1_data[3] = 2.;
         });
 
-        let mut p = ProblemNlp::new(
+        let mut p = Problem::Nlp(ProblemNlp::new(
             hphi, 
             a,
             b,
@@ -547,10 +552,10 @@ mod tests {
             u,
             Some(x0),
             eval_fn
-        );
+        ));
 
-        let mut s = SolverIpopt::new(&p);
-        s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
+        let mut s = SolverIpopt::new();
+        s.set_param("print_level", SolverParam::IntParam(5)).unwrap();
         s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
         let (status, solution) = s.solve(&mut p).unwrap();
 
@@ -576,7 +581,7 @@ mod tests {
         //            x3 <= 0
         //            x4 <= 0
 
-        let mut p = ProblemLp::new(
+        let mut p = Problem::Lp(ProblemLp::new(
             vec![180.,160., 0., 0., 0.],
             CooMat::new(
                 (3, 5),
@@ -587,13 +592,10 @@ mod tests {
             vec![0.,0.,-1e8,-1e8,-1e8],
             vec![5.,5.,0.,0.,0.],
             None,
-        );
-
-        let x = vec![1., 2., 3., 4. ,5.];
-        p.evaluate(&x);
-    
-        let mut s = SolverIpopt::new(&p);
-        s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
+        ));
+ 
+        let mut s = SolverIpopt::new();
+        s.set_param("print_level", SolverParam::IntParam(5)).unwrap();
         s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
         let (status, solution) = s.solve(&mut p).unwrap();
 

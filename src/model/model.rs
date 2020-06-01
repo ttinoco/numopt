@@ -2,8 +2,8 @@ use std::fmt;
 use std::collections::HashMap;
 use simple_error::SimpleError;
 
-use crate::solver::{Solver, SolverStatus};
-use crate::problem::{Problem, ProblemSol};
+use crate::solver::base::{Solver, SolverStatus};
+use crate::problem::base::{Problem, ProblemSol};
 
 use crate::model::node::Node;
 use crate::model::constraint::Constraint;

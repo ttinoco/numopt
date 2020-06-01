@@ -6,7 +6,7 @@ use crate::matrix::item::MatItem;
 use crate::matrix::csr::CsrMat;
 
 /// Sparse matrix in coordinate format.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CooMat<T> {
     shape: (usize, usize),
     row_inds: Vec<usize>,
@@ -177,7 +177,7 @@ impl<'a, T: MatItem> Iterator for CooMatIter<'a, T> {
 #[cfg(test)]
 mod tests {
     
-    use crate::matrix::CooMat;
+    use crate::matrix::coo::CooMat;
     use crate::assert_vec_approx_eq;
 
     #[test]

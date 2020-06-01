@@ -8,14 +8,13 @@ use simple_error::SimpleError;
 use std::io::{self, BufReader};
 use std::collections::HashMap;
 
-use crate::solver::{Solver, 
-                    SolverParam,
-                    SolverStatus};
-use crate::problem::{Problem,
-                     ProblemSol,
-                     ProblemLpBase,
-                     ProblemMilpBase, 
-                     ProblemMilpIO};
+use crate::solver::base::{Solver, 
+                          SolverParam,
+                          SolverStatus};
+use crate::problem::base::{Problem,
+                           ProblemSol};
+use crate::problem::milp::{ProblemMilp,
+                           ProblemMilpIO};
 
 /// Interface to the optimization solver Cbc from COIN-OR 
 /// that utilzes the command-line tool "cbc". 
@@ -38,7 +37,7 @@ impl SolverCbcCmd {
 
     /// Reads cbc solver solution file.
     pub fn read_sol_file(fname: &str, 
-                         p: &dyn ProblemMilpBase, 
+                         p: &ProblemMilp, 
                          cbc: bool) -> io::Result<(SolverStatus, ProblemSol)> {
         
         let mut name: String;
@@ -133,7 +132,7 @@ impl Solver for SolverCbcCmd {
         // Get problem
         let p  = match problem {
             Problem::Milp(x) => x,
-            Problem::Lp(x) => ProblemLpBase::base_mut(x),
+            Problem::Lp(x) => x.as_mut_milp(),
             _ => return Err(SimpleError::new("problem type not supported"))
         };
 
@@ -198,7 +197,7 @@ impl Solver for SolverCbcCmd {
         remove_file(&input_filename).ok();
 
         // Read output file
-        let (status, solution) = match Self::read_sol_file(&output_filename, p, true) {
+        let (status, solution) = match Self::read_sol_file(&output_filename, &p, true) {
             Ok((s, sol)) => (s, sol),
             Err(_e) => {
                 remove_file(&output_filename).ok();
@@ -219,9 +218,12 @@ mod tests {
 
     use serial_test::serial;
 
-    use crate::matrix::CooMat;
-    use crate::problem::{Problem, ProblemLp, ProblemMilp};
-    use crate::solver::{Solver, SolverParam, SolverStatus, SolverCbcCmd};
+    use crate::matrix::coo::CooMat;
+    use crate::problem::base::Problem;
+    use crate::problem::lp::ProblemLp;
+    use crate::problem::milp::ProblemMilp;
+    use crate::solver::base::{Solver, SolverParam, SolverStatus};
+    use crate::solver::cbc_cmd::SolverCbcCmd;
     use crate::assert_vec_approx_eq;
 
     #[test]

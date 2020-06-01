@@ -1,6 +1,6 @@
 
-use crate::matrix::CooMat; 
-use crate::problem::ProblemEval;
+use crate::matrix::coo::CooMat; 
+use crate::problem::base::ProblemEval;
 
 /// Mixed-integer nonlinear optimization problem (Minlp).
 pub struct ProblemMinlp
@@ -36,67 +36,67 @@ pub struct ProblemMinlp
 ///            l <= x <= u
 ///            p*x in integers
 /// ```
-pub trait ProblemMinlpBase {
+// pub trait ProblemMinlpBase {
 
-    /// Initial point.
-    fn x0(&self) -> Option<&[f64]>;
+//     /// Initial point.
+//     fn x0(&self) -> Option<&[f64]>;
 
-    /// Objective function value.
-    fn phi(&self) -> f64;
+//     /// Objective function value.
+//     fn phi(&self) -> f64;
 
-    /// Objective function gradient value.
-    fn gphi(&self) -> &[f64];
+//     /// Objective function gradient value.
+//     fn gphi(&self) -> &[f64];
 
-    /// Objective function Hessian value (lower triangular part)
-    fn hphi(&self) -> &CooMat<f64>;
+//     /// Objective function Hessian value (lower triangular part)
+//     fn hphi(&self) -> &CooMat<f64>;
 
-    /// Jacobian matrix of linear equality constraints.
-    fn a(&self) -> &CooMat<f64>;
+//     /// Jacobian matrix of linear equality constraints.
+//     fn a(&self) -> &CooMat<f64>;
 
-    /// Right-hand-side vector of linear equality constraints.
-    fn b(&self) -> &[f64];
+//     /// Right-hand-side vector of linear equality constraints.
+//     fn b(&self) -> &[f64];
 
-    /// Nonlinear equality constraint function value.
-    fn f(&self) -> &[f64];
+//     /// Nonlinear equality constraint function value.
+//     fn f(&self) -> &[f64];
     
-    /// Nonlinear equality constraint function Jacobian value.
-    fn j(&self) -> &CooMat<f64>;
+//     /// Nonlinear equality constraint function Jacobian value.
+//     fn j(&self) -> &CooMat<f64>;
 
-    /// Vector of nonlinear equality constraint function Hessian values
-    /// (lower triangular parts).
-    fn h(&self) -> &Vec<CooMat<f64>>;
+//     /// Vector of nonlinear equality constraint function Hessian values
+//     /// (lower triangular parts).
+//     fn h(&self) -> &Vec<CooMat<f64>>;
 
-    /// Linear combination of nonlinear equality constraint function Hessian values
-    /// (lower triangular part).
-    fn hcomb(&self) -> &CooMat<f64>;
+//     /// Linear combination of nonlinear equality constraint function Hessian values
+//     /// (lower triangular part).
+//     fn hcomb(&self) -> &CooMat<f64>;
     
-    /// Vector of optimization variable lower limits.
-    fn l(&self) -> &[f64];
+//     /// Vector of optimization variable lower limits.
+//     fn l(&self) -> &[f64];
 
-    /// Vector of optimization variable upper limits.
-    fn u(&self) -> &[f64];
+//     /// Vector of optimization variable upper limits.
+//     fn u(&self) -> &[f64];
 
-    /// Vector of boolean values indicating optimization variables that are constrained
-    /// to be integers.
-    fn p(&self) -> &[bool];
+//     /// Vector of boolean values indicating optimization variables that are constrained
+//     /// to be integers.
+//     fn p(&self) -> &[bool];
 
-    /// Function that evaluates objective function, nonlinear equality constraint
-    /// functions, and their derivatives for a given vector of optimization variable values.
-    fn evaluate(&mut self, x: &[f64]) -> ();
+//     /// Function that evaluates objective function, nonlinear equality constraint
+//     /// functions, and their derivatives for a given vector of optimization variable values.
+//     fn evaluate(&mut self, x: &[f64]) -> ();
 
-    /// Function that forms a linear combination of nonlinear equality constraint
-    /// function Hessians.
-    fn combine_h(&mut self, nu: &[f64]) -> ();
+//     /// Function that forms a linear combination of nonlinear equality constraint
+//     /// function Hessians.
+//     fn combine_h(&mut self, nu: &[f64]) -> ();
 
-    /// Number of optimization variables.
-    fn nx(&self) -> usize { self.gphi().len() }
+//     /// Number of optimization variables.
+//     fn nx(&self) -> usize { self.gphi().len() }
 
-    /// Number of linear equality constraints.
-    fn na(&self) -> usize { self.b().len() }
+//     /// Number of linear equality constraints.
+//     fn na(&self) -> usize { self.b().len() }
 
-    /// Number of nonlinear equality constraints.
-    fn nf(&self) -> usize { self.f().len() }
-}
+//     /// Number of nonlinear equality constraints.
+//     fn nf(&self) -> usize { self.f().len() }
+// }
 
 impl ProblemMinlp {
 
@@ -165,30 +165,30 @@ impl ProblemMinlp {
             eval_fn: eval_fn
         }
     }
-}
 
-impl ProblemMinlpBase for ProblemMinlp {
-
-    fn x0(&self) -> Option<&[f64]> { 
+    pub fn x0(&self) -> Option<&[f64]> { 
         match &self.x0 { 
             Some(xx) => Some(&xx),
             None => None
         }
     }
-    fn phi(&self) -> f64 { self.phi }
-    fn gphi(&self) -> &[f64] { &self.gphi }
-    fn hphi(&self) -> &CooMat<f64> { &self.hphi }
-    fn a(&self) -> &CooMat<f64> { &self.a } 
-    fn b(&self) -> &[f64] { &self.b }
-    fn f(&self) -> &[f64] { &self.f }
-    fn j(&self) -> &CooMat<f64> { &self.j } 
-    fn h(&self) -> &Vec<CooMat<f64>> { &self.h } 
-    fn hcomb(&self) -> &CooMat<f64> { &self.hcomb }
-    fn l(&self) -> &[f64] { &self.l }
-    fn u(&self) -> &[f64] { &self.u }
-    fn p(&self) -> &[bool] { &self.p } 
+    pub fn phi(&self) -> f64 { self.phi }
+    pub fn gphi(&self) -> &[f64] { &self.gphi }
+    pub fn hphi(&self) -> &CooMat<f64> { &self.hphi }
+    pub fn a(&self) -> &CooMat<f64> { &self.a } 
+    pub fn b(&self) -> &[f64] { &self.b }
+    pub fn f(&self) -> &[f64] { &self.f }
+    pub fn j(&self) -> &CooMat<f64> { &self.j } 
+    pub fn h(&self) -> &Vec<CooMat<f64>> { &self.h } 
+    pub fn hcomb(&self) -> &CooMat<f64> { &self.hcomb }
+    pub fn l(&self) -> &[f64] { &self.l }
+    pub fn u(&self) -> &[f64] { &self.u }
+    pub fn p(&self) -> &[bool] { &self.p } 
+    pub fn nx(&self) -> usize { self.a().cols() }
+    pub fn na(&self) -> usize { self.b().len() }
+    pub fn nf(&self) -> usize { self.f().len() }
     
-    fn evaluate(&mut self, x: &[f64]) -> () {
+    pub fn evaluate(&mut self, x: &[f64]) -> () {
         (self.eval_fn)(&mut self.phi, 
                        &mut self.gphi,
                        &mut self.hphi,
@@ -198,7 +198,7 @@ impl ProblemMinlpBase for ProblemMinlp {
                        x)
     }
 
-    fn combine_h(&mut self, nu: &[f64]) -> () {
+    pub fn combine_h(&mut self, nu: &[f64]) -> () {
 
         assert_eq!(self.nf(), nu.len());
  

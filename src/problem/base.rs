@@ -1,10 +1,10 @@
 use std::fmt::{self, Debug};
 
-use crate::matrix::CooMat; 
-use crate::problem::minlp::ProblemMinlp;
-use crate::problem::milp::ProblemMilp;
+use crate::matrix::coo::CooMat; 
 use crate::problem::lp::ProblemLp;
 use crate::problem::nlp::ProblemNlp;
+use crate::problem::milp::ProblemMilp;
+use crate::problem::minlp::ProblemMinlp;
 
 pub enum Problem {
     Minlp(ProblemMinlp),

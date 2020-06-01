@@ -3,7 +3,7 @@
 use crate::matrix::item::MatItem;
 
 /// Sparse matrix in compressed sparse row format.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CsrMat<T> {
     shape: (usize, usize),
     indptr: Vec<usize>,
@@ -107,7 +107,7 @@ impl<T: MatItem> CsrMat<T> {
 #[cfg(test)]
 mod tests {
 
-    use crate::matrix::CooMat;
+    use crate::matrix::coo::CooMat;
     use crate::assert_vec_approx_eq;
 
     #[test]

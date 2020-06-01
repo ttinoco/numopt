@@ -5,14 +5,13 @@ use std::process::{Command, Stdio};
 use simple_error::SimpleError;
 use std::collections::HashMap;
 
-use crate::solver::{Solver, 
-                    SolverParam,
-                    SolverStatus,
-                    SolverCbcCmd};
-use crate::problem::{Problem,
-                     ProblemSol,
-                     ProblemLpBase, 
-                     ProblemMilpIO};
+use crate::solver::base::{Solver, 
+                          SolverParam,
+                          SolverStatus};
+use crate::solver::cbc_cmd::SolverCbcCmd;
+use crate::problem::base::{Problem,
+                          ProblemSol};
+use crate::problem::milp::ProblemMilpIO;
 
 /// Interface to the optimization solver Clp from COIN-OR 
 /// that utilzes the command-line tool "clp". 
@@ -43,7 +42,7 @@ impl Solver for SolverClpCmd {
 
         // Get problem
         let p  = match problem {
-            Problem::Lp(x) => x,
+            Problem::Lp(x) => x.as_mut_milp(),
             _ => return Err(SimpleError::new("problem type not supported"))
         };
 
@@ -110,7 +109,7 @@ impl Solver for SolverClpCmd {
 
         // Read output file
         let (status, solution) = match SolverCbcCmd::read_sol_file(&output_filename, 
-                                                                   p.base(), 
+                                                                   &p, 
                                                                    false) {
             Ok((s, sol)) => (s, sol),
             Err(_e) => {
@@ -132,9 +131,11 @@ mod tests {
 
     use serial_test::serial;
 
-    use crate::matrix::CooMat;
-    use crate::problem::{Problem, ProblemLp};
-    use crate::solver::{Solver, SolverParam, SolverStatus, SolverClpCmd};
+    use crate::matrix::coo::CooMat;
+    use crate::problem::base::Problem;
+    use crate::problem::lp::ProblemLp;
+    use crate::solver::base::{Solver, SolverParam, SolverStatus};
+    use crate::solver::clp_cmd::SolverClpCmd;
     use crate::assert_vec_approx_eq;
 
     #[test]

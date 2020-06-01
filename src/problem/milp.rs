@@ -1,10 +1,9 @@
 use std::fs::File;
 use std::io::{self, Write, BufWriter};
- 
 use ndarray::ArrayView1;
-use crate::matrix::CooMat;
-use crate::problem::{ProblemMinlp, 
-                     ProblemMinlpBase}; 
+
+use crate::matrix::coo::CooMat;
+use crate::problem::minlp::ProblemMinlp;
 
 /// Mixed-integer linear optimization problem (Milp).
 pub struct ProblemMilp {
@@ -20,52 +19,49 @@ pub struct ProblemMilp {
 ///            l <= x <= u
 ///            p*x in integers
 /// ```
-pub trait ProblemMilpBase {
+// pub trait ProblemMilpBase {
 
-    /// Initial point.
-    fn x0(&self) -> Option<&[f64]>;
+//     /// Initial point.
+//     fn x0(&self) -> Option<&[f64]>;
 
-    /// Objective function gradient.
-    fn c(&self) -> &[f64];
+//     /// Objective function gradient.
+//     fn c(&self) -> &[f64];
 
-    /// Jacobian matrix of linear equality constraints.
-    fn a(&self) -> &CooMat<f64>;
+//     /// Jacobian matrix of linear equality constraints.
+//     fn a(&self) -> &CooMat<f64>;
 
-    /// Right-hand-side vector of linear equality constraints.
-    fn b(&self) -> &[f64];
+//     /// Right-hand-side vector of linear equality constraints.
+//     fn b(&self) -> &[f64];
 
-    /// Vector of optimization variable lower limits.
-    fn l(&self) -> &[f64];
+//     /// Vector of optimization variable lower limits.
+//     fn l(&self) -> &[f64];
 
-    /// Vector of optimization variable upper limits.
-    fn u(&self) -> &[f64];
+//     /// Vector of optimization variable upper limits.
+//     fn u(&self) -> &[f64];
 
-    /// Vector of boolean values indicating optimization variables that are constrained
-    /// to be integers.
-    fn p(&self) -> &[bool];
+//     /// Vector of boolean values indicating optimization variables that are constrained
+//     /// to be integers.
+//     fn p(&self) -> &[bool];
 
-    /// A reference to the problem as an Minlp problem.
-    fn base(&self) -> &ProblemMinlp;
+//     /// A reference to the problem as an Minlp problem.
+//     fn base(&self) -> &ProblemMinlp;
 
-    /// A mutable reference to the problem as an Minlp problem.
-    fn base_mut(&mut self) -> &mut ProblemMinlp;
+//     /// A mutable reference to the problem as an Minlp problem.
+//     fn base_mut(&mut self) -> &mut ProblemMinlp;
 
-    /// Number of optimization variables.
-    fn nx(&self) -> usize { self.c().len() }
+//     /// Number of optimization variables.
+//     fn nx(&self) -> usize { self.c().len() }
 
-    /// Number of linear equality cosntraints.
-    fn na(&self) -> usize { self.b().len() }
-}
+//     /// Number of linear equality cosntraints.
+//     fn na(&self) -> usize { self.b().len() }
+// }
 
 /// A trait for reading and writing mixed-integer linear 
 /// optimization problems (Milp).
 pub trait ProblemMilpIO {
 
-    /// Optimization problem type.
-    type P: ProblemMilpBase;
-
     /// Reads problem from LP file.
-    fn read_from_lp_file(filename: &str) -> io::Result<Self::P>;
+    fn read_from_lp_file(filename: &str) -> io::Result<ProblemMilp>;
 
     /// Writes problem to LP file.
     fn write_to_lp_file(&self, filename: &str) -> io::Result<()>;
@@ -109,43 +105,74 @@ impl ProblemMilp {
             base: base,
         }
     }
-}
 
-impl ProblemMilpBase for ProblemMilp {
-    fn x0(&self) -> Option<&[f64]> { self.base.x0() }
-    fn c(&self) -> &[f64] { &self.c }
-    fn a(&self) -> &CooMat<f64> { &self.base.a() } 
-    fn b(&self) -> &[f64] { &self.base.b() }
-    fn l(&self) -> &[f64] { &self.base.l() }
-    fn u(&self) -> &[f64] { &self.base.u() }
-    fn p(&self) -> &[bool] { self.base.p() }
-    fn base(&self) -> &ProblemMinlp { &self.base }
-    fn base_mut(&mut self) -> &mut ProblemMinlp { &mut self.base }
-}
+    pub fn x0(&self) -> Option<&[f64]> { self.base.x0() }
+    pub fn c(&self) -> &[f64] { &self.c }
+    pub fn a(&self) -> &CooMat<f64> { &self.base.a() } 
+    pub fn b(&self) -> &[f64] { &self.base.b() }
+    pub fn l(&self) -> &[f64] { &self.base.l() }
+    pub fn u(&self) -> &[f64] { &self.base.u() }
+    pub fn p(&self) -> &[bool] { self.base.p() }
+    pub fn nx(&self) -> usize { self.c().len() }
+    pub fn na(&self) -> usize { self.b().len() }
 
-impl ProblemMinlpBase for ProblemMilp {
-    fn x0(&self) -> Option<&[f64]> { self.base.x0() }
-    fn phi(&self) -> f64 { self.base().phi() }
-    fn gphi(&self) -> &[f64] { self.base().gphi() }
-    fn hphi(&self) -> &CooMat<f64> { self.base().hphi() }
-    fn a(&self) -> &CooMat<f64> { self.base.a() }
-    fn b(&self) -> &[f64] { self.base.b() }
-    fn f(&self) -> &[f64] { self.base().f() }
-    fn j(&self) -> &CooMat<f64> { self.base().j() }
-    fn h(&self) -> &Vec<CooMat<f64>> { self.base().h() }
-    fn hcomb(&self) -> &CooMat<f64> { self.base().hcomb() }
-    fn l(&self) -> &[f64] { self.base.l() }
-    fn u(&self) -> &[f64] { self.base.u() }
-    fn p(&self) -> &[bool] { self.base.p() }
-    fn evaluate(&mut self, x: &[f64]) -> () { self.base_mut().evaluate(x) }
-    fn combine_h(&mut self, _nu: &[f64]) -> () {}
-}
-
-impl<T: ProblemMilpBase> ProblemMilpIO for T {
+    pub fn as_mut_minlp(&mut self) -> &mut ProblemMinlp { &mut self.base }
     
-    type P = T;
+    // pub fn to_minlp(&self) -> ProblemMinlp { 
+    //     let c = self.c().to_vec();
+    //     let eval_fn = Box::new(move | phi: &mut f64, 
+    //                                   gphi: &mut Vec<f64>, 
+    //                                   _hphi: &mut CooMat<f64>,
+    //                                   _f: &mut Vec<f64>,
+    //                                   _j: &mut CooMat<f64>,
+    //                                   _h: &mut Vec<CooMat<f64>>,
+    //                                   x: &[f64] | {
+    //         *phi = ArrayView1::from(&c).dot(&ArrayView1::from(x));
+    //         gphi.copy_from_slice(&c);
+    //     });
+    //     let nx = self.a().cols();
+    //     let x0: Option<Vec<f64>> = match self.x0() {
+    //         Some(x) => Some(x.to_vec()),
+    //         None => None,
+    //     };
+    //     ProblemMinlp::new(CooMat::from_nnz((nx, nx), 0),
+    //                       self.a().clone(), 
+    //                       self.b().to_vec(),
+    //                       CooMat::from_nnz((0, nx), 0),
+    //                       Vec::new(), 
+    //                       self.l().to_vec(), 
+    //                       self.u().to_vec(), 
+    //                       self.p().to_vec(), 
+    //                       x0,
+    //                       eval_fn)
+    // }
+}
 
-    fn read_from_lp_file(_filename: &str) -> io::Result<Self::P> {
+//impl ProblemMilpBase for ProblemMilp {
+//
+//}
+
+// impl ProblemMinlpBase for ProblemMilp {
+//     fn x0(&self) -> Option<&[f64]> { self.base.x0() }
+//     fn phi(&self) -> f64 { self.base().phi() }
+//     fn gphi(&self) -> &[f64] { self.base().gphi() }
+//     fn hphi(&self) -> &CooMat<f64> { self.base().hphi() }
+//     fn a(&self) -> &CooMat<f64> { self.base.a() }
+//     fn b(&self) -> &[f64] { self.base.b() }
+//     fn f(&self) -> &[f64] { self.base().f() }
+//     fn j(&self) -> &CooMat<f64> { self.base().j() }
+//     fn h(&self) -> &Vec<CooMat<f64>> { self.base().h() }
+//     fn hcomb(&self) -> &CooMat<f64> { self.base().hcomb() }
+//     fn l(&self) -> &[f64] { self.base.l() }
+//     fn u(&self) -> &[f64] { self.base.u() }
+//     fn p(&self) -> &[bool] { self.base.p() }
+//     fn evaluate(&mut self, x: &[f64]) -> () { self.base_mut().evaluate(x) }
+//     fn combine_h(&mut self, _nu: &[f64]) -> () {}
+// }
+
+impl ProblemMilpIO for ProblemMilp {
+    
+    fn read_from_lp_file(_filename: &str) -> io::Result<ProblemMilp> {
 
         Err(io::Error::new(io::ErrorKind::Other, "not implemented"))
     }

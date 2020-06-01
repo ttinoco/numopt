@@ -1,11 +1,11 @@
 use std::collections::{HashSet, HashMap};
 
-use crate::matrix::CooMat;
+use crate::matrix::coo::CooMat;
 
-use crate::problem::{ProblemMinlp,
-                     ProblemMilp,
-                     ProblemNlp,
-                     ProblemLp};
+use crate::problem::minlp::ProblemMinlp;
+use crate::problem::milp::ProblemMilp;
+use crate::problem::nlp::ProblemNlp;
+use crate::problem::lp::ProblemLp;
 
 use crate::model::node::Node;
 use crate::model::node_base::NodeBase;
@@ -386,8 +386,6 @@ mod tests {
     #[test]
     fn std_problem_lp() {
 
-        use crate::problem::ProblemLpBase;
-
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
 
@@ -474,8 +472,6 @@ mod tests {
     #[test]
     fn std_problem_milp() {
 
-        use crate::problem::ProblemMilpBase;
-
         let x = VariableScalar::new_integer("x");
         let y = VariableScalar::new_continuous("y");
 
@@ -539,8 +535,6 @@ mod tests {
 
     #[test]
     fn std_problem_nlp() {
-
-        use crate::problem::ProblemNlpBase;
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
