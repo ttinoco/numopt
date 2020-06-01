@@ -7,7 +7,7 @@ use crate::problem::base::{Problem, ProblemSol};
 
 use crate::model::node::Node;
 use crate::model::constraint::Constraint;
-use crate::model::model_std::{ModelStd, ModelStdProb, ModelStdMaps};
+use crate::model::model_std::{ModelStd, ModelStdProb};
 
 pub enum Objective {
     Minimize(Node),
@@ -21,7 +21,6 @@ pub struct Model {
     constraints: Vec<Constraint>,
     init_values: HashMap<Node, f64>,
     std_prob: Option<ModelStdProb>,
-    std_maps: Option<ModelStdMaps>,
     solver_status: Option<SolverStatus>,
     solution: Option<ProblemSol>,
 }
@@ -62,7 +61,6 @@ impl Model {
             objective: Objective::empty(),
             constraints: Vec::new(),
             init_values: HashMap::new(),
-            std_maps: None,
             std_prob: None,
             solver_status: None,
             solution: None,
@@ -86,23 +84,43 @@ impl Model {
 
         // Reset
         self.std_prob = None;
-        self.std_maps = None;
         self.solver_status = None;
         self.solution = None;
 
         // Construct
-        let (std_prob, std_maps) = self.std_problem();
+        let mut std_prob = self.std_problem();
         
-        // Solve
-        let (status, solution) = match std_prob {
-             ModelStdProb::Minlp(x) => solver.solve(&mut Problem::Minlp(x))?,
-             ModelStdProb::Lp(x) => solver.solve(&mut Problem::Lp(x))?,
-             ModelStdProb::Milp(x) => solver.solve(&mut Problem::Milp(x))?,
-             ModelStdProb::Nlp(x) => solver.solve(&mut Problem::Nlp(x))?,
+        println!("problem");
+        match &std_prob.prob {
+            Problem::Lp(x) => {
+                println!("c {:?}", x.c());
+                println!("a {:?}", x.a());
+                println!("b {:?}", x.b());
+                println!("l {:?}", x.l());
+                println!("u {:?}", x.u());
+            }
+            _ => (),
         };
+
+        // Solve
+        let (status, solution) = solver.solve(&mut std_prob.prob)?;
+       
+        println!("solution");
+        println!("{:?}", solution);
+
+        // Store 
+        self.solver_status = Some(status);
+        self.solution = Some(solution);
 
         // Done
         Ok(())
+    }
+
+    pub fn solver_status(&self) -> Option<&SolverStatus> {
+        match &self.solver_status {
+            Some(x) => Some(&x),
+            None => None,
+        }
     }
 }
 
@@ -137,12 +155,13 @@ impl<'a> fmt::Display for Model {
 mod tests {
 
     use super::*;
+    use crate::solver::clp_cmd::SolverClpCmd;
     use crate::model::node_cmp::NodeCmp;
     use crate::model::node_func::NodeFunc;
     use crate::model::variable::VariableScalar;
 
     #[test]
-    fn display() {
+    fn model_display() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -164,5 +183,48 @@ mod tests {
                       y >= 0 : y limit\n";
 
         assert_eq!(refstr, format!("{}", m));
+    }
+
+    #[test]
+    fn model_solve_lp_clp_cmd() {
+
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
+
+        let mut m = Model::new();
+        m.set_objective(Objective::maximize(&(-2.*&x + 5.*&y)));
+        m.add_constraint(&(100_f64.leq(&x)));
+        m.add_constraint(&(&x).leq(200.));
+        m.add_constraint(&(80_f64.leq(&y)));
+        m.add_constraint(&(&y).leq(170.));
+        m.add_constraint(&(&y).geq(-&x + 200.));
+
+        println!("{}", m);
+
+        let solver = SolverClpCmd::new();
+        m.solve(&solver).unwrap();
+
+        let status = m.solver_status().unwrap();
+        assert_eq!(*status, SolverStatus::Solved);
+    }
+
+    #[test]
+    fn model_solve_lp_cbc_cmd() {
+
+    }
+
+    #[test]
+    fn model_solve_lp_ipopt() {
+
+    }
+
+    #[test]
+    fn model_solve_milp_cbc_cmd() {
+
+    }
+
+    #[test]
+    fn model_solve_nlp_ipopt() {
+
     }
 }

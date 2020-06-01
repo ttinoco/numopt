@@ -44,7 +44,7 @@ mod tests {
     use crate::model::constant::ConstantScalar;
 
     #[test]
-    fn partial() {
+    fn constant_partial() {
 
         let x = VariableScalar::new_continuous("x");
         let c = ConstantScalar::new(3.);
@@ -57,7 +57,7 @@ mod tests {
     }
 
     #[test]
-    fn derivative() {
+    fn constant_derivative() {
 
         let x = VariableScalar::new_continuous("x");
         let c = ConstantScalar::new(3.);
@@ -67,7 +67,7 @@ mod tests {
     }
 
     #[test]
-    fn std_properties() {
+    fn constant_std_properties() {
 
         let c = ConstantScalar::new(5.);
         let p = c.std_properties();

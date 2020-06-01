@@ -42,7 +42,7 @@ impl Solver for SolverClpCmd {
 
         // Get problem
         let p  = match problem {
-            Problem::Lp(x) => x.as_mut_milp(),
+            Problem::Lp(x) => x, //x.as_mut_milp(),
             _ => return Err(SimpleError::new("problem type not supported"))
         };
 
@@ -67,7 +67,7 @@ impl Solver for SolverClpCmd {
         };
 
         // Write input file
-        match p.write_to_lp_file(&input_filename) {
+        match p.as_mut_milp().write_to_lp_file(&input_filename) {
             Ok(()) => (),
             Err(_e) => {
                 remove_file(&input_filename).ok();
@@ -109,7 +109,7 @@ impl Solver for SolverClpCmd {
 
         // Read output file
         let (status, solution) = match SolverCbcCmd::read_sol_file(&output_filename, 
-                                                                   &p, 
+                                                                   p.as_mut_milp(), 
                                                                    false) {
             Ok((s, sol)) => (s, sol),
             Err(_e) => {

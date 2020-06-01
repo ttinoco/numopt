@@ -6,6 +6,7 @@ use crate::problem::nlp::ProblemNlp;
 use crate::problem::milp::ProblemMilp;
 use crate::problem::minlp::ProblemMinlp;
 
+/// General optimization problem type.
 pub enum Problem {
     Minlp(ProblemMinlp),
     Milp(ProblemMilp),

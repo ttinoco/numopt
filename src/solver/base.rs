@@ -73,6 +73,8 @@ pub trait Solver {
     fn solve(&self, problem: &mut Problem) -> Result<(SolverStatus, ProblemSol), SimpleError>;
 }
 
+impl Eq for SolverStatus {}
+
 impl fmt::Display for SolverStatus {
 
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

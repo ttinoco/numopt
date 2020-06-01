@@ -1,4 +1,4 @@
-//! Sparse matrix data structures and tools.
+//! Sparse matrix data structures and associated tools.
 
 pub mod coo;
 pub mod csr;

@@ -99,7 +99,7 @@ mod tests {
     use crate::model::constant::ConstantScalar;
 
     #[test]
-    fn clone_eq() {
+    fn constr_clone_eq() {
 
         let x = VariableScalar::new_continuous("x");
         let c = ConstantScalar::new(4.);
@@ -113,7 +113,7 @@ mod tests {
     }
 
     #[test]
-    fn label() {
+    fn constr_label() {
 
         let x = VariableScalar::new_continuous("x");
         let c = ConstantScalar::new(4.);
@@ -123,7 +123,7 @@ mod tests {
     }
 
     #[test]
-    fn violation() {
+    fn constr_violation() {
 
         let x = VariableScalar::new_continuous("x");
         let c4 = ConstantScalar::new(4.);

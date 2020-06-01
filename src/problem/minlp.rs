@@ -2,7 +2,14 @@
 use crate::matrix::coo::CooMat; 
 use crate::problem::base::ProblemEval;
 
-/// Mixed-integer nonlinear optimization problem (Minlp).
+/// Mixed-integer nonlinear optimization problem (Minlp) of the form
+/// ```ignore
+/// minimize   phi(x)
+/// subject to a*x = b
+///            f(x) = 0
+///            l <= x <= u
+///            p*x in integers
+/// ```
 pub struct ProblemMinlp
 {
     x0: Option<Vec<f64>>,
@@ -26,77 +33,6 @@ pub struct ProblemMinlp
     
     eval_fn: ProblemEval,
 }
-
-/// A trait for mixed-integer nonlinear optimization 
-/// problems (Minlp) of the form
-/// ```ignore
-/// minimize   phi(x)
-/// subject to a*x = b
-///            f(x) = 0
-///            l <= x <= u
-///            p*x in integers
-/// ```
-// pub trait ProblemMinlpBase {
-
-//     /// Initial point.
-//     fn x0(&self) -> Option<&[f64]>;
-
-//     /// Objective function value.
-//     fn phi(&self) -> f64;
-
-//     /// Objective function gradient value.
-//     fn gphi(&self) -> &[f64];
-
-//     /// Objective function Hessian value (lower triangular part)
-//     fn hphi(&self) -> &CooMat<f64>;
-
-//     /// Jacobian matrix of linear equality constraints.
-//     fn a(&self) -> &CooMat<f64>;
-
-//     /// Right-hand-side vector of linear equality constraints.
-//     fn b(&self) -> &[f64];
-
-//     /// Nonlinear equality constraint function value.
-//     fn f(&self) -> &[f64];
-    
-//     /// Nonlinear equality constraint function Jacobian value.
-//     fn j(&self) -> &CooMat<f64>;
-
-//     /// Vector of nonlinear equality constraint function Hessian values
-//     /// (lower triangular parts).
-//     fn h(&self) -> &Vec<CooMat<f64>>;
-
-//     /// Linear combination of nonlinear equality constraint function Hessian values
-//     /// (lower triangular part).
-//     fn hcomb(&self) -> &CooMat<f64>;
-    
-//     /// Vector of optimization variable lower limits.
-//     fn l(&self) -> &[f64];
-
-//     /// Vector of optimization variable upper limits.
-//     fn u(&self) -> &[f64];
-
-//     /// Vector of boolean values indicating optimization variables that are constrained
-//     /// to be integers.
-//     fn p(&self) -> &[bool];
-
-//     /// Function that evaluates objective function, nonlinear equality constraint
-//     /// functions, and their derivatives for a given vector of optimization variable values.
-//     fn evaluate(&mut self, x: &[f64]) -> ();
-
-//     /// Function that forms a linear combination of nonlinear equality constraint
-//     /// function Hessians.
-//     fn combine_h(&mut self, nu: &[f64]) -> ();
-
-//     /// Number of optimization variables.
-//     fn nx(&self) -> usize { self.gphi().len() }
-
-//     /// Number of linear equality constraints.
-//     fn na(&self) -> usize { self.b().len() }
-
-//     /// Number of nonlinear equality constraints.
-//     fn nf(&self) -> usize { self.f().len() }
-// }
 
 impl ProblemMinlp {
 
@@ -166,28 +102,64 @@ impl ProblemMinlp {
         }
     }
 
+    /// Initial point.
     pub fn x0(&self) -> Option<&[f64]> { 
         match &self.x0 { 
             Some(xx) => Some(&xx),
             None => None
         }
     }
+
+    /// Objective function value.
     pub fn phi(&self) -> f64 { self.phi }
+
+    /// Objective function gradient value.
     pub fn gphi(&self) -> &[f64] { &self.gphi }
+
+    /// Objective function Hessian value (lower triangular part)
     pub fn hphi(&self) -> &CooMat<f64> { &self.hphi }
+
+    /// Jacobian matrix of linear equality constraints.
     pub fn a(&self) -> &CooMat<f64> { &self.a } 
+
+    /// Right-hand-side vector of linear equality constraints.
     pub fn b(&self) -> &[f64] { &self.b }
+
+    /// Nonlinear equality constraint function value.
     pub fn f(&self) -> &[f64] { &self.f }
+
+    /// Nonlinear equality constraint function Jacobian value.
     pub fn j(&self) -> &CooMat<f64> { &self.j } 
+
+    /// Vector of nonlinear equality constraint function Hessian values
+    /// (lower triangular parts).
     pub fn h(&self) -> &Vec<CooMat<f64>> { &self.h } 
+
+    /// Linear combination of nonlinear equality constraint function Hessian values
+    /// (lower triangular parts).
     pub fn hcomb(&self) -> &CooMat<f64> { &self.hcomb }
+
+    /// Vector of optimization variable lower limits.
     pub fn l(&self) -> &[f64] { &self.l }
+
+    /// Vector of optimization variable upper limits.
     pub fn u(&self) -> &[f64] { &self.u }
+
+    /// Vector of boolean values indicating optimization variables that are constrained
+    /// to be integers.
     pub fn p(&self) -> &[bool] { &self.p } 
+    
+    /// Number of optimization variables.
     pub fn nx(&self) -> usize { self.a().cols() }
+
+    /// Number of linear equality constraints.
     pub fn na(&self) -> usize { self.b().len() }
+
+    /// Number of nonlinear equality constraints.
     pub fn nf(&self) -> usize { self.f().len() }
     
+    /// Function that evaluates objective function, nonlinear equality constraint
+    /// functions, and their derivatives for a given vector of optimization variable values.
     pub fn evaluate(&mut self, x: &[f64]) -> () {
         (self.eval_fn)(&mut self.phi, 
                        &mut self.gphi,
@@ -198,10 +170,10 @@ impl ProblemMinlp {
                        x)
     }
 
+    /// Function that forms a linear combination of nonlinear equality constraint
+    /// function Hessians.
     pub fn combine_h(&mut self, nu: &[f64]) -> () {
-
         assert_eq!(self.nf(), nu.len());
- 
         let mut k: usize = 0;
         let data = self.hcomb.data_mut();
         for (h, nuval) in self.h.iter().zip(nu.iter()) {

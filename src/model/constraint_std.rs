@@ -198,7 +198,7 @@ mod tests {
     use crate::model::variable::VariableScalar;
 
     #[test]
-    fn std_components_u_bound() {
+    fn constr_std_comp_u_bound() {
 
         let x = VariableScalar::new_continuous("x");
 
@@ -225,7 +225,7 @@ mod tests {
     }
 
     #[test]
-    fn std_components_l_bound() {
+    fn constr_std_comp_l_bound() {
 
         let x = VariableScalar::new_continuous("x");
 
@@ -252,7 +252,7 @@ mod tests {
     }
 
     #[test]
-    fn std_components_affine_eq() {
+    fn constr_std_comp_affine_eq() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -295,7 +295,7 @@ mod tests {
     }
 
     #[test]
-    fn std_components_affine_leq() {
+    fn constr_std_comp_affine_leq() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -347,7 +347,7 @@ mod tests {
     }
 
     #[test]
-    fn std_components_affine_geq() {
+    fn constr_std_comp_affine_geq() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -399,7 +399,7 @@ mod tests {
     }
 
     #[test]
-    fn std_components_nonlinear_eq() {
+    fn constr_std_comp_nonlinear_eq() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -468,7 +468,7 @@ mod tests {
     }
 
     #[test]
-    fn std_components_nonlinear_leq() {
+    fn constr_std_comp_nonlinear_leq() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -546,7 +546,7 @@ mod tests {
     }
 
     #[test]
-    fn std_components_nonlinear_geq() {
+    fn constr_std_comp_nonlinear_geq() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");

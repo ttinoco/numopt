@@ -5,51 +5,16 @@ use crate::problem::minlp::ProblemMinlp;
 use crate::problem::milp::ProblemMilp;
 use crate::problem::nlp::ProblemNlp;
 
-/// Linear optimization problem (Lp).                     
-pub struct ProblemLp {
-    base_milp: ProblemMilp,
-    base_nlp: ProblemNlp,
-}
-
-/// A trait for linear optimization 
-/// problems (Lp) of the form
+/// Linear optimization problem (Lp) of the form
 /// ```ignore
 /// minimize   c^T*x
 /// subject to a*x = b
 ///            l <= x <= u
-/// ```
-// pub trait ProblemLpBase {
-
-//     /// Initial point.
-//     fn x0(&self) -> Option<&[f64]>;
-
-//     /// Objective function gradient.
-//     fn c(&self) -> &[f64];
-
-//     /// Jacobian matrix of linear equality constraints.
-//     fn a(&self) -> &CooMat<f64>;
-
-//     /// Right-hand-side vector of linear equality constraints.
-//     fn b(&self) -> &[f64];
-
-//     /// Vector of optimization variable lower limits.
-//     fn l(&self) -> &[f64];
-
-//     /// Vector of optimization variable upper limits.
-//     fn u(&self) -> &[f64];
-
-//     /// A reference to the problem as an Milp problem.
-//     fn base(&self) -> &ProblemMilp;
-
-//     /// A mutable reference to the problem as an Milp problem.
-//     fn base_mut(&mut self) -> &mut ProblemMilp;
-
-//     /// Number of optimization variables.
-//     fn nx(&self) -> usize { self.c().len() }
-
-//     /// Number of linear equality cosntraints.
-//     fn na(&self) -> usize { self.b().len() }
-// }
+/// ```                     
+pub struct ProblemLp {
+    base_milp: ProblemMilp,
+    base_nlp: ProblemNlp,
+}
 
 impl ProblemLp {
 
@@ -93,16 +58,36 @@ impl ProblemLp {
         }
     }
 
+    /// Initial point.
     pub fn x0(&self) -> Option<&[f64]> { self.base_milp.x0() }
+
+    /// Objective function gradient.
     pub fn c(&self) -> &[f64] { self.base_milp.c() }
+    
+    /// Jacobian matrix of linear equality constraints.
     pub fn a(&self) -> &CooMat<f64> { self.base_milp.a() } 
+    
+    /// Right-hand-side vector of linear equality constraints.
     pub fn b(&self) -> &[f64] { self.base_milp.b() }
+    
+    /// Vector of optimization variable lower limits.
     pub fn l(&self) -> &[f64] { self.base_milp.l() }
+    
+    /// Vector of optimization variable upper limits.
     pub fn u(&self) -> &[f64] { self.base_milp.u() }
+    
+    /// Number of optimization variables.
     pub fn nx(&self) -> usize { self.c().len() }
+    
+    /// Number of linear equality cosntraints.
     pub fn na(&self) -> usize { self.b().len() }
     
+    /// Returns a mutable reference to the problem cast as a Milp.
     pub fn as_mut_milp(&mut self) -> &mut ProblemMilp { &mut self.base_milp }
-    pub fn as_mut_minlp(&mut self) -> &mut ProblemMinlp { self.base_milp.as_mut_minlp() }   
+    
+    /// Returns a mutable reference to the problem cast as a Minlp.
+    pub fn as_mut_minlp(&mut self) -> &mut ProblemMinlp { self.base_milp.as_mut_minlp() } 
+    
+    /// Returns a mutable reference to the problem cast as an Nlp
     pub fn as_mut_nlp(&mut self) -> &mut ProblemNlp { &mut self.base_nlp }      
 }

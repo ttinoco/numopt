@@ -84,7 +84,7 @@ mod tests {
     use crate::model::variable::VariableScalar;
 
     #[test]
-    fn construction() {
+    fn var_construction() {
 
         let x = VariableScalar::new_continuous("x");
         assert_eq!(x.name(), "x");
@@ -108,7 +108,7 @@ mod tests {
     }
 
     #[test]
-    fn partial() {
+    fn var_partial() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -121,7 +121,7 @@ mod tests {
     }
 
     #[test]
-    fn derivative() {
+    fn var_derivative() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -135,7 +135,7 @@ mod tests {
     }
 
     #[test]
-    fn std_properties() {
+    fn var_std_properties() {
 
         let x = VariableScalar::new_integer("x");
         let p = x.std_properties();

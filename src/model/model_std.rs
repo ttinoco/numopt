@@ -1,7 +1,7 @@
 use std::collections::{HashSet, HashMap};
 
 use crate::matrix::coo::CooMat;
-
+use crate::problem::base::Problem;
 use crate::problem::minlp::ProblemMinlp;
 use crate::problem::milp::ProblemMilp;
 use crate::problem::nlp::ProblemNlp;
@@ -22,14 +22,8 @@ pub struct ModelStdComp {
     pub constr: ConstraintStdComp,
 }
 
-pub enum ModelStdProb {
-    Minlp(ProblemMinlp),
-    Lp(ProblemLp),
-    Milp(ProblemMilp),
-    Nlp(ProblemNlp),
-}
-
-pub struct ModelStdMaps {
+pub struct ModelStdProb {
+    pub prob: Problem,
     pub var2index: HashMap<Node, usize>,
     pub aindex2constr: HashMap<usize, Constraint>,
     pub jindex2constr: HashMap<usize, Constraint>,
@@ -39,7 +33,7 @@ pub struct ModelStdMaps {
 
 pub trait ModelStd {
     fn std_components(&self) -> ModelStdComp;
-    fn std_problem(&self) -> (ModelStdProb, ModelStdMaps);
+    fn std_problem(&self) -> ModelStdProb;
 }
 
 impl ModelStd for Model {
@@ -48,7 +42,7 @@ impl ModelStd for Model {
 
         // Objective std comp
         let obj = match self.objective() {
-            Objective::Maximize(f) => f.std_components(),
+            Objective::Maximize(f) => (-f).std_components(),
             Objective::Minimize(f) => f.std_components(),
             Objective::Empty => ConstantScalar::new(0.).std_components(),
         };
@@ -68,7 +62,7 @@ impl ModelStd for Model {
         }
     }
 
-    fn std_problem(&self) -> (ModelStdProb, ModelStdMaps) {
+    fn std_problem(&self) -> ModelStdProb {
 
         // Components
         let comp = self.std_components();
@@ -291,21 +285,12 @@ impl ModelStd for Model {
             }
         });
 
-        // Maps
-        let maps = ModelStdMaps {
-            var2index: var2index,
-            aindex2constr: aindex2constr,
-            jindex2constr: jindex2constr,
-            uindex2constr: uindex2constr,
-            lindex2constr: lindex2constr,
-        };
-
         // Problem
-        let problem: ModelStdProb;
+        let problem: Problem;
 
         // Lp
         if comp.obj.prop.affine && num_j == 0 && num_int == 0 {
-            problem = ModelStdProb::Lp(
+            problem = Problem::Lp(
                 ProblemLp::new(
                     c_data,
                     a_mat,
@@ -319,7 +304,7 @@ impl ModelStd for Model {
 
         // Milp
         else if comp.obj.prop.affine && num_j == 0 && num_int > 0 {
-            problem = ModelStdProb::Milp(
+            problem = Problem::Milp(
                 ProblemMilp::new(
                     c_data,
                     a_mat,
@@ -334,7 +319,7 @@ impl ModelStd for Model {
 
         // Nlp
         else if num_int == 0 {
-            problem = ModelStdProb::Nlp(
+            problem = Problem::Nlp(
                 ProblemNlp::new(
                     hphi_mat,
                     a_mat,
@@ -351,7 +336,7 @@ impl ModelStd for Model {
 
         // Minlp
         else {
-            problem = ModelStdProb::Minlp(
+            problem = Problem::Minlp(
                 ProblemMinlp::new(
                     hphi_mat,
                     a_mat,
@@ -368,7 +353,14 @@ impl ModelStd for Model {
         }
 
         // Return
-        (problem, maps)
+        ModelStdProb {
+            prob: problem,
+            var2index: var2index,
+            aindex2constr: aindex2constr,
+            jindex2constr: jindex2constr,
+            uindex2constr: uindex2constr,
+            lindex2constr: lindex2constr,
+        }
     }
 }
 
@@ -378,13 +370,14 @@ mod tests {
     use maplit::hashmap;
 
     use super::*;
+    use crate::problem::base::Problem;
     use crate::model::node_func::NodeFunc;
     use crate::model::node_cmp::NodeCmp;
     use crate::model::variable::VariableScalar;
     use crate::assert_vec_approx_eq;
 
     #[test]
-    fn std_problem_lp() {
+    fn model_std_problem_lp() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -397,7 +390,7 @@ mod tests {
         let c6 = (7.*&x + 5.*&y - 10.).geq(&x + &y - 3.);
 
         let mut m = Model::new();
-        m.set_objective(Objective::minimize(&(3.*&x + 4.*&y + 1.)));
+        m.set_objective(Objective::maximize(&(3.*&x + 4.*&y + 1.)));
         m.add_constraint(&c1);
         m.add_constraint(&c2);
         m.add_constraint(&c3);
@@ -406,14 +399,14 @@ mod tests {
         m.add_constraint(&c6);
         m.set_init_values(&hashmap!{ &x => 2., &y => 3. });
 
-        let (std_p, std_maps) = m.std_problem();
-        let lp = match std_p {
-            ModelStdProb::Lp(x) => x,
+        let std_p = m.std_problem();
+        let lp = match std_p.prob {
+            Problem::Lp(x) => x,
             _ => panic!("invalid std problem")
         };
 
         assert_vec_approx_eq!(lp.x0().unwrap(), vec![0., 2., 3.], epsilon=0.);
-        assert_vec_approx_eq!(lp.c(), vec![0., 3., 4.,], epsilon=0.);
+        assert_vec_approx_eq!(lp.c(), vec![0., -3., -4.,], epsilon=0.);
         assert_eq!(lp.na(), 2);
         assert_eq!(lp.nx(), 3);
         assert_eq!(lp.a().nnz(), 5);
@@ -441,8 +434,8 @@ mod tests {
         assert_vec_approx_eq!(lp.l(), vec![0., 0., 0.], epsilon=0.);
         assert_vec_approx_eq!(lp.u(), vec![1e8, 5., 5.], epsilon=0.);
 
-        assert_eq!(std_maps.var2index.len(), 3);
-        for (var, index) in std_maps.var2index.iter() {
+        assert_eq!(std_p.var2index.len(), 3);
+        for (var, index) in std_p.var2index.iter() {
             if *var == x {
                 assert_eq!(*index, 1);
             }
@@ -456,21 +449,21 @@ mod tests {
                 panic!("invalid var2index data");
             }
         }
-        assert_eq!(std_maps.aindex2constr.len(), 2);
-        assert_eq!(*std_maps.aindex2constr.get(&0).unwrap(), c1);
-        assert_eq!(*std_maps.aindex2constr.get(&1).unwrap(), c6);
-        assert_eq!(std_maps.jindex2constr.len(), 0);
-        assert_eq!(std_maps.uindex2constr.len(), 2);
-        assert_eq!(*std_maps.uindex2constr.get(&1).unwrap(), c2);
-        assert_eq!(*std_maps.uindex2constr.get(&2).unwrap(), c4);
-        assert_eq!(std_maps.lindex2constr.len(), 3);
-        assert_eq!(*std_maps.lindex2constr.get(&0).unwrap(), c6);
-        assert_eq!(*std_maps.lindex2constr.get(&1).unwrap(), c3);
-        assert_eq!(*std_maps.lindex2constr.get(&2).unwrap(), c5);
+        assert_eq!(std_p.aindex2constr.len(), 2);
+        assert_eq!(*std_p.aindex2constr.get(&0).unwrap(), c1);
+        assert_eq!(*std_p.aindex2constr.get(&1).unwrap(), c6);
+        assert_eq!(std_p.jindex2constr.len(), 0);
+        assert_eq!(std_p.uindex2constr.len(), 2);
+        assert_eq!(*std_p.uindex2constr.get(&1).unwrap(), c2);
+        assert_eq!(*std_p.uindex2constr.get(&2).unwrap(), c4);
+        assert_eq!(std_p.lindex2constr.len(), 3);
+        assert_eq!(*std_p.lindex2constr.get(&0).unwrap(), c6);
+        assert_eq!(*std_p.lindex2constr.get(&1).unwrap(), c3);
+        assert_eq!(*std_p.lindex2constr.get(&2).unwrap(), c5);
     }
 
     #[test]
-    fn std_problem_milp() {
+    fn model_std_problem_milp() {
 
         let x = VariableScalar::new_integer("x");
         let y = VariableScalar::new_continuous("y");
@@ -490,9 +483,9 @@ mod tests {
         m.add_constraint(&c5);
         m.set_init_values(&hashmap!{ &x => 2., &y => 3. });
 
-        let (std_p, std_maps) = m.std_problem();
-        let milp = match std_p {
-            ModelStdProb::Milp(x) => x,
+        let std_p = m.std_problem();
+        let milp = match std_p.prob {
+            Problem::Milp(x) => x,
             _ => panic!("invalid std problem")
         };
 
@@ -519,22 +512,22 @@ mod tests {
         assert!(milp.p()[0]);
         assert!(!milp.p()[1]);
 
-        assert_eq!(std_maps.var2index.len(), 2);
-        assert_eq!(*std_maps.var2index.get(&x).unwrap(), 0);
-        assert_eq!(*std_maps.var2index.get(&y).unwrap(), 1);
-        assert_eq!(std_maps.aindex2constr.len(), 1);
-        assert_eq!(*std_maps.aindex2constr.get(&0).unwrap(), c1);
-        assert_eq!(std_maps.jindex2constr.len(), 0);
-        assert_eq!(std_maps.uindex2constr.len(), 2);
-        assert_eq!(*std_maps.uindex2constr.get(&0).unwrap(), c2);
-        assert_eq!(*std_maps.uindex2constr.get(&1).unwrap(), c4);
-        assert_eq!(std_maps.lindex2constr.len(), 2);
-        assert_eq!(*std_maps.lindex2constr.get(&0).unwrap(), c3);
-        assert_eq!(*std_maps.lindex2constr.get(&1).unwrap(), c5);
+        assert_eq!(std_p.var2index.len(), 2);
+        assert_eq!(*std_p.var2index.get(&x).unwrap(), 0);
+        assert_eq!(*std_p.var2index.get(&y).unwrap(), 1);
+        assert_eq!(std_p.aindex2constr.len(), 1);
+        assert_eq!(*std_p.aindex2constr.get(&0).unwrap(), c1);
+        assert_eq!(std_p.jindex2constr.len(), 0);
+        assert_eq!(std_p.uindex2constr.len(), 2);
+        assert_eq!(*std_p.uindex2constr.get(&0).unwrap(), c2);
+        assert_eq!(*std_p.uindex2constr.get(&1).unwrap(), c4);
+        assert_eq!(std_p.lindex2constr.len(), 2);
+        assert_eq!(*std_p.lindex2constr.get(&0).unwrap(), c3);
+        assert_eq!(*std_p.lindex2constr.get(&1).unwrap(), c5);
     }
 
     #[test]
-    fn std_problem_nlp() {
+    fn model_std_problem_nlp() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -551,9 +544,9 @@ mod tests {
         m.add_constraint(&c3);
         m.set_init_values(&hashmap!{ &x => 2., &y => 3. });
 
-        let (std_p, std_maps) = m.std_problem();
-        let mut nlp = match std_p {
-            ModelStdProb::Nlp(x) => x,
+        let std_p = m.std_problem();
+        let mut nlp = match std_p.prob {
+            Problem::Nlp(x) => x,
             _ => panic!("invalid std problem")
         };
 
@@ -658,8 +651,8 @@ mod tests {
         assert_vec_approx_eq!(nlp.l(), vec![-1e8, 0., -1e8, -1e8], epsilon=0.);
         assert_vec_approx_eq!(nlp.u(), vec![0., 1e8, 1e8, 1e8], epsilon=0.);
 
-        assert_eq!(std_maps.var2index.len(), 4);
-        for (var, index) in std_maps.var2index.iter() {
+        assert_eq!(std_p.var2index.len(), 4);
+        for (var, index) in std_p.var2index.iter() {
             if *var == x{
                 assert_eq!(*index, 2);
             }
@@ -676,14 +669,14 @@ mod tests {
                 panic!("invalid var2index entry");
             }
         }
-        assert_eq!(std_maps.aindex2constr.len(), 1);
-        assert_eq!(*std_maps.aindex2constr.get(&0).unwrap(), c1);
-        assert_eq!(std_maps.jindex2constr.len(), 2);
-        assert_eq!(*std_maps.jindex2constr.get(&0).unwrap(), c2);
-        assert_eq!(*std_maps.jindex2constr.get(&1).unwrap(), c3);
-        assert_eq!(std_maps.uindex2constr.len(), 1);
-        assert_eq!(*std_maps.uindex2constr.get(&0).unwrap(), c2);
-        assert_eq!(std_maps.lindex2constr.len(), 1);
-        assert_eq!(*std_maps.lindex2constr.get(&1).unwrap(), c3);
+        assert_eq!(std_p.aindex2constr.len(), 1);
+        assert_eq!(*std_p.aindex2constr.get(&0).unwrap(), c1);
+        assert_eq!(std_p.jindex2constr.len(), 2);
+        assert_eq!(*std_p.jindex2constr.get(&0).unwrap(), c2);
+        assert_eq!(*std_p.jindex2constr.get(&1).unwrap(), c3);
+        assert_eq!(std_p.uindex2constr.len(), 1);
+        assert_eq!(*std_p.uindex2constr.get(&0).unwrap(), c2);
+        assert_eq!(std_p.lindex2constr.len(), 1);
+        assert_eq!(*std_p.lindex2constr.get(&1).unwrap(), c3);
     }
 }

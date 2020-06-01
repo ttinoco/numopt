@@ -116,7 +116,7 @@ mod tests {
     use crate::model::variable::VariableScalar;
 
     #[test]
-    fn all_simple_paths() {
+    fn node_all_simple_paths() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
