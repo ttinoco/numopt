@@ -199,9 +199,8 @@ impl Solver for SolverCbcCmd {
                               "solution",
                               &output_filename])
                       .spawn()
-                      .and_then(|mut cmd| cmd.wait())
-                      .map(|ecode| assert!(ecode.success())) {
-            Ok(()) => (),
+                      .and_then(|mut cmd| cmd.wait()) {
+            Ok(_s) => (),
             Err(_e) => {
                 remove_file(&input_filename).ok();
                 remove_file(&output_filename).ok();
