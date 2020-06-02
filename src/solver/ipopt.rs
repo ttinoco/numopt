@@ -1,6 +1,6 @@
 #![cfg(feature = "ipopt")] 
 
-use std::ptr;
+use std::{ptr, slice};
 use std::ffi::CString;
 use ndarray::ArrayView1;
 use simple_error::SimpleError;
@@ -162,8 +162,7 @@ extern fn eval_f_cb(n: c_int,
             None => return cipopt::FALSE,
         }
         if new_x == cipopt::TRUE {
-            let xx: Vec<f64> = (0..p.nx()).map(|i| *x.add(i)).collect();
-            p.evaluate(&xx);
+            p.evaluate(slice::from_raw_parts(x, p.nx()));
         }
         *obj_value = p.phi();
     };
@@ -185,8 +184,7 @@ extern fn eval_grad_f_cb(n: c_int,
             None => return cipopt::FALSE,
         }
         if new_x == cipopt::TRUE {
-            let xx: Vec<f64> = (0..p.nx()).map(|i| *x.add(i)).collect();
-            p.evaluate(&xx);
+            p.evaluate(slice::from_raw_parts(x, p.nx()));
         }
         ptr::copy(p.gphi().as_ptr(), grad_f, p.nx());
     };
@@ -212,11 +210,11 @@ extern fn eval_g_cb(n: c_int,
             Some(mm) => { if mm != p.na()+p.nf() { return cipopt::FALSE; } },
             None => return cipopt::FALSE,
         }
-        let xx: Vec<f64> = (0..p.nx()).map(|i| *x.add(i)).collect();
+        let xx: &[f64] = slice::from_raw_parts(x, p.nx());
         if new_x == cipopt::TRUE {
             p.evaluate(&xx);
         }
-        let ax = p.a()*xx;
+        let ax = p.a()*xx.to_vec();
         let axmb = &ArrayView1::from(&ax)-&ArrayView1::from(p.b());
         ptr::copy(axmb.as_slice().unwrap().as_ptr(), g, p.na());
         ptr::copy(p.f().as_ptr(), g.add(p.na()), p.nf());
@@ -271,8 +269,7 @@ extern fn eval_jac_g_cb(n: c_int,
                 if x.is_null() {
                     return cipopt::FALSE;
                 }
-                let xx: Vec<f64> = (0..p.nx()).map(|i| *x.add(i)).collect();
-                p.evaluate(&xx);
+                p.evaluate(slice::from_raw_parts(x, p.nx()));
             }
             let mut k: usize = 0;
             for (_row, _col, val) in p.a().iter() {
@@ -338,15 +335,13 @@ extern fn eval_h_cb(n: c_int,
                 if x.is_null() {
                     return cipopt::FALSE;
                 }
-                let xx: Vec<f64> = (0..p.nx()).map(|i| *x.add(i)).collect();
-                p.evaluate(&xx);
+                p.evaluate(slice::from_raw_parts(x, p.nx()));
             }
             if new_lambda == cipopt::TRUE {
                 if lambda.is_null() {
                     return cipopt::FALSE;
                 }
-                let ll: Vec<f64> = (p.na()..(p.na()+p.nf())).map(|i| *lambda.add(i)).collect();
-                p.combine_h(&ll);
+                p.combine_h(slice::from_raw_parts(lambda.add(p.na()), p.nf()));
             }
             if new_x == cipopt::TRUE || new_lambda == cipopt::TRUE {
                 let mut k: usize = 0;
