@@ -204,7 +204,7 @@ mod tests {
 
     #[test]
     #[serial]
-    fn model_solve_lp_clp_cmd() {
+    fn model_solve_lp1_clp_cmd() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -237,6 +237,110 @@ mod tests {
         let final_primals = m.final_primals();
         assert_abs_diff_eq!(*final_primals.get(&x).unwrap(), 100., epsilon = 1e-5);
         assert_abs_diff_eq!(*final_primals.get(&y).unwrap(), 170., epsilon = 1e-5);
+    }
+
+    #[test]
+    #[serial]
+    fn model_solve_lp2_clp_cmd() {
+
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
+
+        let c1 = x.geq(100.);
+        let c2 = x.leq(200.);
+        let c3 = y.geq(80.);
+        let c4 = y.leq(170.);
+        let c5 = y.geq(-&x + 200.);
+
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&(2.*&x - 5.*&y)));
+        m.add_constraint(&c1);
+        m.add_constraint(&c2);
+        m.add_constraint(&c3);
+        m.add_constraint(&c4);
+        m.add_constraint(&c5);
+
+        let mut s = SolverClpCmd::new();
+        s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
+        m.solve(&s).unwrap();
+
+        assert_eq!(*m.solver_status().unwrap(), SolverStatus::Solved);
+
+        let final_duals = m.final_duals();
+        assert_eq!(*final_duals.get(&c1).unwrap(), 2.);
+        assert_eq!(*final_duals.get(&c2).unwrap(), 0.);
+        assert_eq!(*final_duals.get(&c3).unwrap(), 0.);
+        assert_eq!(*final_duals.get(&c4).unwrap(), 5.);
+        assert_eq!(*final_duals.get(&c5).unwrap(), 0.);
+    }
+    
+    #[test]
+    #[serial]
+    fn model_solve_lp3_clp_cmd() {
+
+        let x = VariableScalar::new_continuous("x");
+        let c = (3.*&x).equal(4.);
+
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&(5.*&x)));
+        m.add_constraint(&c);
+
+        let mut s = SolverClpCmd::new();
+        s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
+        m.solve(&s).unwrap();
+
+        assert_eq!(*m.solver_status().unwrap(), SolverStatus::Solved);
+
+        let final_primals = m.final_primals();
+        let final_duals = m.final_duals();
+        assert_abs_diff_eq!(*final_primals.get(&x).unwrap(), 4./3., epsilon = 1e-6);
+        assert_abs_diff_eq!(*final_duals.get(&c).unwrap(), 5./3., epsilon = 1e-6);
+    }
+
+    #[test]
+    #[serial]
+    fn model_solve_lp4_clp_cmd() {
+
+        let x = VariableScalar::new_continuous("x");
+        let c = (3.*&x).geq(4.);
+
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&(5.*&x)));
+        m.add_constraint(&c);
+
+        let mut s = SolverClpCmd::new();
+        s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
+        m.solve(&s).unwrap();
+
+        assert_eq!(*m.solver_status().unwrap(), SolverStatus::Solved);
+
+        let final_primals = m.final_primals();
+        let final_duals = m.final_duals();
+        assert_abs_diff_eq!(*final_primals.get(&x).unwrap(), 4./3., epsilon = 1e-6);
+        assert_abs_diff_eq!(*final_duals.get(&c).unwrap(), 5./3., epsilon = 1e-6);
+    }
+
+    #[test]
+    #[serial]
+    fn model_solve_lp5_clp_cmd() {
+
+        let x = VariableScalar::new_continuous("x");
+        let c = (3.*&x).leq(4.);
+
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&(-5.*&x)));
+        m.add_constraint(&c);
+
+        let mut s = SolverClpCmd::new();
+        s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
+        m.solve(&s).unwrap();
+
+        assert_eq!(*m.solver_status().unwrap(), SolverStatus::Solved);
+
+        let final_primals = m.final_primals();
+        let final_duals = m.final_duals();
+        assert_abs_diff_eq!(*final_primals.get(&x).unwrap(), 4./3., epsilon = 1e-6);
+        assert_abs_diff_eq!(*final_duals.get(&c).unwrap(), 5./3., epsilon = 1e-6);
     }
 
     #[test]
@@ -560,12 +664,12 @@ mod tests {
     #[serial]
     fn model_solve_nlp_ipopt() {
 
+        // Hock-Schittkowski
+        // Problem 71
+
         use maplit::hashmap;
         use crate::model::node_base::NodeBase;
         use crate::solver::ipopt::SolverIpopt;
-
-        // Hock-Schittkowski
-        // Problem 71
 
         let x1 = VariableScalar::new_continuous("x1");
         let x2 = VariableScalar::new_continuous("x2");
