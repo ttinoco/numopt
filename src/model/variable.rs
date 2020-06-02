@@ -130,7 +130,6 @@ mod tests {
         assert!(z1.is_constant_with_value(0.));
 
         let z2 = x.derivative(&x);
-        println!("{}", z2);
         assert!(z2.is_constant_with_value(1.));
     }
 

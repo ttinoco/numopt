@@ -1,6 +1,8 @@
 use std::fmt;
+use std::ptr;
 use std::rc::Rc;
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 
 use super::node::Node;
 use super::node_base::NodeBase;
@@ -73,6 +75,13 @@ impl PartialEq for Constraint {
 impl Eq for ConstraintKind {}
 impl Eq for Constraint {}
 
+impl Hash for Constraint {
+    
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        ptr::hash(&*self.0, state);
+    }
+}
+
 impl<'a> fmt::Display for Constraint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.0.kind {
@@ -97,6 +106,23 @@ mod tests {
     use super::*;
     use crate::model::variable::VariableScalar;
     use crate::model::constant::ConstantScalar;
+
+    #[test]
+    fn constr_hash() {
+
+        let x = VariableScalar::new_continuous("x");
+
+        let c = ConstantScalar::new(4.);
+
+        let c1 = Constraint::new(x.clone(), ConstraintKind::Equal, c.clone(), "foo");
+        let c2 = Constraint::new(x.clone(), ConstraintKind::LessEqual, c.clone(), "foo");
+        let c3 = c1.clone();
+
+        let h = hashmap!{ &c1 => 5., &c2 => 10.};
+        assert_eq!(*h.get(&c1).unwrap(), 5.);
+        assert_eq!(*h.get(&c2).unwrap(), 10.);
+        assert_eq!(*h.get(&c3).unwrap(), 5.);
+    }
 
     #[test]
     fn constr_clone_eq() {

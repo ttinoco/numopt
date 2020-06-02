@@ -123,21 +123,18 @@ mod tests {
         let z = VariableScalar::new_continuous("z");
 
         let p1 = x.all_simple_paths(&vec![&x, &y, &z]);
-        println!("p1 = {:?}", p1);
         assert_eq!(p1.get(&x).unwrap().len(), 1);
         assert_eq!(p1.get(&x).unwrap()[0].len(), 1);
         assert_eq!(p1.get(&y).unwrap().len(), 0);
         assert_eq!(p1.get(&z).unwrap().len(), 0);
 
         let p2 = (&x + 1.).all_simple_paths(&vec![&x, &y, &z]);
-        println!("p2 = {:?}", p2);
         assert_eq!(p2.get(&x).unwrap().len(), 1);
         assert_eq!(p2.get(&x).unwrap()[0].len(), 2);
         assert_eq!(p2.get(&y).unwrap().len(), 0);
         assert_eq!(p2.get(&z).unwrap().len(), 0);
 
         let p3 = (4. + 3.*(&z + &x)).all_simple_paths(&vec![&x, &y, &z]);
-        println!("p3 = {:?}", p3);
         assert_eq!(p3.get(&x).unwrap().len(), 1);
         assert_eq!(p3.get(&x).unwrap()[0].len(), 3);
         assert_eq!(p3.get(&y).unwrap().len(), 0);
@@ -147,7 +144,6 @@ mod tests {
         let f4 = &x + 5.;
         let g4 = &f4*(&z + 3.);
         let p4 = (f4 + g4).all_simple_paths(&vec![&x, &y, &z]);
-        println!("p4 = {:?}", p4);
         assert_eq!(p4.get(&x).unwrap().len(), 2);
         assert_eq!(p4.get(&x).unwrap()[0].len() +
                    p4.get(&x).unwrap()[1].len(), 6);

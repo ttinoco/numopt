@@ -25,7 +25,7 @@ impl SolverClpCmd {
     pub fn new() -> Self { 
 
         let mut parameters: HashMap<String, SolverParam> = HashMap::new();
-        parameters.insert("logLevel".to_string(), SolverParam::IntParam(1));
+        parameters.insert("logLevel".to_string(), SolverParam::IntParam(5));
 
         Self {
             parameters: parameters,
@@ -94,9 +94,8 @@ impl Solver for SolverClpCmd {
                               "solution",
                               &output_filename])
                       .spawn()
-                      .and_then(|mut cmd| cmd.wait())
-                      .map(|ecode| assert!(ecode.success())) {
-            Ok(()) => (),
+                      .and_then(|mut cmd| cmd.wait()) {
+            Ok(_s) => (),
             Err(_e) => {
                 remove_file(&input_filename).ok();
                 remove_file(&output_filename).ok();

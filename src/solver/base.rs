@@ -12,6 +12,10 @@ pub enum SolverStatus {
     /// to the specified accuracy.
     Solved,
 
+    /// Optimization solver determined that problem
+    /// is infeasible.
+    Infeasible,
+
     /// Optimization solver has unknown status.
     Unknown,
 
@@ -81,7 +85,8 @@ impl fmt::Display for SolverStatus {
         match self {
             SolverStatus::Error => write!(f, "error"),
             SolverStatus::Unknown => write!(f, "unknown"),
-            SolverStatus::Solved => write!(f, "solved")
+            SolverStatus::Solved => write!(f, "solved"),
+            SolverStatus::Infeasible => write!(f, "infeasible")
         }
     }
 }

@@ -583,6 +583,19 @@ mod tests {
     use crate::model::constant::ConstantScalar;
 
     #[test]
+    fn node_hash() {
+
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
+        let xx = x.clone();
+
+        let h = hashmap!{ &x => 2., &y => 4.};
+        assert_eq!(*h.get(&x).unwrap(), 2.);
+        assert_eq!(*h.get(&y).unwrap(), 4.);
+        assert_eq!(*h.get(&xx).unwrap(), 2.);
+    }
+
+    #[test]
     fn node_add_node() {
 
         let x = VariableScalar::new_continuous("x");
@@ -780,7 +793,6 @@ mod tests {
         assert_eq!(z3.evaluate(&var_values), 2.*13.*3.*6.);
 
         let z4 = &x*0.;
-        println!("z4 {}", z4);
         assert!(z4.is_constant_with_value(0.));
 
         let z5 = 0.*&x;

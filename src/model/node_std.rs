@@ -117,7 +117,7 @@ mod tests {
     use crate::model::variable::VariableScalar;
 
     #[test]
-    fn node_std_components_affine() {
+    fn node_std_comp_affine() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");
@@ -144,7 +144,7 @@ mod tests {
     }
 
     #[test]
-    fn node_std_components_not_affine() {
+    fn node_std_comp_not_affine() {
 
         let x = VariableScalar::new_continuous("x");
         let y = VariableScalar::new_continuous("y");

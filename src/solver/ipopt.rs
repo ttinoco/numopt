@@ -121,8 +121,11 @@ impl Solver for SolverIpopt {
 
         // Set status and solution
         let mut status = SolverStatus::Error;
-        if cstatus == 0 {
+        if cstatus == 0 || cstatus == 1 {
             status = SolverStatus::Solved;
+        }
+        else if cstatus == 2 {
+            status = SolverStatus::Infeasible;
         }  
         let mut solution = ProblemSol::new(p.nx(), p.na(), p.nf()); 
         solution.x.copy_from_slice(&x);
@@ -159,7 +162,7 @@ extern fn eval_f_cb(n: c_int,
             None => return cipopt::FALSE,
         }
         if new_x == cipopt::TRUE {
-            let xx: Vec<f64> = (1..p.nx()).map(|i| *x.add(i)).collect();
+            let xx: Vec<f64> = (0..p.nx()).map(|i| *x.add(i)).collect();
             p.evaluate(&xx);
         }
         *obj_value = p.phi();
@@ -555,7 +558,7 @@ mod tests {
         ));
 
         let mut s = SolverIpopt::new();
-        s.set_param("print_level", SolverParam::IntParam(5)).unwrap();
+        s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
         s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
         let (status, solution) = s.solve(&mut p).unwrap();
 
@@ -595,7 +598,7 @@ mod tests {
         ));
  
         let mut s = SolverIpopt::new();
-        s.set_param("print_level", SolverParam::IntParam(5)).unwrap();
+        s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
         s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
         let (status, solution) = s.solve(&mut p).unwrap();
 

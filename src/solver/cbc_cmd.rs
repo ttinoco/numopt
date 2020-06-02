@@ -28,7 +28,7 @@ impl SolverCbcCmd {
     pub fn new() -> Self { 
 
         let mut parameters: HashMap<String, SolverParam> = HashMap::new();
-        parameters.insert("logLevel".to_string(), SolverParam::IntParam(1));
+        parameters.insert("logLevel".to_string(), SolverParam::IntParam(5));
 
         Self {
             parameters: parameters,
@@ -45,9 +45,12 @@ impl SolverCbcCmd {
         let mut index: usize;
         let mut value: f64;
         let mut mul: f64;
-        let mut status = SolverStatus::Unknown;
+        let mut status = SolverStatus::Error;
         let mut solution = ProblemSol::new(p.nx(), p.na(), 0);
-        let f = File::open(fname)?;
+        let f = match File::open(fname) {
+            Ok(ff) => ff,
+            Err(_e) => return Ok((status, solution))
+        };
         let mut r = BufReader::new(f);
         let mut line = String::new();
         let e = io::Error::new(io::ErrorKind::Other, "bad solution file");
@@ -59,11 +62,24 @@ impl SolverCbcCmd {
                 if !cbc && s == "optimal" {
                     status = SolverStatus::Solved;
                 }
+                else if !cbc && s == "infeasible" {
+                    status = SolverStatus::Infeasible;
+                }
                 else if cbc && s == "Optimal" {
                     status = SolverStatus::Solved;
                 }
+                else if cbc && s == "Infeasible" {
+                    status = SolverStatus::Infeasible;
+                }
             },
-            None => return Err(e)
+            None => {
+                status = SolverStatus::Error;
+            }
+        }
+
+        // Not solved
+        if status != SolverStatus::Solved {
+            return Ok((status, solution))
         }
 
         // Objective value

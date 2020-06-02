@@ -3,11 +3,10 @@ use std::collections::HashMap;
 use simple_error::SimpleError;
 
 use crate::solver::base::{Solver, SolverStatus};
-use crate::problem::base::{Problem, ProblemSol};
 
 use crate::model::node::Node;
 use crate::model::constraint::Constraint;
-use crate::model::model_std::{ModelStd, ModelStdProb};
+use crate::model::model_std::ModelStd;
 
 pub enum Objective {
     Minimize(Node),
@@ -19,10 +18,10 @@ pub struct Model {
 
     objective: Objective,
     constraints: Vec<Constraint>,
-    init_values: HashMap<Node, f64>,
-    std_prob: Option<ModelStdProb>,
+    init_primals: HashMap<Node, f64>,
     solver_status: Option<SolverStatus>,
-    solution: Option<ProblemSol>,
+    final_primals: HashMap<Node, f64>,
+    final_duals: HashMap<Constraint, f64>,
 }
 
 impl Objective {
@@ -54,16 +53,19 @@ impl Model {
 
     pub fn constraints(&self) -> &Vec<Constraint> { &self.constraints }
 
-    pub fn init_values(&self) -> &HashMap<Node, f64> { &self.init_values }
+    pub fn final_primals(&self) -> &HashMap<Node, f64> { &self.final_primals }
+    pub fn final_duals(&self) -> &HashMap<Constraint, f64> { &self.final_duals }
+
+    pub fn init_primals(&self) -> &HashMap<Node, f64> { &self.init_primals }
 
     pub fn new() -> Model {
         Model {
             objective: Objective::empty(),
             constraints: Vec::new(),
-            init_values: HashMap::new(),
-            std_prob: None,
+            init_primals: HashMap::new(),
             solver_status: None,
-            solution: None,
+            final_primals: HashMap::new(),
+            final_duals: HashMap::new(),
         }
     }
 
@@ -73,44 +75,47 @@ impl Model {
         self.objective = obj;
     }
 
-    pub fn set_init_values(&mut self, init_values: &HashMap<&Node, f64>) -> () {
-        self.init_values.clear();
-        for (key, val) in init_values.iter() {
-            self.init_values.insert((*key).clone(), *val);
+    pub fn set_init_primals(&mut self, values: &HashMap<&Node, f64>) -> () {
+        self.init_primals.clear();
+        for (key, val) in values.iter() {
+            self.init_primals.insert((*key).clone(), *val);
         }
     }
 
     pub fn solve(&mut self, solver: &dyn Solver) -> Result<(), SimpleError> {
 
         // Reset
-        self.std_prob = None;
+        self.final_primals.clear();
+        self.final_duals.clear();
         self.solver_status = None;
-        self.solution = None;
 
         // Construct
         let mut std_prob = self.std_problem();
         
-        println!("problem");
-        match &std_prob.prob {
-            Problem::Lp(x) => {
-                println!("c {:?}", x.c());
-                println!("a {:?}", x.a());
-                println!("b {:?}", x.b());
-                println!("l {:?}", x.l());
-                println!("u {:?}", x.u());
-            }
-            _ => (),
-        };
-
         // Solve
         let (status, solution) = solver.solve(&mut std_prob.prob)?;
        
-        println!("solution");
-        println!("{:?}", solution);
-
-        // Store 
+        // Status
         self.solver_status = Some(status);
-        self.solution = Some(solution);
+
+        // Final var values
+        for (var, index) in std_prob.var2index.iter() {
+            self.final_primals.insert(var.clone(), solution.x[*index]);
+        }
+
+        // Final constr duals
+        for (index, constr) in std_prob.aindex2constr.iter() {
+            self.final_duals.insert(constr.clone(), solution.lam[*index]);
+        }
+        for (index, constr) in std_prob.jindex2constr.iter() {
+            self.final_duals.insert(constr.clone(), solution.nu[*index]);
+        }
+        for (index, constr) in std_prob.uindex2constr.iter() {
+            self.final_duals.insert(constr.clone(), solution.mu[*index]);
+        }
+        for (index, constr) in std_prob.lindex2constr.iter() {
+            self.final_duals.insert(constr.clone(), solution.pi[*index]);
+        }
 
         // Done
         Ok(())
@@ -154,8 +159,12 @@ impl<'a> fmt::Display for Model {
 #[cfg(test)]
 mod tests {
 
+    use approx::assert_abs_diff_eq;
+
     use super::*;
+    use crate::solver::base::SolverParam;
     use crate::solver::clp_cmd::SolverClpCmd;
+    use crate::solver::cbc_cmd::SolverCbcCmd;
     use crate::model::node_cmp::NodeCmp;
     use crate::model::node_func::NodeFunc;
     use crate::model::variable::VariableScalar;
@@ -199,22 +208,191 @@ mod tests {
         m.add_constraint(&(&y).leq(170.));
         m.add_constraint(&(&y).geq(-&x + 200.));
 
-        println!("{}", m);
-
-        let solver = SolverClpCmd::new();
+        let mut solver = SolverClpCmd::new();
+        solver.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
         m.solve(&solver).unwrap();
 
         let status = m.solver_status().unwrap();
         assert_eq!(*status, SolverStatus::Solved);
+    
+        let final_primals = m.final_primals();
+        assert_abs_diff_eq!(*final_primals.get(&x).unwrap(), 100., epsilon = 1e-5);
+        assert_abs_diff_eq!(*final_primals.get(&y).unwrap(), 170., epsilon = 1e-5);
+
+        // Solve again
+        m.solve(&solver).unwrap();
+
+        let status = m.solver_status().unwrap();
+        assert_eq!(*status, SolverStatus::Solved);
+    
+        let final_primals = m.final_primals();
+        assert_abs_diff_eq!(*final_primals.get(&x).unwrap(), 100., epsilon = 1e-5);
+        assert_abs_diff_eq!(*final_primals.get(&y).unwrap(), 170., epsilon = 1e-5);
     }
 
     #[test]
     fn model_solve_lp_cbc_cmd() {
 
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
+
+        let mut m = Model::new();
+        m.set_objective(Objective::maximize(&(-2.*&x + 5.*&y)));
+        m.add_constraint(&(100_f64.leq(&x)));
+        m.add_constraint(&(&x).leq(200.));
+        m.add_constraint(&(80_f64.leq(&y)));
+        m.add_constraint(&(&y).leq(170.));
+        m.add_constraint(&(&y).geq(-&x + 200.));
+
+        let mut solver = SolverCbcCmd::new();
+        solver.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
+        m.solve(&solver).unwrap();
+
+        let status = m.solver_status().unwrap();
+        assert_eq!(*status, SolverStatus::Solved);
+    
+        let final_primals = m.final_primals();
+        assert_abs_diff_eq!(*final_primals.get(&x).unwrap(), 100., epsilon = 1e-5);
+        assert_abs_diff_eq!(*final_primals.get(&y).unwrap(), 170., epsilon = 1e-5);
+    }
+
+    #[cfg(feature = "ipopt")] 
+    #[test]
+    fn model_solve_lp_ipopt() {
+
+        use crate::solver::ipopt::SolverIpopt;
+
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
+
+        let mut m = Model::new();
+        m.set_objective(Objective::maximize(&(-2.*&x + 5.*&y)));
+        m.add_constraint(&(100_f64.leq(&x)));
+        m.add_constraint(&(&x).leq(200.));
+        m.add_constraint(&(80_f64.leq(&y)));
+        m.add_constraint(&(&y).leq(170.));
+        m.add_constraint(&(&y).geq(-&x + 200.));
+
+        let mut solver = SolverIpopt::new();
+        solver.set_param("print_level", SolverParam::IntParam(0)).unwrap();
+        solver.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
+        m.solve(&solver).unwrap();
+
+        let status = m.solver_status().unwrap();
+        assert_eq!(*status, SolverStatus::Solved);
+    
+        let final_primals = m.final_primals();
+        assert_abs_diff_eq!(*final_primals.get(&x).unwrap(), 100., epsilon = 1e-5);
+        assert_abs_diff_eq!(*final_primals.get(&y).unwrap(), 170., epsilon = 1e-5);
     }
 
     #[test]
-    fn model_solve_lp_ipopt() {
+    fn model_infeas_lp_clc_cmd() {
+
+        let x = VariableScalar::new_continuous("x");
+        
+        let f = &x + 4.;
+        let c1 = &x.geq(4.);
+        let c2 = &x.leq(3.);
+
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&f));
+        m.add_constraint(&c1);
+        m.add_constraint(&c2);
+
+        let mut s = SolverClpCmd::new();
+        s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
+        m.solve(&s).unwrap();
+
+        assert_eq!(*m.solver_status().unwrap(), SolverStatus::Infeasible);
+
+    }
+
+    #[test]
+    fn model_infeas_lp_cbc_cmd() {
+
+        let x = VariableScalar::new_continuous("x");
+        
+        let f = &x + 4.;
+        let c1 = &x.geq(4.);
+        let c2 = &x.leq(3.);
+
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&f));
+        m.add_constraint(&c1);
+        m.add_constraint(&c2);
+
+        let mut s = SolverCbcCmd::new();
+        s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
+        m.solve(&s).unwrap();
+
+        assert_eq!(*m.solver_status().unwrap(), SolverStatus::Infeasible);        
+    }
+
+    #[cfg(feature = "ipopt")] 
+    #[test]
+    fn model_infeas_lp_ipopt() {
+
+        use crate::solver::ipopt::SolverIpopt;
+
+        let x = VariableScalar::new_continuous("x");
+        
+        let f = &x + 4.;
+        let c1 = &x.geq(4.);
+        let c2 = &x.leq(3.);
+
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&f));
+        m.add_constraint(&c1);
+        m.add_constraint(&c2);
+
+        let mut s = SolverIpopt::new();
+        s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
+        s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
+        m.solve(&s).unwrap();
+        
+        assert_eq!(*m.solver_status().unwrap(), SolverStatus::Error); 
+        
+        let c3 = (2.*&x + 10.).leq(4.);
+        let c4 = (2.*&x + 10.).geq(5.);
+
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&f));
+        m.add_constraint(&c3);
+        m.add_constraint(&c4);
+
+        m.solve(&s).unwrap();
+        
+        //assert_eq!(*m.solver_status().unwrap(), SolverStatus::Infeasible);        
+    }
+
+    #[test]
+    fn model_noobj_lp_clp_cmd() {
+
+        let x = VariableScalar::new_continuous("x");
+        
+        let c1 = &x.geq(2.);
+        let c2 = &x.leq(5.);
+
+        let mut m = Model::new();
+        m.add_constraint(&c1);
+        m.add_constraint(&c2);
+
+        let mut s = SolverClpCmd::new();
+        s.set_param("logLevel", SolverParam::IntParam(0)).unwrap();
+        m.solve(&s).unwrap();
+
+        assert_eq!(*m.solver_status().unwrap(), SolverStatus::Error);
+    }
+
+    #[test]
+    fn model_noobj_lp_cbc_cmd() {
+
+    }
+
+    #[cfg(feature = "ipopt")] 
+    #[test]
+    fn model_noobj_lp_ipopt() {
 
     }
 
@@ -224,7 +402,30 @@ mod tests {
     }
 
     #[test]
+    fn model_infeas_milp_cbc_cmd() {
+
+    }
+
+    #[test]
+    fn model_noobj_milp_cbc_cmd() {
+
+    }
+
+    #[cfg(feature = "ipopt")] 
+    #[test]
     fn model_solve_nlp_ipopt() {
+
+    }
+
+    #[cfg(feature = "ipopt")] 
+    #[test]
+    fn model_infeas_nlp_ipopt() {
+
+    }
+
+    #[cfg(feature = "ipopt")] 
+    #[test]
+    fn model_noobj_nlp_ipopt() {
 
     }
 }

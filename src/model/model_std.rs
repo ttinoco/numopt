@@ -229,7 +229,7 @@ impl ModelStd for Model {
 
         // Initial values
         let mut x0_data: Vec<f64> = vec![0.; num_vars];
-        for (var, val) in self.init_values().iter() {
+        for (var, val) in self.init_primals().iter() {
             match var2index.get(var) {
                 Some(index) => x0_data[*index] = *val,
                 None => (), 
@@ -397,7 +397,7 @@ mod tests {
         m.add_constraint(&c4);
         m.add_constraint(&c5);
         m.add_constraint(&c6);
-        m.set_init_values(&hashmap!{ &x => 2., &y => 3. });
+        m.set_init_primals(&hashmap!{ &x => 2., &y => 3. });
 
         let std_p = m.std_problem();
         let lp = match std_p.prob {
@@ -481,7 +481,7 @@ mod tests {
         m.add_constraint(&c3);
         m.add_constraint(&c4);
         m.add_constraint(&c5);
-        m.set_init_values(&hashmap!{ &x => 2., &y => 3. });
+        m.set_init_primals(&hashmap!{ &x => 2., &y => 3. });
 
         let std_p = m.std_problem();
         let milp = match std_p.prob {
@@ -542,7 +542,7 @@ mod tests {
         m.add_constraint(&c1);
         m.add_constraint(&c2);
         m.add_constraint(&c3);
-        m.set_init_values(&hashmap!{ &x => 2., &y => 3. });
+        m.set_init_primals(&hashmap!{ &x => 2., &y => 3. });
 
         let std_p = m.std_problem();
         let mut nlp = match std_p.prob {
@@ -554,17 +554,17 @@ mod tests {
         nlp.combine_h(&vec![1.5, 2.3]);
 
         assert_vec_approx_eq!(nlp.x0().unwrap(), vec![0., 0., 2., 3.], epsilon=0.);
-        assert_eq!(nlp.phi(), 3.*4_f64.cos() + 4.*5.*5. - 10.);
+        assert_eq!(nlp.phi(), -(3.*4_f64.cos() + 4.*5.*5. - 10.));
         assert_vec_approx_eq!(nlp.gphi(), 
-                              vec![0., 0., -3.*4_f64.sin(), 8.*5.],
+                              vec![0., 0., 3.*4_f64.sin(), -8.*5.],
                               epsilon=1e-8);
         assert_eq!(nlp.hphi().nnz(), 2);
         for (v1, v2, val) in nlp.hphi().iter() {
             if *v1 == 2 && *v2 == 2 {
-                assert_eq!(*val, -3.*4_f64.cos());
+                assert_eq!(*val, 3.*4_f64.cos());
             }
             else if *v1 == 3 && *v2 == 3 {
-                assert_eq!(*val, 8.);
+                assert_eq!(*val, -8.);
             }
             else {
                 panic!("invalid variable pair");
