@@ -1,7 +1,10 @@
+use serial_test::serial;
+
 use numopt::model::*;
 use numopt::solver::*;
 
 #[test]
+#[serial]
 fn numopt_model_solve_milp_cbc_cmd() {
 
     let x1 = VariableScalar::new_integer("x1");
@@ -33,11 +36,14 @@ fn numopt_model_solve_milp_cbc_cmd() {
 
 #[cfg(feature = "ipopt")] 
 #[test]
-fn numopt_model_solve_nlp_ipopt() {
+#[serial]
+fn numopt_model_solve_nlp1_ipopt() {
+
+    // Rosenbrock
 
     use approx::assert_abs_diff_eq;
 
-    const N: usize = 500;
+    const N: usize = 100;
 
     let x: Vec<Node>= (0..N).map(|i| VariableScalar::new_continuous(format!("x{}", i).as_ref()))
                             .collect();
@@ -51,7 +57,7 @@ fn numopt_model_solve_nlp_ipopt() {
     m.set_objective(Objective::minimize(&f));
 
     let mut s = SolverIpopt::new();
-    s.set_param("print_level", SolverParam::IntParam(5)).unwrap();
+    s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
     s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
     m.solve(&s).unwrap();
 
@@ -60,4 +66,53 @@ fn numopt_model_solve_nlp_ipopt() {
     for xx in x.iter() {
         assert_abs_diff_eq!(*final_primals.get(xx).unwrap(), 1., epsilon=1e-8);
     }
+}
+
+#[cfg(feature = "ipopt")] 
+#[test]
+#[serial]
+fn numopt_model_solve_nlp2_ipopt() {
+
+    // https://github.com/JuliaOpt/JuMP.jl/blob/master/examples/clnlbeam.jl
+
+    use num_traits::ToPrimitive;
+    use approx::assert_abs_diff_eq;
+
+    const N: usize = 100;
+    const ALPHA: f64 = 350.;
+    let h: f64 = 1./N.to_f64().unwrap();
+
+    let t: Vec<Node>= (0..N+1).map(|i| VariableScalar::new_continuous(format!("t{}", i).as_ref()))
+                              .collect();    
+    let x: Vec<Node>= (0..N+1).map(|i| VariableScalar::new_continuous(format!("x{}", i).as_ref()))
+                              .collect();
+    let u: Vec<Node>= (0..N+1).map(|i| VariableScalar::new_continuous(format!("u{}", i).as_ref()))
+                              .collect();
+
+    let mut f = ConstantScalar::zero();
+    for i in 0..N {
+        f = f + 0.5*h*(&u[i]*&u[i] + &u[i+1]*&u[i+1]) +
+                0.5*ALPHA*h*(t[i].cos() + t[i+1].cos());
+    }
+    
+    let mut m = Model::new();
+    m.set_objective(Objective::minimize(&f));
+    for i in 0..N {
+        m.add_constraint(&(&x[i+1] - &x[i] - 0.5*h*(t[i+1].sin() + t[i].sin())).equal(0.));
+        m.add_constraint(&(&t[i+1] - &t[i] - 0.5*h*(&u[i+1] - &u[i])).equal(0.));
+    }
+    for i in 0..(N+1) {
+        m.add_constraint(&t[i].leq(1.));
+        m.add_constraint(&t[i].geq(-1.));
+        m.add_constraint(&x[i].leq(0.05));
+        m.add_constraint(&x[i].geq(-0.05));
+    }
+
+    let mut s = SolverIpopt::new();
+    s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
+    s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
+    m.solve(&s).unwrap();
+
+    assert_eq!(*m.solver_status().unwrap(), SolverStatus::Solved);
+    assert_abs_diff_eq!(f.evaluate(&m.final_primals()), 350., epsilon=1e-8);
 }

@@ -166,14 +166,13 @@ impl<'a> fmt::Display for Model {
 #[cfg(test)]
 mod tests {
 
-    use maplit::hashmap;
+    use serial_test::serial;
     use approx::assert_abs_diff_eq;
 
     use super::*;
     use crate::solver::base::SolverParam;
     use crate::solver::clp_cmd::SolverClpCmd;
     use crate::solver::cbc_cmd::SolverCbcCmd;
-    use crate::model::node_base::NodeBase;
     use crate::model::node_cmp::NodeCmp;
     use crate::model::node_func::NodeFunc;
     use crate::model::variable::VariableScalar;
@@ -204,6 +203,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn model_solve_lp_clp_cmd() {
 
         let x = VariableScalar::new_continuous("x");
@@ -240,6 +240,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn model_solve_lp_cbc_cmd() {
 
         let x = VariableScalar::new_continuous("x");
@@ -267,6 +268,7 @@ mod tests {
 
     #[cfg(feature = "ipopt")] 
     #[test]
+    #[serial]
     fn model_solve_lp_ipopt() {
 
         use crate::solver::ipopt::SolverIpopt;
@@ -296,6 +298,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn model_infeas_lp_clc_cmd() {
 
         let x = VariableScalar::new_continuous("x");
@@ -318,6 +321,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn model_infeas_lp_cbc_cmd() {
 
         let x = VariableScalar::new_continuous("x");
@@ -340,6 +344,7 @@ mod tests {
 
     #[cfg(feature = "ipopt")] 
     #[test]
+    #[serial]
     fn model_infeas_lp_ipopt() {
 
         use crate::solver::ipopt::SolverIpopt;
@@ -376,6 +381,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn model_noobj_lp_clp_cmd() {
 
         let x = VariableScalar::new_continuous("x");
@@ -395,6 +401,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn model_noobj_lp_cbc_cmd() {
 
         let x = VariableScalar::new_continuous("x");
@@ -415,6 +422,7 @@ mod tests {
 
     #[cfg(feature = "ipopt")] 
     #[test]
+    #[serial]
     fn model_noobj_lp_ipopt() {
 
         use crate::solver::ipopt::SolverIpopt;
@@ -437,6 +445,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn model_solve_milp_cbc_cmd() {
 
         let x1 = VariableScalar::new_integer("x1");
@@ -467,6 +476,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn model_infeas_milp_cbc_cmd() {
 
         let x1 = VariableScalar::new_integer("x1");
@@ -497,6 +507,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn model_noobj_milp_cbc_cmd() {
 
         let x1 = VariableScalar::new_integer("x1");
@@ -546,8 +557,11 @@ mod tests {
 
     #[cfg(feature = "ipopt")] 
     #[test]
+    #[serial]
     fn model_solve_nlp_ipopt() {
 
+        use maplit::hashmap;
+        use crate::model::node_base::NodeBase;
         use crate::solver::ipopt::SolverIpopt;
 
         // Hock-Schittkowski
@@ -594,6 +608,7 @@ mod tests {
 
     #[cfg(feature = "ipopt")] 
     #[test]
+    #[serial]
     fn model_infeas_nlp_ipopt() {
 
 
@@ -601,6 +616,7 @@ mod tests {
 
     #[cfg(feature = "ipopt")] 
     #[test]
+    #[serial]
     fn model_noobj_nlp_ipopt() {
 
     }
