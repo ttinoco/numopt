@@ -13,3 +13,10 @@ pub mod constraint;
 pub mod constraint_std;
 pub mod model;
 pub mod model_std;
+
+pub use variable::VariableScalar;
+pub use constant::ConstantScalar;
+pub use node::Node;
+pub use node_cmp::NodeCmp;
+pub use model::Model;
+pub use model::Objective;

@@ -21,6 +21,10 @@ impl ConstantScalar {
     pub fn value(&self) -> f64 {
         self.value
     }
+
+    pub fn zero() -> Node {
+        ConstantScalar::new(0.)
+    }
 }
 
 impl NodeBase for ConstantScalar {
@@ -42,6 +46,13 @@ mod tests {
     use crate::model::node_diff::NodeDiff;
     use crate::model::variable::VariableScalar;
     use crate::model::constant::ConstantScalar;
+
+    #[test]
+    fn constant_zero() {
+
+        let z = ConstantScalar::zero();
+        assert!(z.is_constant_with_value(0.));
+    }
 
     #[test]
     fn constant_partial() {
