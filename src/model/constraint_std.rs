@@ -46,7 +46,7 @@ pub struct ConstraintStdComp {
 /// Trait for transforming constraints to standard form.
 pub trait ConstraintStd {
 
-    /// Gets stanford components of constraint.
+    /// Gets standard components of constraint.
     fn std_components(&self, arow: &mut usize, jrow: &mut usize) -> ConstraintStdComp;
 }
 

@@ -1,6 +1,6 @@
 //! Optimization algebraic modeling tools.
 //!
-//! These fools facilitate the construction, solution, and extractio of results
+//! These tools facilitate the construction, solution, and extraction of results
 //! of optimization models.
 //! 
 //! ## Example

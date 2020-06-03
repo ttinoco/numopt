@@ -21,7 +21,7 @@ pub struct VariableScalar {
 
 impl VariableScalar {
 
-    /// Determines whether optimization ariable is a continuous variable.
+    /// Determines whether optimization variable is a continuous variable.
     pub fn is_continuous(&self) -> bool {
         match self.kind {
             VariableKind::VarContinuous => true,

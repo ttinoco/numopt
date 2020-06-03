@@ -13,7 +13,7 @@ pub struct CsrMat<T> {
 
 impl<T: MatItem> CsrMat<T> {
 
-    /// Creates [CsrMat](struct.CooMat.html) from raw data.
+    /// Creates [CsrMat](struct.CsrMat.html) from raw data.
     pub fn new(shape: (usize, usize), 
                indptr: Vec<usize>,
                indices: Vec<usize>,
