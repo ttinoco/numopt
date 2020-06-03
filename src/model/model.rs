@@ -273,6 +273,45 @@ mod tests {
         assert_eq!(*final_duals.get(&c4).unwrap(), 5.);
         assert_eq!(*final_duals.get(&c5).unwrap(), 0.);
     }
+
+    #[cfg(feature = "ipopt")] 
+    #[test]
+    #[serial]
+    fn model_solve_lp2_ipopt() {
+
+        use crate::solver::SolverIpopt;
+
+        let x = VariableScalar::new_continuous("x");
+        let y = VariableScalar::new_continuous("y");
+
+        let c1 = x.geq(100.);
+        let c2 = x.leq(200.);
+        let c3 = y.geq(80.);
+        let c4 = y.leq(170.);
+        let c5 = y.geq(-&x + 200.);
+
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&(2.*&x - 5.*&y)));
+        m.add_constraint(&c1);
+        m.add_constraint(&c2);
+        m.add_constraint(&c3);
+        m.add_constraint(&c4);
+        m.add_constraint(&c5);
+
+        let mut solver = SolverIpopt::new();
+        solver.set_param("print_level", SolverParam::IntParam(0)).unwrap();
+        solver.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
+        m.solve(&solver).unwrap();        
+
+        assert_eq!(*m.solver_status().unwrap(), SolverStatus::Solved);
+
+        let final_duals = m.final_duals();
+        assert_abs_diff_eq!(*final_duals.get(&c1).unwrap(), 2., epsilon = 1e-6);
+        assert_abs_diff_eq!(*final_duals.get(&c2).unwrap(), 0., epsilon = 1e-6);
+        assert_abs_diff_eq!(*final_duals.get(&c3).unwrap(), 0., epsilon = 1e-6);
+        assert_abs_diff_eq!(*final_duals.get(&c4).unwrap(), 5., epsilon = 1e-6);
+        assert_abs_diff_eq!(*final_duals.get(&c5).unwrap(), 0., epsilon = 1e-6);
+    }
     
     #[test]
     #[serial]
@@ -662,7 +701,7 @@ mod tests {
     #[cfg(feature = "ipopt")] 
     #[test]
     #[serial]
-    fn model_solve_nlp_ipopt() {
+    fn model_solve_nlp1_ipopt() {
 
         // Hock-Schittkowski
         // Problem 71
@@ -713,9 +752,73 @@ mod tests {
     #[cfg(feature = "ipopt")] 
     #[test]
     #[serial]
+    fn model_solve_nlp2_ipopt() {
+
+        use std::f64::consts::PI;
+        use crate::solver::ipopt::SolverIpopt;
+
+        let x = VariableScalar::new_continuous("x");
+
+        let c1 = x.cos().equal(0.75);
+        let c2 = x.geq(-PI);
+        let c3 = x.leq(PI);
+
+        let mut m = Model::new();
+        m.set_objective(Objective::minimize(&(5.*&x)));
+        m.add_constraint(&c1);
+        m.add_constraint(&c2);
+        m.add_constraint(&c3);
+
+        let mut s = SolverIpopt::new();
+        s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
+        s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
+        m.solve(&s).unwrap();
+
+        let final_primals = m.final_primals();
+        let final_duals = m.final_duals();
+        let xval = *final_primals.get(&x).unwrap();
+
+        assert_eq!(*m.solver_status().unwrap(), SolverStatus::Solved);
+
+        assert_abs_diff_eq!(xval,
+                            -(0.75_f64.acos().abs()),
+                            epsilon = 1e-6);
+
+        assert_abs_diff_eq!(xval.cos(),
+                            0.75,
+                            epsilon = 1e-6);
+        assert!(xval >= -PI);
+        assert!(xval <= PI);
+
+        assert_abs_diff_eq!(*final_duals.get(&c1).unwrap(), 
+                            -5./(xval.sin()),
+                            epsilon = 1e-6);
+        assert_eq!(*final_duals.get(&c2).unwrap(), 0.);
+        assert_eq!(*final_duals.get(&c3).unwrap(), 0.);
+    }
+
+    #[cfg(feature = "ipopt")] 
+    #[test]
+    #[serial]
     fn model_infeas_nlp_ipopt() {
 
+        use crate::solver::ipopt::SolverIpopt;
 
+        let x = VariableScalar::new_continuous("x");
+
+        let c1 = (&x*&x).geq(3.);
+        let c2 = (&x*&x).leq(2.);
+
+        let mut m = Model::new();
+        m.add_constraint(&c1);
+        m.add_constraint(&c2);
+        
+        let mut s = SolverIpopt::new();
+        s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
+        s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
+        m.solve(&s).unwrap();
+
+        assert_eq!(*m.solver_status().unwrap(), SolverStatus::Infeasible);
     }
 
     #[cfg(feature = "ipopt")] 
@@ -723,5 +826,32 @@ mod tests {
     #[serial]
     fn model_noobj_nlp_ipopt() {
 
+        use maplit::hashmap;
+        use crate::solver::ipopt::SolverIpopt;
+
+        let x = VariableScalar::new_continuous("x");
+
+        let c1 = (&x*(x.cos()) - &x*&x).equal(0.);
+
+        let mut m = Model::new();
+        m.add_constraint(&c1);
+        m.set_init_primals(&hashmap!{ &x => 1. });
+
+        assert_eq!(c1.violation(&m.init_primals()), (1_f64.cos()-1.).abs());
+        
+        let mut s = SolverIpopt::new();
+        s.set_param("print_level", SolverParam::IntParam(0)).unwrap();
+        s.set_param("sb", SolverParam::StrParam("yes".to_string())).unwrap();
+        m.solve(&s).unwrap();
+
+        assert_eq!(*m.solver_status().unwrap(), SolverStatus::Solved);
+
+        let final_primals = m.final_primals();
+        assert_abs_diff_eq!(*final_primals.get(&x).unwrap(),
+                            0.7390851332151607,
+                            epsilon = 1e-6);
+       
+                            
+        assert_abs_diff_eq!(c1.violation(&final_primals), 0., epsilon = 1e-6);
     }
 }
