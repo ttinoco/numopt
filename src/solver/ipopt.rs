@@ -1,3 +1,5 @@
+//! Ipopt solver interface.
+
 #![cfg(feature = "ipopt")] 
 
 use std::{ptr, slice};
@@ -18,15 +20,20 @@ use crate::problem::base::{Problem, ProblemSol};
 use crate::problem::nlp::ProblemNlp;
 
 /// Interface to the optimization solver Ipopt from COIN-OR
-/// that links with the library "libipopt". 
+/// that links with the library "libipopt".
+///  
 /// The library needs to be on the linker path.
-/// This solver is available when the feature "ipopt" is enabled.                 
+/// This solver is available when the feature "ipopt" is enabled.
+/// 
+/// It can solve problems of type [ProblemLp](../../problem/lp/struct.ProblemLp.html) 
+/// and [ProblemNlp](../../problem/nlp/struct.ProblemNlp.html).
 pub struct SolverIpopt {
     parameters: HashMap<String, SolverParam>,
 }
 
 impl SolverIpopt {
 
+    // Creates solver instance.
     pub fn new() -> Self {
         
         let mut parameters: HashMap<String, SolverParam> = HashMap::new();

@@ -1,3 +1,5 @@
+//! Base optimization problem types and structures.
+
 use std::fmt::{self, Debug};
 
 use crate::matrix::coo::CooMat; 

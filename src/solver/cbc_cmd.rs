@@ -1,3 +1,5 @@
+//! Cbc solver interface.
+
 use std::fs::File;
 use std::ffi::OsStr;
 use tempfile::Builder;
@@ -18,13 +20,18 @@ use crate::problem::milp::{ProblemMilp,
 
 /// Interface to the optimization solver Cbc from COIN-OR 
 /// that utilzes the command-line tool "cbc". 
-/// The command-line tool needs to be on the system path.
+///
+/// The command-line tool "cbc" needs to be on the system path.
+/// 
+/// It can solve problems of type [ProblemLp](../../problem/lp/struct.ProblemLp.html) 
+/// and [ProblemMilp](../../problem/milp/struct.ProblemMilp.html).
 pub struct SolverCbcCmd {
     parameters: HashMap<String, SolverParam>,
 }
 
 impl SolverCbcCmd {
 
+    // Creates solver instance.
     pub fn new() -> Self { 
 
         let mut parameters: HashMap<String, SolverParam> = HashMap::new();

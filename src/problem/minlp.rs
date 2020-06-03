@@ -1,3 +1,4 @@
+//! Mixed-integer nonlinear optimization problem.
 
 use crate::matrix::coo::CooMat; 
 use crate::problem::base::ProblemEval;
@@ -8,8 +9,9 @@ use crate::problem::base::ProblemEval;
 /// subject to a*x = b
 ///            f(x) = 0
 ///            l <= x <= u
-///            p*x in integers
+///            p*x in integers,
 /// ```
+/// where p*x gives a subvector of x.
 pub struct ProblemMinlp
 {
     x0: Option<Vec<f64>>,

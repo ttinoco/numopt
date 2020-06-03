@@ -1,3 +1,5 @@
+//! Clp solver interface.
+
 use std::ffi::OsStr;
 use tempfile::Builder;
 use std::fs::remove_file;
@@ -15,13 +17,17 @@ use crate::problem::milp::ProblemMilpIO;
 
 /// Interface to the optimization solver Clp from COIN-OR 
 /// that utilzes the command-line tool "clp". 
-/// The command-line tool needs to be on the system path.
+/// 
+/// The command-line tool "clp" needs to be on the system path.
+/// 
+/// It can solve problems of type [ProblemLp](../../problem/lp/struct.ProblemLp.html). 
 pub struct SolverClpCmd {
     parameters: HashMap<String, SolverParam>,
 }
 
 impl SolverClpCmd {
 
+    // Creates solver instance.
     pub fn new() -> Self { 
 
         let mut parameters: HashMap<String, SolverParam> = HashMap::new();

@@ -1,3 +1,5 @@
+//! Linear optimization problem.
+
 use ndarray::ArrayView1;
 
 use crate::matrix::coo::CooMat;
@@ -7,9 +9,9 @@ use crate::problem::nlp::ProblemNlp;
 
 /// Linear optimization problem (Lp) of the form
 /// ```ignore
-/// minimize   c^T*x
-/// subject to a*x = b
-///            l <= x <= u
+/// minimize   c^T*x       
+/// subject to a*x = b     : lambda
+///            l <= x <= u : pi and mu.
 /// ```                     
 pub struct ProblemLp {
     base_milp: ProblemMilp,

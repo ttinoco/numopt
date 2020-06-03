@@ -1,3 +1,4 @@
+//! Nonlinear optimization problem.
 
 use crate::matrix::coo::CooMat;
 use crate::problem::base::ProblemEval;
@@ -6,9 +7,9 @@ use crate::problem::minlp::ProblemMinlp;
 /// Smooth nonlinear optimization problem (Nlp) of the form
 /// ```ignore
 /// minimize   phi(x)
-/// subject to a*x = b
-///            f(x) = 0
-///            l <= x <= u
+/// subject to a*x = b     : lambda
+///            f(x) = 0    : nu
+///            l <= x <= u : pi and mu.
 /// ```
 pub struct ProblemNlp {
     base: ProblemMinlp,

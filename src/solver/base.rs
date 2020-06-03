@@ -1,3 +1,5 @@
+//! Base optimization solver types and trait.
+
 use std::fmt;
 use simple_error::SimpleError;
 use std::collections::HashMap;

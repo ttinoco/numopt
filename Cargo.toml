@@ -1,10 +1,10 @@
 [package]
 name = "numopt"
-version = "0.1.1"
+version = "0.2.1"
 authors = ["Tomas Tinoco De Rubira <ttinoco5687@gmail.com>"]
 edition = "2018"
 license = "BSD-2-Clause"
-description = "Numerical optimization problem abstractions, solver interfaces, and more."
+description = "Numerical optimization problem abstractions, solver interfaces, and modeling tools."
 documentation = "https://docs.rs/numopt"
 repository = "https://github.com/ttinoco/numopt"
 

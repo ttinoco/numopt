@@ -1,3 +1,5 @@
+//! Mixed-integer linear optimization problem.
+
 use std::fs::File;
 use std::io::{self, Write, BufWriter};
 use ndarray::ArrayView1;
@@ -10,8 +12,9 @@ use crate::problem::minlp::ProblemMinlp;
 /// minimize   c^T*x
 /// subject to a*x = b
 ///            l <= x <= u
-///            p*x in integers
+///            p*x in integers,
 /// ``` 
+/// where p*x gives a subvector of x.
 pub struct ProblemMilp {
     c: Vec<f64>,
     base: ProblemMinlp,
