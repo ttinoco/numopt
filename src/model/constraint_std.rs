@@ -1,3 +1,5 @@
+//! Structures and traits for transforming constraints to standard form.
+
 use std::ops::AddAssign;
 
 use crate::model::node::Node;
@@ -7,25 +9,50 @@ use crate::model::constant::ConstantScalar;
 use crate::model::variable::VariableScalar;
 use crate::model::constraint::{Constraint, ConstraintKind};
 
+/// Constraint standard components.
 pub struct ConstraintStdComp {
+
+    /// List of constraints that map to linear equality constraints.
     pub ca: Vec<Constraint>,             // constraints
+
+    /// List of constraints that map to nonlinear equality constraints.
     pub cj: Vec<Constraint>,             // constraints
+
+    /// Data for Jacobian matrix for linear equality constraints.
     pub a: Vec<(usize, Node, f64)>,      // row, var, value
+
+    /// Right-hand-side vector of linear equality constraint functions.
     pub b: Vec<f64>,                     // values
+
+    /// Expressions for nonlinear equality constraints.
     pub f: Vec<Node>,                    // expressions
+
+    /// Data for Jacobian of nonlinear equality constraint expressions.
     pub j: Vec<(usize, Node, Node)>,     // row, var, expression
+
+    /// Data for Hessians of nonlinear equality constraint expressions.
     pub h: Vec<Vec<(Node, Node, Node)>>, // var, var, expression
+
+    /// Data for variable upper limits.
     pub u: Vec<(Node, f64, Constraint)>, // var, value, constraint
+
+    /// Data for variable lower limits.
     pub l: Vec<(Node, f64, Constraint)>, // var, value, constraint
+
+    /// Standard properties of constraint expressions.
     pub prop: Vec<NodeStdProp>,
 }
 
+/// Trait for transforming constraints to standard form.
 pub trait ConstraintStd {
+
+    /// Gets stanford components of constraint.
     fn std_components(&self, arow: &mut usize, jrow: &mut usize) -> ConstraintStdComp;
 }
 
 impl ConstraintStdComp {
 
+    /// Creates new container of constraint standard components.
     pub fn new() -> ConstraintStdComp {
         ConstraintStdComp {
             ca: Vec::new(),

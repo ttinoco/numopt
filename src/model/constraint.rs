@@ -1,3 +1,8 @@
+//! Optimization constraint.
+//! 
+//! Constraints currently supported are equality and inequality constraints
+//! involving scalar expressions.
+
 use std::fmt;
 use std::ptr;
 use std::rc::Rc;
@@ -7,6 +12,7 @@ use std::hash::{Hash, Hasher};
 use super::node::Node;
 use super::node_base::NodeBase;
 
+/// Constraint kind.
 #[derive(PartialEq)]
 pub enum ConstraintKind {
     Equal,
@@ -14,6 +20,7 @@ pub enum ConstraintKind {
     GreaterEqual,
 }
 
+/// Constraint inner data.
 struct ConstraintInner {
     lhs: Node,
     kind: ConstraintKind,
@@ -21,16 +28,21 @@ struct ConstraintInner {
     label: String,
 }
 
+/// Constraint.
 pub struct Constraint(Rc<ConstraintInner>);
 
 impl Constraint {
 
+    /// Gets constraint kind.
     pub fn kind(&self) -> &ConstraintKind { &self.0.kind }
 
+    /// Gets constraint label.
     pub fn label(&self) -> &str { self.0.label.as_ref() }
 
+    /// Gets constraint left-hand-side.
     pub fn lhs(&self) -> &Node { &self.0.lhs }
 
+    /// Creates new constraint.
     pub fn new(lhs: Node, kind: ConstraintKind, rhs: Node, label: &str) -> Constraint {
         Constraint(Rc::new(
             ConstraintInner{
@@ -42,8 +54,10 @@ impl Constraint {
         ))
     }
 
+    /// Gets constraint right-hand-side.
     pub fn rhs(&self) -> &Node { &self.0.rhs }
 
+    /// Computes constraint violation given variable values.
     pub fn violation(&self, var_values: &HashMap<&Node, f64>) -> f64 {
         match self.0.kind {
             ConstraintKind::Equal => { 

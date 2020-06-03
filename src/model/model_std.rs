@@ -1,3 +1,5 @@
+//! Structures and traits for transforming optimization models to standard form.
+
 use std::collections::{HashSet, HashMap};
 
 use crate::matrix::coo::CooMat;
@@ -17,22 +19,46 @@ use crate::model::model::{Model, Objective};
 
 const INF: f64 = 1e8;
 
+/// Optimization model standard components.
 pub struct ModelStdComp {
+
+    /// Standard components of objective expression.
     pub obj: NodeStdComp,
+
+    /// Standard components of constraints.
     pub constr: ConstraintStdComp,
 }
 
+/// Optimization model standard problem.
 pub struct ModelStdProb {
+
+    /// Problem in standard form.
     pub prob: Problem,
+
+    /// Map between optimization model variables and their index
+    /// in the vector of variables for the problem in standard form.
     pub var2index: HashMap<Node, usize>,
+
+    /// Map between linear equality constraint row and model constraint.
     pub aindex2constr: HashMap<usize, Constraint>,
+    
+    /// Map between nonlinear equality constraint row and model constraint.
     pub jindex2constr: HashMap<usize, Constraint>,
+
+    /// Map between variable upper limit and model constraint.
     pub uindex2constr: HashMap<usize, Constraint>,
+
+    /// Map between variable lower limit and model constraint.
     pub lindex2constr: HashMap<usize, Constraint>,
 }
 
+/// A trait for transforming optimization models to problems in standard form.
 pub trait ModelStd {
+
+    /// Obtains standard components of model.
     fn std_components(&self) -> ModelStdComp;
+
+    /// Obtains standard problem of model.
     fn std_problem(&self) -> ModelStdProb;
 }
 

@@ -1,3 +1,5 @@
+//! Optimization model.
+
 use std::fmt;
 use std::collections::HashMap;
 use simple_error::SimpleError;
@@ -8,32 +10,48 @@ use crate::model::node::Node;
 use crate::model::constraint::Constraint;
 use crate::model::model_std::ModelStd;
 
+/// Optimization objective.
 pub enum Objective {
     Minimize(Node),
     Maximize(Node),
     Empty,
 }
 
+/// Optimization model.
 pub struct Model {
 
+    /// Optimization objective.
     objective: Objective,
+
+    /// Optimization constraints.
     constraints: Vec<Constraint>,
+
+    /// Initial primal values.
     init_primals: HashMap<Node, f64>,
+
+    /// Solver status.
     solver_status: Option<SolverStatus>,
+
+    /// Final primal values.
     final_primals: HashMap<Node, f64>,
+
+    /// Final dual values.
     final_duals: HashMap<Constraint, f64>,
 }
 
 impl Objective {
 
+    /// Creates an objective for minimizing a given expression.
     pub fn minimize(f: &Node) -> Objective {
         Objective::Minimize(f.clone())
     }
 
+    /// Creates an objective for maximizing a given expression.
     pub fn maximize(f: &Node) -> Objective {
         Objective::Maximize(f.clone())
     }
 
+    /// Creates and empty objective.
     pub fn empty() -> Objective {
         Objective::Empty
     }
@@ -41,30 +59,37 @@ impl Objective {
 
 impl Model {
 
+    /// Add a constraint to the model.
     pub fn add_constraint(&mut self, c: &Constraint) -> () {
         self.constraints.push(c.clone())
     }
 
+    /// Adds multiple constraints to the model.
     pub fn add_constraints(&mut self, c: &[&Constraint]) -> () {
         self.constraints.extend(c.iter()
                                  .map(|cc| (*cc).clone())
                                  .collect::<Vec<Constraint>>());
     }
 
+    /// Gets the model constraints.
     pub fn constraints(&self) -> &Vec<Constraint> { &self.constraints }
 
+    /// Gets the final primal values of the model.
     pub fn final_primals(&self) -> HashMap<&Node, f64> { 
          self.final_primals.iter().map(|(var, val)| (var, *val)).collect()
     }
 
+    /// Gets the final dual values of the model.
     pub fn final_duals(&self) -> HashMap<&Constraint, f64> { 
         self.final_duals.iter().map(|(c, val)| (c, *val)).collect()
     }
 
+    /// Gets the initial primal values of the model.
     pub fn init_primals(&self) -> HashMap<&Node, f64> { 
         self.init_primals.iter().map(|(var, val)| (var, *val)).collect()
     }
 
+    /// Creates a new empty optimization model.
     pub fn new() -> Model {
         Model {
             objective: Objective::empty(),
@@ -76,12 +101,15 @@ impl Model {
         }
     }
 
+    /// Gets the model objective.
     pub fn objective(&self) -> &Objective { &self.objective }
 
+    /// Sets the model objective.
     pub fn set_objective(&mut self, obj: Objective) -> () {
         self.objective = obj;
     }
 
+    /// Sets initial primal values for the model.
     pub fn set_init_primals(&mut self, values: &HashMap<&Node, f64>) -> () {
         self.init_primals.clear();
         for (key, val) in values.iter() {
@@ -89,6 +117,7 @@ impl Model {
         }
     }
 
+    /// Solves the model using a given solver.
     pub fn solve(&mut self, solver: &dyn Solver) -> Result<(), SimpleError> {
 
         // Reset
@@ -128,6 +157,7 @@ impl Model {
         Ok(())
     }
 
+    /// Gets the solver status.
     pub fn solver_status(&self) -> Option<&SolverStatus> {
         match &self.solver_status {
             Some(x) => Some(&x),

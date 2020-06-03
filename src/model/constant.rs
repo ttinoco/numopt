@@ -1,15 +1,19 @@
+//! Constant expression.
+
 use std::fmt;
 use std::rc::Rc;
 
 use super::node::Node;
 use super::node_base::NodeBase;
 
+/// Constant scalar.
 pub struct ConstantScalar {
     value: f64,
 }
 
 impl ConstantScalar {
 
+    /// Creates new scalar constant expression node.
     pub fn new(value: f64) -> Node {
         Node::ConstantScalar(Rc::new(
             Self {
@@ -18,10 +22,12 @@ impl ConstantScalar {
         ))
     }
 
+    /// Gets value of constant.
     pub fn value(&self) -> f64 {
         self.value
     }
 
+    /// Creates new scalar constant with value zero.
     pub fn zero() -> Node {
         ConstantScalar::new(0.)
     }
