@@ -1,12 +1,17 @@
+//! Trait that provides various functions of expression nodes.
 
 use crate::model::node::Node;
 use crate::model::constant::ConstantScalar;
 use crate::model::function::cos::FunctionCos;
 use crate::model::function::sin::FunctionSin;
 
+/// Trait that provides various functions for expression nodes.
 pub trait NodeFunc {
 
+    /// Constructs cosine expression node.
     fn cos(&self) -> Node;
+
+    /// Constructs sine expression node.
     fn sin(&self) -> Node;
 }
 

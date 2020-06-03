@@ -1,3 +1,5 @@
+//! Optimization expression node.
+
 use std::fmt;
 use std::ptr;
 use std::rc::Rc;
@@ -16,6 +18,7 @@ use crate::model::function::div::FunctionDiv;
 use crate::model::function::cos::FunctionCos;
 use crate::model::function::sin::FunctionSin;
 
+/// Expression node.
 pub enum Node {
     ConstantScalar(Rc<ConstantScalar>),
     VariableScalar(Rc<VariableScalar>),
@@ -28,6 +31,7 @@ pub enum Node {
 
 impl Node {
 
+    /// Determines whether node is a constant.
     pub fn is_constant(&self) -> bool {
         match self {
             Node::ConstantScalar(_) => true,
@@ -35,6 +39,7 @@ impl Node {
         }
     }
 
+    /// Determines whether node is a constant with a given value.
     pub fn is_constant_with_value(&self, val: f64) -> bool {
         match self {
             Node::ConstantScalar(x) => x.value() == val,
@@ -42,6 +47,7 @@ impl Node {
         }
     }
 
+    /// Gets node name. Currently, only variables have nonempty names.
     pub fn name(&self) -> &str {
         match self {
             Node::VariableScalar(x) => x.name(),

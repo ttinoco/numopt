@@ -8,8 +8,9 @@ pub mod cbc_cmd;
 pub mod ipopt;
 
 pub use base::{Solver, SolverParam, SolverStatus};
-pub use clp_cmd::SolverClpCmd;
-pub use cbc_cmd::SolverCbcCmd;
 
 #[cfg(feature = "ipopt")] 
 pub use ipopt::SolverIpopt;
+
+pub use clp_cmd::SolverClpCmd;
+pub use cbc_cmd::SolverCbcCmd;

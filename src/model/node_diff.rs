@@ -1,3 +1,5 @@
+//! Trait for differentiating expression nodes.
+
 use std::iter::FromIterator;
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -5,10 +7,18 @@ use crate::model::node::Node;
 use crate::model::node_base::NodeBase;
 use crate::model::constant::ConstantScalar;
 
+/// Trait for differentiating expression nodes.
 pub trait NodeDiff {
 
+    /// Obtains all simple paths between node and given variable nodes.
+    /// This is used for then performing differentiation using the chain-rule.
     fn all_simple_paths(&self, vars: &[&Node]) -> HashMap<Node, Vec<Vec<Node>>>;
+    
+    /// Obtains the derivative of the expression node with respect to a given variable node.
     fn derivative(&self, var: &Node) -> Node;
+
+    /// Obtains the derivatives of the expression node with respect to a given array
+    /// of variable nodes.
     fn derivatives(&self, vars: &[&Node]) -> HashMap<Node, Node>;
 }
 

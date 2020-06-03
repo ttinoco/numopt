@@ -1,3 +1,5 @@
+//! Add function.
+
 use std::fmt;
 use std::rc::Rc;
 use std::collections::HashMap;
@@ -7,12 +9,14 @@ use crate::model::node_base::NodeBase;
 use crate::model::node_std::{NodeStd, NodeStdProp};
 use crate::model::constant::ConstantScalar;
 
+/// Add function.
 pub struct FunctionAdd {
     args: Vec<Node>,
 }
 
 impl FunctionAdd {
 
+    /// Creates new add expression node.
     pub fn new(args: Vec<Node>) -> Node {
 
         assert!(args.len() >= 2);

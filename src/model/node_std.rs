@@ -1,23 +1,55 @@
+//! Structures and trait for extracting standard components and properties
+//! of expression node.
+
 use std::collections::HashMap;
 
 use crate::model::node::Node;
 use crate::model::node_diff::NodeDiff;
 use crate::model::constant::ConstantScalar;
 
+/// Standard properties of expression node.
 pub struct NodeStdProp {
+
+    /// Flag that indicates whether expression node represents affine
+    /// expression.
     pub affine: bool,
+
+    /// Map of variable nodes to values representing elements of vector
+    /// "a" of affine form "a*x + b" that represents the expression, 
+    /// where "x" are optimization variables.
+    /// When the expression is not affine, the values of this map are
+    /// meaningless but the keys are a complete set of all variables of the
+    /// expression.
     pub a: HashMap<Node, f64>,
+
+    /// Constant value representing the scalar "b" of the affine form "a*x + b"
+    /// that represents the expression. 
+    /// When the expression is not affine, this value is meaningless.
     pub b: f64,
 }
 
+/// Standard components of expression node.
 pub struct NodeStdComp {
+
+    /// Expression.
     pub phi: Node,                     // expression
+
+    /// Expression gradient entries.
     pub gphi: Vec<(Node, Node)>,       // var, expression
+
+    /// Expression hessian entries. 
+    /// They include only one term of each off-diagonal pair.
     pub hphi: Vec<(Node, Node, Node)>, // var, var, expression
+
+    /// Standard properties of expression.
     pub prop: NodeStdProp,
 }
 
+/// Trait for extracting standard properties and components
+/// of expression node.
 pub trait NodeStd {
+
+    /// Obtains standard properties of expression node.
     fn std_properties(&self) -> NodeStdProp {
         NodeStdProp {
             affine: false,
@@ -25,6 +57,8 @@ pub trait NodeStd {
             b: 0.,
         }
     }
+
+    /// Obtains standard components of expression node.
     fn std_components(&self) -> NodeStdComp {
         NodeStdComp {
             phi: ConstantScalar::new(0.),

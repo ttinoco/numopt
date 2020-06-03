@@ -1,16 +1,31 @@
+//! Trait for comparing expression nodes and constructing 
+//! optimization constraints. 
+
 use num_traits::cast::ToPrimitive;
 
 use crate::model::node::Node;
 use crate::model::constant::ConstantScalar;
 use crate::model::constraint::{Constraint, ConstraintKind};
 
+/// Trait for comparing expression nodes.
 pub trait NodeCmp<T> {
 
+    /// Creates equality constraint and tags it.
     fn equal_and_tag(&self, other: T, tag: &str) -> Constraint;
+
+    /// Creates equality constraint.
     fn equal(&self, other: T) -> Constraint { self.equal_and_tag(other, "") }
+
+    /// Creates greater-than-or-equal constraint and tags it.
     fn geq_and_tag(&self, other: T, tag: &str) -> Constraint;
+
+    /// Creates greater-than-or-equal constraint.
     fn geq(&self, other: T) -> Constraint { self.geq_and_tag(other, "") }
+
+    /// Creates less-than-or-equal constraint and tags it.
     fn leq_and_tag(&self, other: T, tag: &str) -> Constraint;
+
+    /// Creates less-than-or-equal constraint.
     fn leq(&self, other: T) -> Constraint { self.leq_and_tag(other, "") }
 }
 

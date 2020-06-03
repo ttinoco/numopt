@@ -1,3 +1,5 @@
+//! Divide function.
+
 use std::fmt;
 use std::rc::Rc;
 use std::collections::HashMap;
@@ -7,12 +9,14 @@ use crate::model::node_base::NodeBase;
 use crate::model::node_std::{NodeStd, NodeStdProp};
 use crate::model::constant::ConstantScalar;
 
+/// Divide function.
 pub struct FunctionDiv {
     args: (Node, Node),
 }
 
 impl FunctionDiv {
 
+    /// Creates new divide expression node.
     pub fn new(arg1: Node, arg2: Node) -> Node {
         Node::FunctionDiv(Rc::new(
             Self {

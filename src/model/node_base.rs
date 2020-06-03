@@ -1,12 +1,21 @@
+//! Base expression node functionality.
+
 use std::f64::NAN;
 use std::collections::HashMap;
 
 use crate::model::node::Node;
 
+/// Trait for base functionality of expression nodes.
 pub trait NodeBase {
 
+    /// Gets arguments (children) of an expression node.
     fn arguments(&self) -> Vec<&Node> { Vec::new() }
+
+    /// Gets partial derivative of expression node with respect to 
+    /// argument node.
     fn partial(&self, arg: &Node) -> Node;
+
+    /// Evaluates expression for given variable values.
     fn evaluate(&self, _var_values: &HashMap<&Node, f64>) -> f64 { NAN }
 }
 

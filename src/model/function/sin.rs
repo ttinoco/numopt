@@ -1,3 +1,5 @@
+//! Sine function.
+
 use std::fmt;
 use std::rc::Rc;
 use std::collections::HashMap;
@@ -8,12 +10,14 @@ use crate::model::node_std::{NodeStd, NodeStdProp};
 use crate::model::node_func::NodeFunc;
 use crate::model::constant::ConstantScalar;
 
+/// Sine function.
 pub struct FunctionSin {
     arg: Node
 }
 
 impl FunctionSin {
 
+    /// Creates new sine expression node.
     pub fn new(arg: Node) -> Node {
         Node::FunctionSin(Rc::new(
             Self {

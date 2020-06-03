@@ -1,3 +1,5 @@
+//! Optimization variables.
+
 use std::fmt;
 use std::rc::Rc;
 
@@ -5,11 +7,13 @@ use super::node::Node;
 use super::node_base::NodeBase;
 use super::constant::ConstantScalar;
 
+/// Optimization variable kind.
 pub enum VariableKind {
     VarContinuous,
     VarInteger,
 }
 
+/// Scalar optimization variable.
 pub struct VariableScalar {
     name: String,
     kind: VariableKind,
@@ -17,6 +21,7 @@ pub struct VariableScalar {
 
 impl VariableScalar {
 
+    /// Determines whether optimization ariable is a continuous variable.
     pub fn is_continuous(&self) -> bool {
         match self.kind {
             VariableKind::VarContinuous => true,
@@ -24,6 +29,7 @@ impl VariableScalar {
         }
     }
 
+    /// Determines whether optimization variable is an integer variable.
     pub fn is_integer(&self) -> bool {
         match self.kind {
             VariableKind::VarInteger => true,
@@ -31,8 +37,10 @@ impl VariableScalar {
         }
     }
 
+    /// Gets optimization variable name.
     pub fn name(&self) -> &str { self.name.as_ref() }
 
+    /// Creates a new optimization variable expression node.
     pub fn new(name: &str, kind: VariableKind) -> Node {
         Node::VariableScalar(Rc::new(
             Self {
@@ -42,10 +50,12 @@ impl VariableScalar {
         ))
     }
 
+    /// Creates a new continuous optimization variable expression node.
     pub fn new_continuous(name: &str) -> Node {
         VariableScalar::new(name, VariableKind::VarContinuous)
     }
 
+    /// Creates a new integer optimization variable expression node.
     pub fn new_integer(name: &str) -> Node {
         VariableScalar::new(name, VariableKind::VarInteger)
     }

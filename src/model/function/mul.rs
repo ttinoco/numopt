@@ -1,3 +1,5 @@
+//! Multiply function.
+
 use std::fmt;
 use std::rc::Rc;
 use std::collections::HashMap;
@@ -7,12 +9,14 @@ use crate::model::node_base::NodeBase;
 use crate::model::node_std::{NodeStd, NodeStdProp};
 use crate::model::constant::ConstantScalar;
 
+/// Multiply function.
 pub struct FunctionMul {
     args: (Node, Node),
 }
 
 impl FunctionMul {
 
+    /// Creates new multiply expression node.
     pub fn new(arg1: Node, arg2: Node) -> Node {
         Node::FunctionMul(Rc::new(
             Self {

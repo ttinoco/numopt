@@ -1,3 +1,5 @@
+//! Cosine function.
+
 use std::fmt;
 use std::rc::Rc;
 use std::collections::HashMap;
@@ -8,12 +10,14 @@ use crate::model::node_std::{NodeStd, NodeStdProp};
 use crate::model::node_func::NodeFunc;
 use crate::model::constant::ConstantScalar;
 
+/// Cosine function.
 pub struct FunctionCos {
     arg: Node
 }
 
 impl FunctionCos {
 
+    /// Creates new cosine expression node.
     pub fn new(arg: Node) -> Node {
         Node::FunctionCos(Rc::new(
             Self {
