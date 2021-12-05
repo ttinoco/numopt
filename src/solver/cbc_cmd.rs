@@ -69,6 +69,9 @@ impl SolverCbcCmd {
                 if !cbc && s == "optimal" {
                     status = SolverStatus::Solved;
                 }
+                if !cbc && s == "Optimal" {
+                    status = SolverStatus::Solved;
+                }
                 else if !cbc && s == "infeasible" {
                     status = SolverStatus::Infeasible;
                 }
