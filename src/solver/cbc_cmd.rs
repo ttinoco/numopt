@@ -96,7 +96,7 @@ impl SolverCbcCmd {
         }
 
         // Objective value
-        if !cbc {
+        if !cbc && (!line.contains("-")) {
             r.read_line(&mut line)?;
         }
 
@@ -128,7 +128,7 @@ impl SolverCbcCmd {
             };
 
             // Variable
-             if dtype == "x" {
+            if dtype == "x" {
                 solution.x[index] = value;
                 if mul > 0. {
                     solution.pi[index] = mul;
