@@ -1,4 +1,3 @@
-// Solve a simple LP using Clp
 extern crate numopt;
 use numopt::model::*;
 use numopt::solver::*;
